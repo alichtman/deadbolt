@@ -82,9 +82,19 @@ repeat with itemRef in selected_items
 	if fileType is equal to "openssl enc'd data with salted password" then
 		set decryptionKey to the text returned of (display dialog "Enter a decryption password for: " & filePath default answer "")
 		set unencryptedFilePath to findAndReplaceInText(filePath, encryptedExtension, "")
-		set decryptionStatus to do shell script "openssl enc -d -aes-256-ctr -salt -in " & filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
-		-- TODO: Detect decryption failures
-		display dialog "Decrypted (maybe): " & unencryptedFilePath
+
+		--  TODO: Detect decryption failures with a checksum
+		do shell script "openssl enc -d -aes-256-ctr -salt -in " & filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
+		set checksumDoesNotMatch to false
+		if checksumDoesNotMatch then
+			display dialog "ERROR: Decryption failure for file: " & filePath
+			return
+		else
+			display dialog "Successful decryption! Decrypted file can be found at: " & unencryptedFilePath
+		end if
+
+		-- TODO: If it's a zip, auto decompress it and remove the zip.
+
 	else
 		-- If it's not already encrypted, encrypt it.
 		set fileToBeEncrypted to filePath
@@ -113,12 +123,14 @@ repeat with itemRef in selected_items
 		end if
 
 		-- Test to see if the encrypted file we're about to create already exists, and warn user. https://stackoverflow.com/a/3471702
+		-- If the user says the don't want to overwrite, remove the ZIP archive if we created it and then exit
 		set encryptedFileName to fileToBeEncrypted & encryptedExtension
 		if checkIfFileExists(encryptedFileName) then
 			set shouldOverwrite to button returned of (display dialog encryptedFileName & " already exists. Would you like to overwrite it?" buttons {"No", "Yes"} default button "Yes")
-			if isEncryptingDir and shouldOverwrite is equal to "Yes" then
-				removeZip(fileToBeEncrypted)
-			else
+			if shouldOverwrite is equal to "No" then
+				if isEncryptingDir and not zipAlreadyExistedFlag then
+					removeZip(fileToBeEncrypted)
+				end if
 				return
 			end if
 		end if
@@ -128,7 +140,7 @@ repeat with itemRef in selected_items
 
 		if encryptionKey is not equal to encryptionKeyConfirmation then
 			display dialog "ERROR: Encryption passwords did not match."
-			exit repeat
+			return
 		end if
 
 		do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
@@ -138,4 +150,4 @@ repeat with itemRef in selected_items
 			removeZip(fileToBeEncrypted)
 		end if
 	end if
-end repeat
+end
