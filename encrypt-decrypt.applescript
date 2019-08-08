@@ -1,21 +1,6 @@
 -- Easy File/Folder Encryption and Decryption with openssl
 -- Written by: Aaron Lichtman <aaronlichtman@gmail.com>
 
------------
--- Overview:
------------
-	-- Iterate over all selected items
-	-- Check $ file output to decide whether to encrypt or decrypt file
-	-- If encrypting:
-		-- If encrypting a directory, create a ZIP archive of it in the same directory it lives in.
-		-- Prompt for password
-		-- Encrypt the ZIP (if it's a directory) or regular file
-		-- Clean up temp ZIP archive, if it exists
-	-- If decrypting:
-		-- Prompt for password
-		-- Decrypt
-	-- Prompt user for password
-
 ------------
 -- Globals / Constants
 ------------
@@ -83,7 +68,7 @@ repeat with itemRef in selected_items
 		set decryptionKey to the text returned of (display dialog "Enter a decryption password:" default answer "")
 		set unencryptedFilePath to findAndReplaceInText(filePath, encryptedExtension, "")
 
-		--  TODO: Detect decryption failures with a checksum (#1)
+		--  TODO: Detect decryption failures with a checksum (#1) At the moment, we are printing success every single time, even when the password is incorrect.
 		do shell script "openssl enc -d -aes-256-ctr -salt -in " & filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 		set checksumDoesNotMatch to false
 		if checksumDoesNotMatch then
