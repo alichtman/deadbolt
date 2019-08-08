@@ -33,7 +33,7 @@ on checkOpenSSLInstallation()
 	end try
 end checkOpenSSLInstallation
 
--- Check if file exists. Returns true if it does
+-- Returns true if the path exists as either a file or directory
 on checkIfFileExists(path)
 	try
 		do shell script cdToRightDir & "test -e " & path
@@ -43,10 +43,14 @@ on checkIfFileExists(path)
 	return true
 end checkIfFileExists
 
-on removeZip(zipPath)
-	log "Removing zip archive: " & zipPath
-	do shell script cdToRightDir & "rm " & quoted form of zipPath
-end removeZip
+-- Removes zip archive if we created it and then exits
+on cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, zipPath)
+	if isEncryptingDir and not zipAlreadyExistedFlag then
+		log "Removing zip archive: " & zipPath
+		do shell script cdToRightDir & "rm " & quoted form of zipPath
+	end if
+	quit
+end cleanUpAndExit
 
 -- Returns the SHA1 sum of the filePath passed in
 on hashFile(filePath)
@@ -109,8 +113,6 @@ repeat with itemRef in selected_items
 			set zipCommand to cdToRightDir & "zip -r " & quotedFileToBeEncrypted & " " & quoted form of (dirToBeZipped & "/")
 			log "Zip Command: " & zipCommand
 			do shell script zipCommand
-		else
-			display dialog fileToBeEncrypted & " is a file."
 		end if
 
 		-- Test to see if the encrypted file we're about to create already exists. Exit early if it's already there since the SHA1 hash must match.
@@ -118,10 +120,7 @@ repeat with itemRef in selected_items
 		set encryptedFileName to fileToBeEncrypted & encryptedExtension & "." & hashFile(fileToBeEncrypted)
 		if checkIfFileExists(encryptedFileName) then
 			display dialog encryptedFileName & " already exists. Exiting."
-			if isEncryptingDir and not zipAlreadyExistedFlag then
-				removeZip(fileToBeEncrypted)
-			end if
-			return
+			cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
 		end if
 
 		-- TODO: Remove ZIP if user exits at either of these prompts
@@ -134,11 +133,9 @@ repeat with itemRef in selected_items
 			return
 		end if
 
+		log "openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 		do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
-		display dialog "Created: " & encryptedFileName
-
-		if isEncryptingDir and not zipAlreadyExistedFlag then
-			removeZip(fileToBeEncrypted)
-		end if
+		display dialog "Created " & encryptedFileName
+		cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
 	end if
 end repeat
