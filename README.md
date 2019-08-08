@@ -1,6 +1,6 @@
-# macOS-encrypt-decrypt
+# macOS-encrypt-decrypt-quick-actions
 
-This `macOS` `Quick Action` removes all the complication when encrypting and decrypting files. Simply right click on a file you'd like to encrypt or decrypt, select the `Encrypt Decrypt` `Quick Action`, and follow the prompts.
+This `macOS` `Quick Action` removes all the complication when encrypting and decrypting files. Simply right click on a file you'd like to encrypt or decrypt, select the `Encrypt Decrypt` `Quick Action`, and follow the prompts. To decrypt, double click on the file with the `.encrypted` extension.
 
 <h1 align="center">
   <img src="img/demo.gif" width="80%" />
