@@ -43,20 +43,23 @@ on checkIfFileExists(path)
 	return true
 end checkIfFileExists
 
+on removeFile(path)
+	log "Removing: " & path
+	do shell script cdToRightDir & "rm " & path
+end removeFile
+
 -- Removes zip archive if we created it and then exits
 on cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, zipPath)
 	if isEncryptingDir and not zipAlreadyExistedFlag then
-		log "Removing zip archive: " & zipPath
-		do shell script cdToRightDir & "rm " & quoted form of zipPath
+		removeFile(zipPath)
 	end if
 	quit
 end cleanUpAndExit
 
 -- Returns the SHA1 sum of the filePath passed in
 on hashFile(filePath)
-	set hash to do shell script cdToRightDir & "openssl sha1 " & filePath & " | cut -d' ' -f2"
-	log "Hash: " & hash
-	return hash
+	log "Hashing " & filePath
+	return do shell script cdToRightDir & "openssl sha1 " & filePath & " | cut -d' ' -f2"
 end hashFile
 
 -------
@@ -68,20 +71,24 @@ checkOpenSSLInstallation()
 tell application "Finder" to set selected_items to selection
 repeat with itemRef in selected_items
 	set filePath to POSIX path of (itemRef as string)
+	set quotedAndEscapedPath to quoted form of findAndReplaceInText(filePath, " ", "\\\\")
 	log "FilePath: " & filePath
-	set parentDir to do shell script "dirname " & filePath
+	set parentDir to do shell script "dirname " & quotedAndEscapedPath
+	log "ParentDir: " & parentDir
+
+	set fileType to do shell script "file " & quotedAndEscapedPath & " | sed 's/^.*: //'"
+	log "Filetype: " & fileType
 	set cdToRightDir to "cd " & quoted form of (parentDir) & " && "
-	set fileType to do shell script "file " & filePath & " | sed 's/^.*: //'"
 
 	-- If file is already encrypted, decrypt it.
 	if fileType is equal to "openssl enc'd data with salted password" then
 		set decryptionKey to the text returned of (display dialog "Enter a decryption password:" default answer "")
 		-- Extract file hash from filename for decryption success verification
 		set originalHash to do shell script "echo " & filePath & " | rev | cut -d'.' -f 1 | rev"
-		set unencryptedFilePath to findAndReplaceInText(filePath, encryptedExtension & "." & originalHash, "")
-
+		log "Original Hash: " & originalHash
+		set unencryptedFilePath to quoted form of findAndReplaceInText(filePath, encryptedExtension & "." & originalHash, "")
 		--  Detect decryption failures with a checksum (#1) At the moment, we are printing success every single time, even when the password is incorrect.
-		do shell script "openssl enc -d -aes-256-ctr -salt -in " & filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
+		do shell script "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 		set newHash to hashFile(unencryptedFilePath)
 
 		if newHash is not equal to originalHash then
@@ -92,14 +99,21 @@ repeat with itemRef in selected_items
 			display dialog "Successful decryption!"
 		end if
 
-		-- TODO: If it's a zip, auto decompress it and remove the zip. (#2)
+		-- If it's a zip, auto decompress it and remove the zip
+		set decryptedFileType to do shell script cdToRightDir & "file " & unencryptedFilePath & " | sed 's/^.*: //' | cut -d' ' -f1"
+		log "Decrypted File Type: " & decryptedFileType
+		if decryptedFileType is equal to "Zip" then
+			do shell script cdToRightDir & " unzip -u " & unencryptedFilePath
+			removeFile(unencryptedFilePath)
+		end if
+
 	else
 		-- If it's not already encrypted, encrypt it.
 		set fileToBeEncrypted to filePath
 		set zipAlreadyExistedFlag to false
 		set isEncryptingDir to false
 
-		-- If the filepath is a folder, compress it into a zip file.
+		-- If the filePath is a folder, compress it into a zip file.
 		if kind of (info for filePath) is "folder" then
 			set isEncryptingDir to true
 			log "Encrypting Directory..."
@@ -115,13 +129,7 @@ repeat with itemRef in selected_items
 			do shell script zipCommand
 		end if
 
-		-- Test to see if the encrypted file we're about to create already exists. Exit early if it's already there since the SHA1 hash must match.
-		-- Remove the ZIP archive if we created it and then exit
 		set encryptedFileName to fileToBeEncrypted & encryptedExtension & "." & hashFile(fileToBeEncrypted)
-		if checkIfFileExists(encryptedFileName) then
-			display dialog encryptedFileName & " already exists. Exiting."
-			cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
-		end if
 
 		-- TODO: Remove ZIP if user exits at either of these prompts
 		set encryptionKey to the text returned of (display dialog "Enter an encryption password for file: " & fileToBeEncrypted default answer "")
