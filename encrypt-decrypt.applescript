@@ -80,7 +80,7 @@ repeat with itemRef in selected_items
 
 	-- If file is already encrypted, decrypt it.
 	if fileType is equal to "openssl enc'd data with salted password" then
-		set decryptionKey to the text returned of (display dialog "Enter a decryption password for: " & filePath default answer "")
+		set decryptionKey to the text returned of (display dialog "Enter a decryption password:" default answer "")
 		set unencryptedFilePath to findAndReplaceInText(filePath, encryptedExtension, "")
 
 		--  TODO: Detect decryption failures with a checksum (#1)
@@ -90,7 +90,7 @@ repeat with itemRef in selected_items
 			display dialog "ERROR: Decryption failure for file: " & filePath
 			return
 		else
-			display dialog "Successful decryption! Decrypted file can be found at: " & unencryptedFilePath
+			display dialog "Successful decryption!"
 		end if
 
 		-- TODO: If it's a zip, auto decompress it and remove the zip. (#2)
