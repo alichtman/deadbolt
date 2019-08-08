@@ -83,7 +83,7 @@ repeat with itemRef in selected_items
 		set decryptionKey to the text returned of (display dialog "Enter a decryption password for: " & filePath default answer "")
 		set unencryptedFilePath to findAndReplaceInText(filePath, encryptedExtension, "")
 
-		--  TODO: Detect decryption failures with a checksum
+		--  TODO: Detect decryption failures with a checksum (#1)
 		do shell script "openssl enc -d -aes-256-ctr -salt -in " & filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 		set checksumDoesNotMatch to false
 		if checksumDoesNotMatch then
@@ -93,8 +93,7 @@ repeat with itemRef in selected_items
 			display dialog "Successful decryption! Decrypted file can be found at: " & unencryptedFilePath
 		end if
 
-		-- TODO: If it's a zip, auto decompress it and remove the zip.
-
+		-- TODO: If it's a zip, auto decompress it and remove the zip. (#2)
 	else
 		-- If it's not already encrypted, encrypt it.
 		set fileToBeEncrypted to filePath
@@ -107,8 +106,8 @@ repeat with itemRef in selected_items
 		if kind of (info for filePath) is "folder" then
 			set isEncryptingDir to true
 			log "Encrypting Directory..."
-			-- log "ParentDir: " & parentDir
-			-- log "Created: " & fileToBeEncrypted
+			log "ParentDir: " & parentDir
+			log "Created: " & fileToBeEncrypted
 			set dirToBeZipped to findAndReplaceInText(text 1 through -2 of filePath, parentDir & "/", "")
 			log "DirToBeZipped: " & dirToBeZipped
 			log "cdToRightDir: " & cdToRightDir
