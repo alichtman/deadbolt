@@ -1,12 +1,14 @@
 -- Easy File/Folder Encryption and Decryption with openssl
 -- Written by: Aaron Lichtman <aaronlichtman@gmail.com>
 
-------------
+----------------------
 -- Globals / Constants
-------------
+----------------------
 
 global encryptedExtension
 set encryptedExtension to ".encrypted"
+global missingOpenSSLError
+set missingOpenSSLError to "Error: openssl can't be found on your system. Make sure it's installed and on your $PATH."
 global cdToRightDir
 
 -------------------
@@ -23,14 +25,18 @@ on findAndReplaceInText(theText, theSearchString, theReplacementString)
 	return theText
 end findAndReplaceInText
 
+on userExit()
+	error number -128
+end userExit
+
 -- Make sure openssl is installed.
 on checkOpenSSLInstallation()
 	try
 		do shell script "which openssl"
 	on error
-		display dialog "Encrypt/Decrypt Error: openssl can't be found on your
-						system. Make sure it's installed and on your $PATH."
-		return
+		log missingOpenSSLError
+		display dialog missingOpenSSLError
+		userExit()
 	end try
 end checkOpenSSLInstallation
 
@@ -51,16 +57,16 @@ end removeFile
 
 -- Removes zip archive if we created it and then exits
 on cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, zipPath)
+	log "Cleaning up and exiting."
 	if isEncryptingDir and not zipAlreadyExistedFlag then
 		removeFile(zipPath)
 	end if
-	-- User Exit
-	error number -128
+	userExit()
 end cleanUpAndExit
 
 -- Returns the SHA1 sum of the filePath passed in
 on hashFile(filePath)
-	log "Hashing " & filePath
+	log "Hashing: " & filePath
 	return do shell script cdToRightDir & "openssl sha1 " & filePath & " | cut -d' ' -f2"
 end hashFile
 
@@ -77,10 +83,12 @@ on decryptFile(filePath)
 	do shell script "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 
 	if hashFile(unencryptedFilePath) is not equal to originalHash then
+		log "ERROR: Decryption failure for file: " & filePath
 		display dialog "ERROR: Decryption failure for file: " & filePath
 		do shell script cdToRightDir & "rm " & unencryptedFilePath
 		return
 	else
+		log "Successful decryption!"
 		display dialog "Successful decryption!"
 	end if
 
@@ -122,10 +130,10 @@ repeat with itemRef in selected_items
 		-- If the filePath is a folder, compress it into a zip file.
 		if kind of (info for filePath) is "folder" then
 			set isEncryptingDir to true
-			log "Encrypting Directory..."
-			log "Created: " & fileToBeEncrypted
+			log "Encrypting Directory."
 			set dirToBeZipped to findAndReplaceInText(text 1 through -2 of filePath, parentDir & "/", "")
 			log "DirToBeZipped: " & dirToBeZipped
+			log "Created: " & fileToBeEncrypted
 			log "cdToRightDir: " & cdToRightDir
 			set fileToBeEncrypted to dirToBeZipped & ".zip"
 			set quotedFileToBeEncrypted to quoted form of (fileToBeEncrypted)
@@ -147,7 +155,7 @@ repeat with itemRef in selected_items
 			return
 		end if
 
-		log "openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
+		log "Encryption Command: openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 		do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 		display dialog "Created " & encryptedFileName
 		cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
