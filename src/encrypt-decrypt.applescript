@@ -1,6 +1,10 @@
 -- Easy File/Folder Encryption and Decryption with openssl
 -- Written by: Aaron Lichtman <aaronlichtman@gmail.com>
 
+-- Warnings to anyone editing this script:
+	-- Watch those quoted paths. AppleScript chokes on paths that are quoted more than once... bash ftw (now that's a sentence I never thought I'd say...)
+	-- This is some absolute shit code. I'm sorry. It works well, though.
+
 ----------------------
 -- Globals / Constants
 ----------------------
@@ -41,17 +45,6 @@ on readValueFromConfig(key)
 	end tell
 end readValueFromConfig
 
--- Make sure openssl is installed.
-on checkOpenSSLInstallation()
-	try
-		do shell script "which openssl"
-	on error
-		log missingOpenSSLError
-		display dialog missingOpenSSLError
-		userExit()
-	end try
-end checkOpenSSLInstallation
-
 -- Returns true if the path exists as either a file or directory
 on checkIfFileExists(path)
 	try
@@ -67,20 +60,27 @@ on removeFile(path)
 	do shell script cdToRightDir & "rm " & path
 end removeFile
 
--- Removes zip archive if we created it and then exits
-on cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, zipPath)
+-- Removes zip archive if we created it and then exits. zipPath should be quoted already.
+on cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, zipPath)
 	log "Cleaning up and exiting."
-	if isEncryptingDir and not zipAlreadyExistedFlag then
+	if isEncryptingDirFlag and not zipAlreadyExistedFlag then
 		removeFile(zipPath)
 	end if
 	userExit()
 end cleanUpAndExit
 
--- Returns the SHA1 sum of the filePath passed in
+-- Returns the SHA1 sum of the filePath passed in. filePath should be quoted already
 on hashFile(filePath)
-	log "Hashing: " & filePath
-	return do shell script cdToRightDir & "openssl sha1 " & filePath & " | cut -d' ' -f2"
+	set hashCommand to cdToRightDir & "openssl sha1 " & filePath & " | rev | cut -d' ' -f1 | rev"
+	log "Hash command: " & hashCommand
+	set hash to do shell script hashCommand
+	log "Hashing: " & filePath & " -> " & hash
+	return hash
 end hashFile
+
+on getFileType(escapedFilePath)
+	return do shell script "file " & escapedFilePath & " | sed 's/^.*: //'"
+end getFileType
 
 -- Prompt for passphrase, enter it and verify decryption. If it's a ZIP, auto-extract and delete ZIP.
 on decryptFile(filePath)
@@ -91,7 +91,7 @@ on decryptFile(filePath)
 	set originalHash to do shell script "echo " & filePath & " | rev | cut -d'.' -f 2 | rev"
 	log "Original Hash: " & originalHash
 	set unencryptedFilePath to quoted form of findAndReplaceInText(filePath, "." & originalHash & encryptedExtension, "")
-
+	log "Unencryoted FilePath: " & unencryptedFilePath
 	-- Decrypt the file
 	log "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 	do shell script "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
@@ -115,9 +115,9 @@ on decryptFile(filePath)
 		end if
 
 		-- If it's a zip, auto decompress it and remove the zip
-		set decryptedFileType to do shell script cdToRightDir & "file " & unencryptedFilePath & " | sed 's/^.*: //' | cut -d' ' -f1"
+		set decryptedFileType to getFileType(unencryptedFilePath)
 		log "Decrypted File Type: " & decryptedFileType
-		if decryptedFileType is equal to "Zip" then
+		if decryptedFileType starts with "Zip" then
 			do shell script cdToRightDir & " unzip -u " & unencryptedFilePath
 			removeFile(unencryptedFilePath)
 		end if
@@ -125,77 +125,85 @@ on decryptFile(filePath)
 
 end decryptFile
 
+on encryptFile(filePath, parentDir)
+	set fileToBeEncrypted to filePath
+	set zipAlreadyExistedFlag to false
+	set isEncryptingDirFlag to false
+
+	-- If the filePath is a folder, compress it into a zip file.
+	if kind of (info for filePath) is "folder" then
+		set isEncryptingDirFlag to true
+		log "Encrypting Directory."
+		set dirToBeZipped to findAndReplaceInText(text 1 through -2 of filePath, parentDir & "/", "")
+		log "DirToBeZipped: " & dirToBeZipped
+		log "Created: " & fileToBeEncrypted
+		set fileToBeEncrypted to dirToBeZipped & ".zip"
+		set quotedFileToBeEncrypted to quoted form of fileToBeEncrypted
+		set zipAlreadyExistedFlag to checkIfFileExists(quotedFileToBeEncrypted)
+		set zipCommand to cdToRightDir & "zip -r " & quotedFileToBeEncrypted & " " & quoted form of (dirToBeZipped & "/")
+		log "Zip Command: " & zipCommand
+		do shell script zipCommand
+	else
+		set quotedFileToBeEncrypted to quoted form of filePath
+	end if
+
+	-- Remove ZIP if user exits at either of these prompts
+	set encryptionKeyPrompt to (display dialog "Enter an encryption password for file: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
+	if button returned of encryptionKeyPrompt = "Cancel Encryption" then
+		log "Aborting encryption."
+		cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
+	end if
+
+	set encryptionKey to the text returned of encryptionKeyPrompt
+
+	set encryptionKeyConfirmationPrompt to (display dialog "Confirm the password: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
+	if button returned of encryptionKeyConfirmationPrompt = "Cancel Encryption" then
+		log "Aborting encryption."
+		cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
+	end if
+
+	-- Validate the encryption key the user has provided to make sure there aren't any typos.
+	if encryptionKey is not equal to the text returned of encryptionKeyConfirmationPrompt then
+		display dialog "ERROR: Encryption passwords did not match."
+		log "ERROR: Passwords didn't match"
+		userExit()
+	end if
+
+	set encryptedFileName to quoted form of (fileToBeEncrypted & "." & hashFile(quoted form of fileToBeEncrypted) & encryptedExtension)
+	log "Encrypted file to be created: " & encryptedFileName
+	log "Encryption Command: openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
+	do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
+	cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
+end encryptFile
+
 -------
 -- Main
 -------
 
 set encryptedExtension to readValueFromConfig("encryptedFileExtension")
 
-checkOpenSSLInstallation()
-
 tell application "Finder" to set selected_items to selection
 repeat with itemRef in selected_items
+
+	-- Get filePath and escape it
 	set filePath to POSIX path of (itemRef as string)
-	set quotedAndEscapedPath to quoted form of findAndReplaceInText(filePath, " ", "\\\\")
+	set quotedAndEscapedPath to quoted form of filePath
 	log "FilePath: " & filePath
+
+	-- Set up cdToRightDir command
 	set parentDir to do shell script "dirname " & quotedAndEscapedPath
 	log "ParentDir: " & parentDir
-	set fileType to do shell script "file " & quotedAndEscapedPath & " | sed 's/^.*: //'"
-	log "Filetype: " & fileType
 	set cdToRightDir to "cd " & quoted form of (parentDir) & " && "
+
+	-- Use filetype to figure out if we need to encrypt or decrypt it.
+	set fileType to getFileType(quotedAndEscapedPath)
+	log "Filetype: " & fileType
 
 	-- If file is already encrypted, decrypt it.
 	if fileType is equal to "openssl enc'd data with salted password" then
 		decryptFile(filePath)
 	else
 		-- If it's not already encrypted, encrypt it.
-		set fileToBeEncrypted to filePath
-		set zipAlreadyExistedFlag to false
-		set isEncryptingDir to false
-
-		-- If the filePath is a folder, compress it into a zip file.
-		if kind of (info for filePath) is "folder" then
-			set isEncryptingDir to true
-			log "Encrypting Directory."
-			set dirToBeZipped to findAndReplaceInText(text 1 through -2 of filePath, parentDir & "/", "")
-			log "DirToBeZipped: " & dirToBeZipped
-			log "Created: " & fileToBeEncrypted
-			log "cdToRightDir: " & cdToRightDir
-			set fileToBeEncrypted to dirToBeZipped & ".zip"
-			set quotedFileToBeEncrypted to quoted form of (fileToBeEncrypted)
-			set zipAlreadyExistedFlag to checkIfFileExists(quotedFileToBeEncrypted)
-			set zipCommand to cdToRightDir & "zip -r " & quotedFileToBeEncrypted & " " & quoted form of (dirToBeZipped & "/")
-			log "Zip Command: " & zipCommand
-			do shell script zipCommand
-		end if
-
-		set encryptedFileName to fileToBeEncrypted & "." & hashFile(fileToBeEncrypted) & encryptedExtension
-
-		-- Remove ZIP if user exits at either of these prompts
-		set encryptionKeyPrompt to (display dialog "Enter an encryption password for file: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
-		if button returned of encryptionKeyPrompt = "Cancel Encryption" then
-			log "Aborting encryption."
-			cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
-		end if
-
-		set encryptionKey to the text returned of encryptionKeyPrompt
-
-		set encryptionKeyConfirmationPrompt to (display dialog "Confirm the password: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
-		if button returned of encryptionKeyConfirmationPrompt = "Cancel Encryption" then
-			log "Aborting encryption."
-			cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
-		end if
-
-		-- Validate the encryption key the user has provided to make sure there aren't any typos.
-		if encryptionKey is not equal to the text returned of encryptionKeyConfirmationPrompt then
-			display dialog "ERROR: Encryption passwords did not match."
-			log "ERROR: Passwords didn't match"
-			userExit()
-		end if
-
-		log "Encryption Command: openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
-		do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
-		display dialog "Created " & encryptedFileName
-		cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
+		encryptFile(filePath, parentDir)
 	end if
 end repeat
