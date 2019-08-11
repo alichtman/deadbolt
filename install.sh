@@ -24,24 +24,26 @@ function check_requirements_and_install_missing() {
 
 function install_app_and_workflow() {
 	open "dist/Encrypt Decrypt.workflow"
-	cp -r "dist/Encrypt Decrypt.app" /Applications/
+	cp "assets/EncryptedFileIcon.png" "dist/Encrypt Decrypt.app/Contents/Resources/"
+	cp "src/set-custom-icon.sh" "dist/Encrypt Decrypt.app/Contents/MacOS/"
+	cp -r "dist/Encrypt Decrypt.app" "/Applications/"
 }
 
 function create_config_file() {
-	echo "Creating config file..."
 	conf_file="$HOME/.encrypt-decrypt.plist"
+	echo "Creating config file at $conf_file"
 	if [ -f "$conf_file" ]; then
 		while true; do
-			read -p "A config file for this application has been detected. Would you like to overwrite it? ($conf_file) [y/n] : " yn
+			read -p "An existing config file for this application has been detected. Would you like to overwrite it? [y/n] : " yn
 			case $yn in
-				[Yy]* ) rm "$conf_file";;
+				[Yy]* ) rm "$conf_file"; break;;
 				[Nn]* ) exit_handler;;
 				* ) echo "Please answer yes or no.";;
 			esac
 		done
 	fi
 
-	/usr/libexec/PlistBuddy -c 'add encryptedFileExtension string .encrypted' "$conf_file"
+	/usr/libexec/PlistBuddy -c 'add encryptedFileExtension string .encrypted' "$conf_file" &>/dev/null
 	/usr/libexec/PlistBuddy -c 'add deleteEncryptedFileAfterDecryption bool False' "$conf_file"
 }
 

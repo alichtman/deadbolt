@@ -79,6 +79,19 @@ on getFileType(escapedFilePath)
 	return fileType
 end getFileType
 
+on changeFileIcon(encryptedFileName)
+	set appPath to "/Applications/Encrypt\\ Decrypt.app/Contents/"
+	set pngIconFile to appPath & "/Resources/EncryptedFileIcon.png"
+	log "PNG Icon File: " & pngIconFile
+	set changeFileScript to appPath & "/MacOS/set-custom-icon.sh"
+	log "Change File Script: " & changeFileScript
+	set encryptedFileNameTrimmed to text 2 through -2 of encryptedFileName
+	log "Encrypted File Trimmed: " & encryptedFileNameTrimmed
+	set changeFileIconCommand to cdToRightDir & changeFileScript & " " & pngIconFile & " " & encryptedFileNameTrimmed
+	log "Change File Icon Command: $ " & changeFileIconCommand
+	do shell script changeFileIconCommand
+end changeFileIcon
+
 -- Prompt for passphrase, enter it and verify decryption. If it's a ZIP, auto-extract and delete ZIP.
 on decryptFile(filePath)
 	log "Decrypting: " & filePath
@@ -169,6 +182,8 @@ on encryptFile(filePath, parentDir)
 	set encryptedFileName to quoted form of (fileToBeEncrypted & "." & hashFile(quoted form of fileToBeEncrypted) & encryptedExtension)
 	log "Encryption Command: $ openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 	do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
+
+	changeFileIcon(encryptedFileName)
 	cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 end encryptFile
 
