@@ -49,9 +49,11 @@ This script also installs the `Encrypt Decrypt.app`. You can set this app as the
 There are two options you can configure in the file `~/.encrypt-decrypt.plist`. This file is automatically created when you run the install script.
 
 - `deleteEncryptedFileAfterDecryption`
-	* **Default**: `False`. Set this to `True` if you'd like to automatically remove the encrypted versions of successfully decrypted files.
+	* **Default**: `False`. 
+	* Set this to `True` if you'd like to automatically remove the encrypted versions of successfully decrypted files.
 - `encryptedFileExtension`
-	* **Default**: `.encrypted`. Change this if you'd like to change the default extension of encrypted files. If you decide to change this, note that all encrypted files will not decryt successfully unless their extensions are also modified.
+	* **Default**: `.encrypted`. 
+	* Change this if you'd like to set a non-default extension for encrypted files. Note that encrypted files with an extension differing from the extension in the config file will not decrypt successfully.
 
 ## Technical Details
 
