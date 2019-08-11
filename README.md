@@ -1,6 +1,9 @@
-# macOS-encrypt-decrypt-quick-actions
+# macOS Quick Lock
+> Bringing the simplistic style of Quick Look's file browsing to encryption.
 
-This `macOS` `Quick Action` removes all the complication when encrypting and decrypting files. Simply right click on a file you'd like to encrypt or decrypt, select the `Encrypt Decrypt` `Quick Action`, and follow the prompts. To decrypt, double click on the file with the `.encrypted` extension.
+This tool removes all of the complication of encrypting and decrypting files. Simply right click on a file you'd like to encrypt, select the `Encrypt Decrypt` `Quick Action` and follow the prompts. To decrypt, just double click on the file.
+
+Here's a quick demo:
 
 <h1 align="center">
   <img src="img/demo.gif" width="80%" />
@@ -49,10 +52,10 @@ This script also installs the `Encrypt Decrypt.app`. You can set this app as the
 There are two options you can configure in the file `~/.encrypt-decrypt.plist`. This file is automatically created when you run the install script.
 
 - `deleteEncryptedFileAfterDecryption`
-	* **Default**: `False`. 
+	* **Default**: `False`.
 	* Set this to `True` if you'd like to automatically remove the encrypted versions of successfully decrypted files.
 - `encryptedFileExtension`
-	* **Default**: `.encrypted`. 
+	* **Default**: `.encrypted`.
 	* Change this if you'd like to set a non-default extension for encrypted files. Note that encrypted files with an extension differing from the extension in the config file will not decrypt successfully.
 
 ## Technical Details

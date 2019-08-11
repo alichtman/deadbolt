@@ -23,14 +23,14 @@ function check_requirements_and_install_missing() {
 }
 
 function install_app_and_workflow() {
-	open "dist/Encrypt Decrypt.workflow"
-	cp "assets/EncryptedFileIcon.png" "dist/Encrypt Decrypt.app/Contents/Resources/"
-	cp "src/set-custom-icon.sh" "dist/Encrypt Decrypt.app/Contents/MacOS/"
-	cp -r "dist/Encrypt Decrypt.app" "/Applications/"
+	open "dist/Quick Lock.workflow"
+	cp "assets/EncryptedFileIcon.png" "dist/Quick Lock.app/Contents/Resources/"
+	cp "src/set-custom-icon.sh" "dist/Quick Lock.app/Contents/MacOS/"
+	cp -r "dist/Quick Lock.app" "/Applications/"
 }
 
 function create_config_file() {
-	conf_file="$HOME/.encrypt-decrypt.plist"
+	conf_file="$HOME/.quick-lock.plist"
 	echo "Creating config file at $conf_file"
 	if [ -f "$conf_file" ]; then
 		while true; do
