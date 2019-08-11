@@ -1,23 +1,17 @@
 -- Easy File/Folder Encryption and Decryption with openssl
 -- Written by: Aaron Lichtman <aaronlichtman@gmail.com>
 
--- Warnings to anyone editing this script:
-	-- Watch those quoted paths. AppleScript chokes on paths that are quoted more than once... bash ftw (now that's a sentence I never thought I'd say...)
-	-- This is some absolute shit code. I'm sorry. It works well, though. Once I get automated testing working, I'll go back and refactor things.
+-- Notes to anyone editing this script:
+	-- Watch the quoting of paths. Unlike bash, AppleScript chokes on paths that are quoted more than once, so you can't just throw a pair of quotes around a path randomly.
 
 ----------------------
 -- Globals / Constants
 ----------------------
 
+global encryptedExtension
+global cdToRightDir
 global configFile
 set configFile to POSIX path of (path to home folder) & ".encrypt-decrypt.plist"
-
-global encryptedExtension
-
-global missingOpenSSLError
-set missingOpenSSLError to "Error: openssl can't be found on your system. Make sure it's installed and on your $PATH."
-
-global cdToRightDir
 
 -------------------
 -- Helper Functions
@@ -33,6 +27,7 @@ on findAndReplaceInText(theText, theSearchString, theReplacementString)
 	return theText
 end findAndReplaceInText
 
+-- TODO: Is this the proper way to do that?
 on userExit()
 	error number -128
 end userExit

@@ -51,6 +51,6 @@ exit_handler() {
 }
 
 check_requirements_and_install_missing
-#install_app_and_workflow
+install_app_and_workflow
 create_config_file
 exit_handler
