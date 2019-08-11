@@ -171,14 +171,26 @@ repeat with itemRef in selected_items
 
 		set encryptedFileName to fileToBeEncrypted & "." & hashFile(fileToBeEncrypted) & encryptedExtension
 
-		-- TODO: Remove ZIP if user exits at either of these prompts
-		set encryptionKey to the text returned of (display dialog "Enter an encryption password for file: " & fileToBeEncrypted default answer "")
-		set encryptionKeyConfirmation to the text returned of (display dialog "Enter the password again: " default answer "")
+		-- Remove ZIP if user exits at either of these prompts
+		set encryptionKeyPrompt to (display dialog "Enter an encryption password for file: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
+		if button returned of encryptionKeyPrompt = "Cancel Encryption" then
+			log "Aborting encryption."
+			cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
+		end if
 
-		if encryptionKey is not equal to encryptionKeyConfirmation then
+		set encryptionKey to the text returned of encryptionKeyPrompt
+
+		set encryptionKeyConfirmationPrompt to (display dialog "Confirm the password: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
+		if button returned of encryptionKeyConfirmationPrompt = "Cancel Encryption" then
+			log "Aborting encryption."
+			cleanUpAndExit(isEncryptingDir, zipAlreadyExistedFlag, fileToBeEncrypted)
+		end if
+
+		-- Validate the encryption key the user has provided to make sure there aren't any typos.
+		if encryptionKey is not equal to the text returned of encryptionKeyConfirmationPrompt then
 			display dialog "ERROR: Encryption passwords did not match."
 			log "ERROR: Passwords didn't match"
-			return
+			userExit()
 		end if
 
 		log "Encryption Command: openssl enc -aes-256-ctr -salt -in " & fileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
