@@ -1,8 +1,14 @@
-## Hacking
+# Hacking
+
+### How Does This Work?
+
+- `encrypt-decrypt.applescript` file is the master script. When I am developing, I write code in this file.
+- `dist/Encrypt Decrypt.app` is an app I created in Automator that runs a copy of the script above. This allows you to choose the option to open `.encrypted` filetypes with it, meaning that you can double-click on encrypted files to decrypt them.
+- `dist/Encrypt Decrypt.workflow` is a Quick Action created in Automator that allows you to right-click on files and select the option to encrypt / decrypt them.
 
 ### Writing Code
 
-The master copy of this project is `encrypt-decrypt.applescript`, but `Encrypt\ Decrypt.workflow` is the file that is released / installed by users.
+The master copy of this project is `encrypt-decrypt.applescript`, but the files in `dist/` are the ones that are actually installed by users.
 
 ### Testing
 
@@ -10,8 +16,8 @@ Test by selecting a file in Finder and running the script with `$ osascript encr
 
 ### Making a New Release
 
-1. Copy the `encrypt-decrypt.applescript` file into the `Encrypt\ Decrypt.workflow` file and export the workflow.
-2. Copy the `encrypt-decrypt.applescript` file into the `Encrypt\ Decrypt.app` file and export the workflow.
-3. Run script to update the app icon.
-4. Bump the version number in `VERSION`.
-5. Commit and push
+1. Copy the `encrypt-decrypt.applescript` file into the `Encrypt\ Decrypt.workflow` file and save the workflow.
+2. Copy the `encrypt-decrypt.applescript` file into the `Encrypt\ Decrypt.app` file and save the app.
+3. Bump the version number in `VERSION`.
+4. Tag the commit as a new release
+5. Push
