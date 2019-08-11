@@ -5,10 +5,14 @@
 -- Globals / Constants
 ----------------------
 
+global configFile
+set configFile to POSIX path of (path to home folder) & ".encrypt-decrypt.plist"
+
 global encryptedExtension
-set encryptedExtension to ".encrypted"
+
 global missingOpenSSLError
 set missingOpenSSLError to "Error: openssl can't be found on your system. Make sure it's installed and on your $PATH."
+
 global cdToRightDir
 
 -------------------
@@ -28,6 +32,14 @@ end findAndReplaceInText
 on userExit()
 	error number -128
 end userExit
+
+on readValueFromConfig(key)
+	tell application "System Events"
+		tell property list file configFile
+			return value of property list item key
+		end tell
+	end tell
+end readValueFromConfig
 
 -- Make sure openssl is installed.
 on checkOpenSSLInstallation()
@@ -74,14 +86,17 @@ end hashFile
 on decryptFile(filePath)
 	log "Decrypting: " & filePath
 	set decryptionKey to the text returned of (display dialog "Enter a decryption password:" default answer "")
+
 	-- Extract file hash from filename for decryption success verification
 	set originalHash to do shell script "echo " & filePath & " | rev | cut -d'.' -f 2 | rev"
 	log "Original Hash: " & originalHash
 	set unencryptedFilePath to quoted form of findAndReplaceInText(filePath, "." & originalHash & encryptedExtension, "")
-	--  Detect decryption failures with a checksum (#1) At the moment, we are printing success every single time, even when the password is incorrect.
+
+	-- Decrypt the file
 	log "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 	do shell script "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 
+	-- Detect decryption failures by comparing the checksums
 	if hashFile(unencryptedFilePath) is not equal to originalHash then
 		log "ERROR: Decryption failure for file: " & filePath
 		display dialog "ERROR: Decryption failure for file: " & filePath
@@ -90,20 +105,31 @@ on decryptFile(filePath)
 	else
 		log "Successful decryption!"
 		display dialog "Successful decryption!"
+
+		-- If the option to remove encrypted files after decrypting is set, remove the file
+		if readValueFromConfig("deleteEncryptedFileAfterDecryption") is equal to true then
+			log "Removing encrypted file after successful decryption."
+			removeFile(quoted form of filePath)
+		else
+			log "Not removing encrypted file after successful decryption."
+		end if
+
+		-- If it's a zip, auto decompress it and remove the zip
+		set decryptedFileType to do shell script cdToRightDir & "file " & unencryptedFilePath & " | sed 's/^.*: //' | cut -d' ' -f1"
+		log "Decrypted File Type: " & decryptedFileType
+		if decryptedFileType is equal to "Zip" then
+			do shell script cdToRightDir & " unzip -u " & unencryptedFilePath
+			removeFile(unencryptedFilePath)
+		end if
 	end if
 
-	-- If it's a zip, auto decompress it and remove the zip
-	set decryptedFileType to do shell script cdToRightDir & "file " & unencryptedFilePath & " | sed 's/^.*: //' | cut -d' ' -f1"
-	log "Decrypted File Type: " & decryptedFileType
-	if decryptedFileType is equal to "Zip" then
-		do shell script cdToRightDir & " unzip -u " & unencryptedFilePath
-		removeFile(unencryptedFilePath)
-	end if
 end decryptFile
 
 -------
 -- Main
 -------
+
+set encryptedExtension to readValueFromConfig("EncryptedFileExtension")
 
 checkOpenSSLInstallation()
 
