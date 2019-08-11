@@ -17,8 +17,8 @@ Test by selecting a file in Finder and running the script with `$ osascript quic
 
 ### Making a New Release
 
-1. Copy the `quick-lock.applescript` file into the `Quick\ Lock.workflow` file and save the workflow.
-2. Copy the `quick-lock.applescript` file into the `Quick\ Lock.app` file and save the app.
+1. Copy the `quick-lock.applescript` file into the `Quick\ Lock.workflow` file and export the workflow, signing with `Aaron Lichtman`'s signing certificate.
+2. Copy the `quick-lock.applescript` file into the `Quick\ Lock.app` file and export the app, signing with `Aaron Lichtman`'s signing certificate.
 3. Bump the version number in `VERSION`.
-4. Tag the commit as a new release
-5. Push
+5. Commit and push.
+4. Draft a new release on GitHub.
