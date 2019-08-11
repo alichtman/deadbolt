@@ -55,6 +55,16 @@ on removeFile(path)
 	do shell script cdToRightDir & "rm " & path
 end removeFile
 
+on decompressAndRemoveZip(filePath)
+	-- If it's a zip, auto decompress it and remove the zip
+	set decryptedFileType to getFileType(filePath)
+	log "Decrypted File Type: " & decryptedFileType
+	if decryptedFileType starts with "Zip" then
+		do shell script cdToRightDir & " unzip -u " & filePath
+		removeFile(filePath)
+	end if
+end decompressAndRemoveZip
+
 -- Removes zip archive if we created it and then exits. zipPath should be quoted already.
 on cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, zipPath)
 	log "Cleaning up and exiting."
@@ -93,25 +103,32 @@ on changeFileIcon(encryptedFileName)
 end changeFileIcon
 
 -- Prompt for passphrase, enter it and verify decryption. If it's a ZIP, auto-extract and delete ZIP.
-on decryptFile(filePath)
-	log "Decrypting: " & filePath
+on decryptFile(encryptedFilePath)
+	log "Decrypting: " & encryptedFilePath
 	set decryptionKey to the text returned of (display dialog "Enter a decryption password:" default answer "")
 
 	-- Extract file hash from filename for decryption success verification
 	set originalHash to do shell script "echo " & filePath & " | rev | cut -d'.' -f 2 | rev"
 	log "Original Hash: " & originalHash
-	set unencryptedFilePath to quoted form of findAndReplaceInText(filePath, "." & originalHash & encryptedExtension, "")
+	set unencryptedFilePath to quoted form of findAndReplaceInText(encryptedFilePath, "." & originalHash & encryptedExtension, "")
 	log "Unencryoted FilePath: " & unencryptedFilePath
 	-- Decrypt the file
-	log "Decryption Command: $ openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
-	do shell script "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
+	set quotedEncryptedFilePath to quoted form of encryptedFilePath
+	log "Decryption Command: $ openssl enc -d -aes-256-ctr -salt -in " & quotedEncryptedFilePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
+	do shell script "openssl enc -d -aes-256-ctr -salt -in " & quotedEncryptedFilePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 
 	-- Detect decryption failures by comparing the checksums
-	if hashFile(unencryptedFilePath) is not equal to originalHash then
-		log "ERROR: Decryption failure for file: " & filePath
-		display dialog "ERROR: Decryption failure for file: " & filePath
-		do shell script cdToRightDir & "rm " & unencryptedFilePath
-		return
+	set newHash to hashFile(unencryptedFilePath)
+	if newHash is not equal to originalHash then
+		log "Potential decryption error. Original hash (" & originalHash & ") does not match New Hash (" & newHash & ")"
+		-- Prompt to see if they want to continue when a hash-mismatch is detected.
+		-- The only time this should be continued through is when decrypting a file without a hash.
+		set potentialErrorPrompt to (display dialog "Potential decryption error. If the file you are trying to decrypt is missing a SHA1 hash, click 'Continue'. Otherwise, click 'Abort'" buttons { "Abort", "Continue" }  default button "Continue")
+		if button returned of potentialErrorPrompt = "Abort" then
+			log "Aborting decryption."
+			removeFile(unencryptedFilePath)
+			userExit()
+		end if
 	else
 		log "Successful decryption!"
 		display dialog "Successful decryption!"
@@ -119,20 +136,13 @@ on decryptFile(filePath)
 		-- If the option to remove encrypted files after decrypting is set, remove the file
 		if readValueFromConfig("deleteEncryptedFileAfterDecryption") is equal to true then
 			log "Removing encrypted file after successful decryption."
-			removeFile(quoted form of filePath)
+			removeFile(quotedEncryptedFilePath)
 		else
 			log "Not removing encrypted file after successful decryption."
 		end if
-
-		-- If it's a zip, auto decompress it and remove the zip
-		set decryptedFileType to getFileType(unencryptedFilePath)
-		log "Decrypted File Type: " & decryptedFileType
-		if decryptedFileType starts with "Zip" then
-			do shell script cdToRightDir & " unzip -u " & unencryptedFilePath
-			removeFile(unencryptedFilePath)
-		end if
 	end if
 
+	decompressAndRemoveZip(unencryptedFilePath)
 end decryptFile
 
 on encryptFile(filePath, parentDir)
@@ -160,19 +170,18 @@ on encryptFile(filePath, parentDir)
 	-- Remove ZIP if user exits at either of these prompts
 	set encryptionKeyPrompt to (display dialog "Enter an encryption password for file: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
 	if button returned of encryptionKeyPrompt = "Cancel Encryption" then
-		log "Aborting encryption."
+		log "Aborting encryption at first password prompt."
 		cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 	end if
 
-	set encryptionKey to the text returned of encryptionKeyPrompt
-
 	set encryptionKeyConfirmationPrompt to (display dialog "Confirm the password: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
 	if button returned of encryptionKeyConfirmationPrompt = "Cancel Encryption" then
-		log "Aborting encryption."
+		log "Aborting encryption at second password prompt."
 		cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 	end if
 
 	-- Validate the encryption key the user has provided to make sure there aren't any typos.
+	set encryptionKey to the text returned of encryptionKeyPrompt
 	if encryptionKey is not equal to the text returned of encryptionKeyConfirmationPrompt then
 		display dialog "ERROR: Encryption passwords did not match."
 		log "ERROR: Passwords didn't match"
