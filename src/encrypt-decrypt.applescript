@@ -3,7 +3,7 @@
 
 -- Warnings to anyone editing this script:
 	-- Watch those quoted paths. AppleScript chokes on paths that are quoted more than once... bash ftw (now that's a sentence I never thought I'd say...)
-	-- This is some absolute shit code. I'm sorry. It works well, though.
+	-- This is some absolute shit code. I'm sorry. It works well, though. Once I get automated testing working, I'll go back and refactor things.
 
 ----------------------
 -- Globals / Constants
@@ -72,14 +72,16 @@ end cleanUpAndExit
 -- Returns the SHA1 sum of the filePath passed in. filePath should be quoted already
 on hashFile(filePath)
 	set hashCommand to cdToRightDir & "openssl sha1 " & filePath & " | rev | cut -d' ' -f1 | rev"
-	log "Hash command: " & hashCommand
+	log "Hash command: $ " & hashCommand
 	set hash to do shell script hashCommand
 	log "Hashing: " & filePath & " -> " & hash
 	return hash
 end hashFile
 
 on getFileType(escapedFilePath)
-	return do shell script "file " & escapedFilePath & " | sed 's/^.*: //'"
+	set fileType to do shell script "file " & escapedFilePath & " | sed 's/^.*: //'"
+	log "Detected fileType: " & fileType
+	return fileType
 end getFileType
 
 -- Prompt for passphrase, enter it and verify decryption. If it's a ZIP, auto-extract and delete ZIP.
@@ -93,7 +95,7 @@ on decryptFile(filePath)
 	set unencryptedFilePath to quoted form of findAndReplaceInText(filePath, "." & originalHash & encryptedExtension, "")
 	log "Unencryoted FilePath: " & unencryptedFilePath
 	-- Decrypt the file
-	log "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
+	log "Decryption Command: $ openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 	do shell script "openssl enc -d -aes-256-ctr -salt -in " & quoted form of filePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 
 	-- Detect decryption failures by comparing the checksums
@@ -141,7 +143,7 @@ on encryptFile(filePath, parentDir)
 		set quotedFileToBeEncrypted to quoted form of fileToBeEncrypted
 		set zipAlreadyExistedFlag to checkIfFileExists(quotedFileToBeEncrypted)
 		set zipCommand to cdToRightDir & "zip -r " & quotedFileToBeEncrypted & " " & quoted form of (dirToBeZipped & "/")
-		log "Zip Command: " & zipCommand
+		log "Zip Command: $ " & zipCommand
 		do shell script zipCommand
 	else
 		set quotedFileToBeEncrypted to quoted form of filePath
@@ -170,8 +172,7 @@ on encryptFile(filePath, parentDir)
 	end if
 
 	set encryptedFileName to quoted form of (fileToBeEncrypted & "." & hashFile(quoted form of fileToBeEncrypted) & encryptedExtension)
-	log "Encrypted file to be created: " & encryptedFileName
-	log "Encryption Command: openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
+	log "Encryption Command: $ openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 	do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 	cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 end encryptFile
@@ -196,14 +197,9 @@ repeat with itemRef in selected_items
 	set cdToRightDir to "cd " & quoted form of (parentDir) & " && "
 
 	-- Use filetype to figure out if we need to encrypt or decrypt it.
-	set fileType to getFileType(quotedAndEscapedPath)
-	log "Filetype: " & fileType
-
-	-- If file is already encrypted, decrypt it.
-	if fileType is equal to "openssl enc'd data with salted password" then
+	if getFileType(quotedAndEscapedPath) is equal to "openssl enc'd data with salted password" then
 		decryptFile(filePath)
 	else
-		-- If it's not already encrypted, encrypt it.
 		encryptFile(filePath, parentDir)
 	end if
 end repeat
