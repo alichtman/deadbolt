@@ -41,7 +41,7 @@ function create_config_file() {
 		done
 	fi
 
-	/usr/libexec/PlistBuddy -c 'add EncryptedFileExtension string .encrypted' "$conf_file"
+	/usr/libexec/PlistBuddy -c 'add encryptedFileExtension string .encrypted' "$conf_file"
 	/usr/libexec/PlistBuddy -c 'add deleteEncryptedFileAfterDecryption bool False' "$conf_file"
 }
 

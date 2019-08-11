@@ -46,6 +46,15 @@ Since you have installed the `Encrypt\ Decrypt.app`, you can set it as the defau
 
 - Filepaths with spaces in them will fail to encrypt. This issue is being tracked [(#7)](https://github.com/alichtman/macOS-encrypt-decrypt/issues/7), but until it's fixed, just, ya know, don't?
 
+## Configuration
+
+There are two options you can configure in the file `~/.encrypt-decrypt.plist`. This file is automatically created when you run the install script.
+
+- `deleteEncryptedFileAfterDecryption`
+	* Default: `False`. Set this to `True` if you'd like to automatically remove the encrypted versions of successfully decrypted files.
+- `encryptedFileExtension`
+	* Default: `.encrypted`. Change this if you'd like to change the default extension of encrypted files. If you decide to change this, note that all encrypted files will not decryt successfully unless their extensions are also modified.
+
 ## Technical Details
 
 This script uses `openssl`'s implementation of the [`AES 256`](https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf) encryption algorithm in [Counter](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_(CTR)) (`CTR`) mode, like is recommended in Professor Rogaway's [_Evaluation of Some Blockcipher Modes of Operation_](https://web.cs.ucdavis.edu/~rogaway/papers/modes.pdf). This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents.

@@ -129,7 +129,7 @@ end decryptFile
 -- Main
 -------
 
-set encryptedExtension to readValueFromConfig("EncryptedFileExtension")
+set encryptedExtension to readValueFromConfig("encryptedFileExtension")
 
 checkOpenSSLInstallation()
 
