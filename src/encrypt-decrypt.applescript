@@ -80,8 +80,11 @@ on getFileType(escapedFilePath)
 end getFileType
 
 on changeFileIcon(encryptedFileName)
-	set pngIconFile to "/Applications/Encrypt\ Decrypt.app/Contents/Resources/EncryptedFileIcon.png"
-	set changeFileIconCommand to cdToRightDir & "/usr/bin/python -c \"import Cocoa;import sys;Cocoa.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(Cocoa.NSImage.alloc().initWithContentsOfFile_(" & pngIconFile & ".decode('utf-8')), " & encryptedFileName & ".decode('utf-8'), 0)"
+	set pngIconFile to "/Applications/Encrypt\\ Decrypt.app/Contents/Resources/EncryptedFileIcon.png"
+	log "PNG Icon File: " & pngIconFile
+	set encryptedFileNameTrimmed to text 2 through -2 of encryptedFileName
+	log "Encrypted File Trimmed: " & encryptedFileNameTrimmed
+	set changeFileIconCommand to cdToRightDir & "/usr/bin/python -c 'import Cocoa;import sys;Cocoa.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(Cocoa.NSImage.alloc().initWithContentsOfFile_(\"" & pngIconFile & "\".decode(\"utf-8\")), \"" & encryptedFileNameTrimmed & "\".decode(\"utf-8\"), 0)'"
 	log "Change File Icon Command: $ " & changeFileIconCommand
 	do shell script changeFileIconCommand
 end changeFileIcon

@@ -11,6 +11,7 @@ fileThatWillBecomeIconic="$2"
 # !!
 # !! Note: setIcon_forFile_options_() seemingly always indicates True, even with invalid image files, so
 # !!       we attempt no error handling in the Python code.
+
 # /usr/bin/python - "$pngIconFile" "$fileThatWillBecomeIconic" <<'EOF' || return
 # import Cocoa
 # import sys

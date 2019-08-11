@@ -32,7 +32,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Application Stub</string>
 	<key>CFBundleIconFile</key>
-	<string>Icon</string>
+	<string>AutomatorApplet</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.apple.automator.Encrypt Decrypt</string>
 	<key>CFBundleInfoDictionaryVersion</key>

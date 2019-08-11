@@ -24,7 +24,8 @@ function check_requirements_and_install_missing() {
 
 function install_app_and_workflow() {
 	open "dist/Encrypt Decrypt.workflow"
-	cp "assets/EncryptedFileIcon.png" "dist/Encrypt\ Decrypt.app/Contents/Resources/"
+	cp "assets/EncryptedFileIcon.png" "dist/Encrypt Decrypt.app/Contents/Resources/"
+	cp "src/set-custom-icon.sh" "dist/Encrypt Decrypt.app/Contents/MacOS/"
 	cp -r "dist/Encrypt Decrypt.app" "/Applications/"
 }
 
@@ -35,7 +36,7 @@ function create_config_file() {
 		while true; do
 			read -p "A config file for this application has been detected. Would you like to overwrite it? ($conf_file) [y/n] : " yn
 			case $yn in
-				[Yy]* ) rm "$conf_file";;
+				[Yy]* ) rm "$conf_file"; break;;
 				[Nn]* ) exit_handler;;
 				* ) echo "Please answer yes or no.";;
 			esac
