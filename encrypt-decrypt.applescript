@@ -79,6 +79,13 @@ on getFileType(escapedFilePath)
 	return fileType
 end getFileType
 
+on changeFileIcon(encryptedFileName)
+	set pngIconFile to "/Applications/Encrypt\ Decrypt.app/Contents/Resources/EncryptedFileIcon.png"
+	set changeFileIconCommand to cdToRightDir & "/usr/bin/python -c \"import Cocoa;import sys;Cocoa.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(Cocoa.NSImage.alloc().initWithContentsOfFile_(" & pngIconFile & ".decode('utf-8')), " & encryptedFileName & ".decode('utf-8'), 0)"
+	log "Change File Icon Command: $ " & changeFileIconCommand
+	do shell script changeFileIconCommand
+end changeFileIcon
+
 -- Prompt for passphrase, enter it and verify decryption. If it's a ZIP, auto-extract and delete ZIP.
 on decryptFile(filePath)
 	log "Decrypting: " & filePath
@@ -169,6 +176,8 @@ on encryptFile(filePath, parentDir)
 	set encryptedFileName to quoted form of (fileToBeEncrypted & "." & hashFile(quoted form of fileToBeEncrypted) & encryptedExtension)
 	log "Encryption Command: $ openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 	do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
+
+	changeFileIcon(encryptedFileName)
 	cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 end encryptFile
 

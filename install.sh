@@ -24,7 +24,8 @@ function check_requirements_and_install_missing() {
 
 function install_app_and_workflow() {
 	open "dist/Encrypt Decrypt.workflow"
-	cp -r "dist/Encrypt Decrypt.app" /Applications/
+	cp "assets/EncryptedFileIcon.png" "dist/Encrypt\ Decrypt.app/Contents/Resources/"
+	cp -r "dist/Encrypt Decrypt.app" "/Applications/"
 }
 
 function create_config_file() {
