@@ -1,7 +1,7 @@
 # macOS Quick Lock
 > Bringing the simplistic style of Quick Look's file browsing to encryption.
 
-This tool removes all of the complication of encrypting and decrypting files. Simply right click on a file you'd like to encrypt, select the `Encrypt Decrypt` `Quick Action` and follow the prompts. To decrypt, just double click on the file.
+This tool removes all of the complication of encrypting and decrypting files. Simply right click on a file you'd like to encrypt, select `Quick Actions > Quick Lock` and follow the prompts. To decrypt, just double click on the file.
 
 Here's a quick demo:
 
@@ -39,7 +39,7 @@ If you'd like to add a keyboard shortcut, go to `Preferences > Keyboard > Shortc
   <br />
 </h1>
 
-This script also installs the `Encrypt Decrypt.app`. You can set this app as the default app for `.encrypted` files, which means you'll be able to double-click on files with that extension and be prompted for a decryption password. You can set this up the first time you double-click on a `.encrypted` file, or by right-clicking on a `.encrypted` file, selecting `Get Info` and changing the default app in the `Open With:` section.
+This script also installs the `Quick Lock.app`. You can set this app as the default app for `.encrypted` files, which means you'll be able to double-click on files with that extension and be prompted for a decryption password. You can set this up the first time you double-click on a `.encrypted` file, or by right-clicking on a `.encrypted` file, selecting `Get Info` and changing the default app in the `Open With:` section.
 
 ## Usage Notes
 
