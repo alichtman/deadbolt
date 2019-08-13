@@ -13,8 +13,8 @@ Here's a quick demo:
 ## Installation
 
 ```bash
-$ git clone https://github.com/alichtman/macOS-encrypt-decrypt.git
-$ cd macOS-encrypt-decrypt
+$ git clone https://github.com/alichtman/macOS-quick-lock.git
+$ cd macOS-quick-lock
 $ ./install.sh
 ```
 
