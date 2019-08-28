@@ -20,5 +20,5 @@ Test by selecting a file in Finder and running the script with `$ osascript quic
 1. Copy the `quick-lock.applescript` file into the `Quick\ Lock.workflow` file and export the workflow, signing with `Aaron Lichtman`'s certificate.
 2. Copy the `quick-lock.applescript` file into the `Quick\ Lock.app` file and export the app, signing with `Aaron Lichtman`'s certificate.
 3. Bump the version number in `VERSION`.
-5. Commit and push.
-4. Draft a new release on GitHub.
+4. Commit and push.
+5. $ hub release create -m "MESSAGE" `cat VERSION`
