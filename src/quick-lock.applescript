@@ -112,7 +112,7 @@ on decryptFile(encryptedFilePath)
 	set originalHash to do shell script "echo " & encryptedFilePath & " | rev | cut -d'.' -f 2 | rev"
 	log "Original Hash: " & originalHash
 	set unencryptedFilePath to quoted form of findAndReplaceInText(encryptedFilePath, "." & originalHash & encryptedExtension, "")
-	log "Unencryoted FilePath: " & unencryptedFilePath
+	log "Unencrypted FilePath: " & unencryptedFilePath
 	-- Decrypt the file
 	set quotedEncryptedFilePath to quoted form of encryptedFilePath
 	log "Decryption Command: $ openssl enc -d -aes-256-ctr -salt -in " & quotedEncryptedFilePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
