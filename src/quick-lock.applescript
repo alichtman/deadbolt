@@ -12,7 +12,7 @@
 global encryptedExtension
 global cdToRightDir
 global configFile
-set configFile to POSIX path of (path to home folder) & ".encrypt-decrypt.plist"
+set configFile to POSIX path of (path to home folder) & ".quick-lock.plist"
 
 -------------------
 -- Helper Functions

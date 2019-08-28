@@ -12,6 +12,8 @@ Here's a quick demo:
 
 ## Installation
 
+Open `Terminal.app` and enter the following commands:
+
 ```bash
 $ git clone https://github.com/alichtman/macOS-quick-lock.git
 $ cd macOS-quick-lock
