@@ -1,8 +1,9 @@
+-- Quick Lock v1.3
 -- Easy File/Folder Encryption and Decryption with openssl
 -- Written by: Aaron Lichtman <aaronlichtman@gmail.com>
 
 -- Notes to anyone editing this script:
-	-- Watch the quoting of paths. Unlike bash, AppleScript chokes on paths that are quoted more than once, so you can't just throw a pair of quotes around a path randomly.
+-- Watch the quoting of paths. Unlike bash, AppleScript chokes on paths that are quoted more than once, so you can't just throw a pair of quotes around a path randomly.
 
 ----------------------
 -- Globals / Constants
@@ -90,7 +91,7 @@ on getFileType(escapedFilePath)
 end getFileType
 
 on changeFileIcon(encryptedFileName)
-	set appPath to "/Applications/Encrypt\\ Decrypt.app/Contents/"
+	set appPath to "/Applications/Quick\\ Lock.app/Contents/"
 	set pngIconFile to appPath & "/Resources/EncryptedFileIcon.png"
 	log "PNG Icon File: " & pngIconFile
 	set changeFileScript to appPath & "/MacOS/set-custom-icon.sh"
@@ -106,9 +107,9 @@ end changeFileIcon
 on decryptFile(encryptedFilePath)
 	log "Decrypting: " & encryptedFilePath
 	set decryptionKey to the text returned of (display dialog "Enter a decryption password:" default answer "")
-
+	
 	-- Extract file hash from filename for decryption success verification
-	set originalHash to do shell script "echo " & filePath & " | rev | cut -d'.' -f 2 | rev"
+	set originalHash to do shell script "echo " & encryptedFilePath & " | rev | cut -d'.' -f 2 | rev"
 	log "Original Hash: " & originalHash
 	set unencryptedFilePath to quoted form of findAndReplaceInText(encryptedFilePath, "." & originalHash & encryptedExtension, "")
 	log "Unencryoted FilePath: " & unencryptedFilePath
@@ -116,14 +117,14 @@ on decryptFile(encryptedFilePath)
 	set quotedEncryptedFilePath to quoted form of encryptedFilePath
 	log "Decryption Command: $ openssl enc -d -aes-256-ctr -salt -in " & quotedEncryptedFilePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
 	do shell script "openssl enc -d -aes-256-ctr -salt -in " & quotedEncryptedFilePath & " -out " & unencryptedFilePath & " -pass pass:" & decryptionKey
-
+	
 	-- Detect decryption failures by comparing the checksums
 	set newHash to hashFile(unencryptedFilePath)
 	if newHash is not equal to originalHash then
 		log "Potential decryption error. Original hash (" & originalHash & ") does not match New Hash (" & newHash & ")"
 		-- Prompt to see if they want to continue when a hash-mismatch is detected.
 		-- The only time this should be continued through is when decrypting a file without a hash.
-		set potentialErrorPrompt to (display dialog "Potential decryption error. If the file you are trying to decrypt is missing a SHA1 hash, click 'Continue'. Otherwise, click 'Abort'" buttons { "Abort", "Continue" }  default button "Continue")
+		set potentialErrorPrompt to (display dialog "Potential decryption error. If the file you are trying to decrypt is missing a SHA1 hash, click 'Continue'. Otherwise, click 'Abort'" buttons {"Abort", "Continue"} default button "Continue")
 		if button returned of potentialErrorPrompt = "Abort" then
 			log "Aborting decryption."
 			removeFile(unencryptedFilePath)
@@ -132,7 +133,7 @@ on decryptFile(encryptedFilePath)
 	else
 		log "Successful decryption!"
 		display dialog "Successful decryption!"
-
+		
 		-- If the option to remove encrypted files after decrypting is set, remove the file
 		if readValueFromConfig("deleteEncryptedFileAfterDecryption") is equal to true then
 			log "Removing encrypted file after successful decryption."
@@ -141,7 +142,7 @@ on decryptFile(encryptedFilePath)
 			log "Not removing encrypted file after successful decryption."
 		end if
 	end if
-
+	
 	decompressAndRemoveZip(unencryptedFilePath)
 end decryptFile
 
@@ -149,7 +150,7 @@ on encryptFile(filePath, parentDir)
 	set fileToBeEncrypted to filePath
 	set zipAlreadyExistedFlag to false
 	set isEncryptingDirFlag to false
-
+	
 	-- If the filePath is a folder, compress it into a zip file.
 	if kind of (info for filePath) is "folder" then
 		set isEncryptingDirFlag to true
@@ -166,20 +167,20 @@ on encryptFile(filePath, parentDir)
 	else
 		set quotedFileToBeEncrypted to quoted form of filePath
 	end if
-
+	
 	-- Remove ZIP if user exits at either of these prompts
 	set encryptionKeyPrompt to (display dialog "Enter an encryption password for file: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
 	if button returned of encryptionKeyPrompt = "Cancel Encryption" then
 		log "Aborting encryption at first password prompt."
 		cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 	end if
-
+	
 	set encryptionKeyConfirmationPrompt to (display dialog "Confirm the password: " & fileToBeEncrypted buttons {"Cancel Encryption", "Ok"} default answer "" default button "Ok")
 	if button returned of encryptionKeyConfirmationPrompt = "Cancel Encryption" then
 		log "Aborting encryption at second password prompt."
 		cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 	end if
-
+	
 	-- Validate the encryption key the user has provided to make sure there aren't any typos.
 	set encryptionKey to the text returned of encryptionKeyPrompt
 	if encryptionKey is not equal to the text returned of encryptionKeyConfirmationPrompt then
@@ -187,11 +188,11 @@ on encryptFile(filePath, parentDir)
 		log "ERROR: Passwords didn't match"
 		userExit()
 	end if
-
+	
 	set encryptedFileName to quoted form of (fileToBeEncrypted & "." & hashFile(quoted form of fileToBeEncrypted) & encryptedExtension)
 	log "Encryption Command: $ openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
 	do shell script cdToRightDir & "openssl enc -aes-256-ctr -salt -in " & quotedFileToBeEncrypted & " -out " & encryptedFileName & " -pass pass:" & encryptionKey
-
+	
 	changeFileIcon(encryptedFileName)
 	cleanUpAndExit(isEncryptingDirFlag, zipAlreadyExistedFlag, quotedFileToBeEncrypted)
 end encryptFile
@@ -204,17 +205,17 @@ set encryptedExtension to readValueFromConfig("encryptedFileExtension")
 
 tell application "Finder" to set selected_items to selection
 repeat with itemRef in selected_items
-
+	
 	-- Get filePath and escape it
 	set filePath to POSIX path of (itemRef as string)
 	set quotedAndEscapedPath to quoted form of filePath
 	log "FilePath: " & filePath
-
+	
 	-- Set up cdToRightDir command
 	set parentDir to do shell script "dirname " & quotedAndEscapedPath
 	log "ParentDir: " & parentDir
 	set cdToRightDir to "cd " & quoted form of (parentDir) & " && "
-
+	
 	-- Use filetype to figure out if we need to encrypt or decrypt it.
 	if getFileType(quotedAndEscapedPath) is equal to "openssl enc'd data with salted password" then
 		decryptFile(filePath)

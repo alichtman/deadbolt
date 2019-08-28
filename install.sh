@@ -22,11 +22,22 @@ function check_requirements_and_install_missing() {
 	fi
 }
 
+workflow="dist/Quick Lock.workflow"
+workflow_temp="dist/Quick Lock.workflow-dev"
+
 function install_app_and_workflow() {
-	open "dist/Quick Lock.workflow"
-	cp "assets/EncryptedFileIcon.png" "dist/Quick Lock.app/Contents/Resources/"
-	cp "src/set-custom-icon.sh" "dist/Quick Lock.app/Contents/MacOS/"
-	cp -r "dist/Quick Lock.app" "/Applications/"
+	# Install the workflow while preserving a copy in the dev directory.
+	# System prompt will pop for user confirmation.
+	cp -r "$workflow" "$workflow_temp"
+	open "$workflow"
+
+	# Move the "encrypted" file icon and the custom icon setting script to the app resources
+	dist_app_contents="dist/Quick Lock.app/Contents/"
+	cp "assets/EncryptedFileIcon.png" "$dist_app_contents/Resources/"
+	cp "src/set-custom-icon.sh" "$dist_app_contents/MacOS/"
+
+	# Install the application
+	cp -rf "dist/Quick Lock.app" "/Applications/"
 }
 
 function create_config_file() {
@@ -49,6 +60,11 @@ function create_config_file() {
 
 exit_handler() {
 	echo "Installation complete!"
+
+	# Preserve copy of workflow
+	if [[ ! -d "$workflow" ]]; then
+		mv "$workflow_temp" "$workflow"
+	fi
 	exit
 }
 
