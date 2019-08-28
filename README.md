@@ -51,7 +51,7 @@ This script also installs the `Quick Lock.app`. You can set this app as the defa
 
 ## Configuration
 
-There are two options you can configure in the file `~/.encrypt-decrypt.plist`. This file is automatically created when you run the install script.
+There are two options you can configure in the file `~/.quick-lock.plist`. This file is automatically created when you run the install script.
 
 - `deleteEncryptedFileAfterDecryption`
 	* **Default**: `False`.
