@@ -23,18 +23,18 @@ const uniqueGzipExtension = ".gz-ql"
 /**
  * Reads config file synchronously.
  * @param  {String} filePath
- * @return {Object} 					Config file contents as dict
+ * @return {Object}					Config file contents as dict
  */
 function readConfigFileSync(filePath) {
-  try {
-    const jsonString = fs.readFileSync(filePath);
-    const config = JSON.parse(jsonString);
-  } catch (err) {
-    console.log(err);
-    return;
-  }
-  console.log("Successfully read config file.");
-  return config;
+	try {
+		const jsonString = fs.readFileSync(filePath);
+		const config = JSON.parse(jsonString);
+	} catch (err) {
+		console.log(err);
+		return;
+	}
+	console.log("Successfully read config file.");
+	return config;
 }
 
 /**
@@ -43,14 +43,14 @@ function readConfigFileSync(filePath) {
  * @param  {Object} config		Dict of config flags
  */
 function writeConfigFileSync(filePath, config) {
-  const jsonString = JSON.stringify(config);
-  fs.writeFileSync(filePath, jsonString, err => {
-    if (err) {
-      console.log("Error writing file", err);
-    } else {
-      console.log("Successfully wrote file.");
-    }
-  });
+	const jsonString = JSON.stringify(config);
+	fs.writeFileSync(filePath, jsonString, err => {
+		if (err) {
+			console.log("Error writing file", err);
+		} else {
+			console.log("Successfully wrote file.");
+		}
+	});
 }
 
 /*********************
@@ -62,7 +62,7 @@ function writeConfigFileSync(filePath, config) {
  * @return {Boolean}      True if the path is a directory, else false.
  */
 function isDir(path) {
-  return fs.lstatSync(path).isDirectory();
+	return fs.lstatSync(path).isDirectory();
 }
 
 /**
@@ -71,9 +71,9 @@ function isDir(path) {
  * @return {Bool}   True if file is encrypted, False otherwise.
  */
 function isFileEncrypted(filePath) {
-  const child = spawnSync(`file ${filePath}`);
-  console.log(`file ${filePath} stdout:`, child.stdout);
-  return child.stdout.includes("openssl enc'd data with salted password");
+	const child = spawnSync(`file ${filePath}`);
+	console.log(`file ${filePath} stdout:`, child.stdout);
+	return child.stdout.includes("openssl enc'd data with salted password");
 }
 
 /**
@@ -82,14 +82,14 @@ function isFileEncrypted(filePath) {
  * @return {Bool}        True on success, False on failure.
  */
 async function removeFileOrDir(path) {
-  try {
-    await fs.remove(path)
-    console.log(`Successfully removed ${path}.`)
+	try {
+		await fs.remove(path)
+		console.log(`Successfully removed ${path}.`)
 		return true;
-  } catch (err) {
-    console.error(`Error removing ${path}: ${err}`)
+	} catch (err) {
+		console.error(`Error removing ${path}: ${err}`)
 		return false;
-  }
+	}
 }
 
 /********
@@ -104,21 +104,14 @@ async function removeFileOrDir(path) {
  * @return {String}                           SHA1 Hex Digest
  */
 function fileHash(filename, hashingAlgorithm = "sha1") {
-  return new Promise((resolve, reject) => {
-    let shasum = crypto.createHash(hashingAlgorithm);
-    try {
-      let fileStream = fs.ReadStream(filename);
-      fileStream.on("data", function(data) {
-        shasum.update(data);
-      });
-      fileStream.on("end", function() {
-        const hash = shasum.digest("hex");
-        return resolve(hash);
-      });
-    } catch (error) {
-      return reject(`${hashingAlgorithm} hash failed.`);
-    }
-  });
+	let shasum = crypto.createHash(hashingAlgorithm);
+	let fileStream = fs.ReadStream(filename);
+	fileStream.on("data", function (data) {
+		shasum.update(data);
+	});
+	fileStream.on("end", function () {
+		return shasum.digest("hex");
+	});
 }
 
 /**
@@ -140,25 +133,25 @@ function getHashFromFilePath(encryptedFilePath) {
  * @return {String}               Absolute path of encrypted file.
  */
 function encryptFile(filePath, encryptionKey, config) {
-  let unencryptedFile = fs.createReadStream(filePath);
-  let encrypt = crypto.createCipher(encryptionAlgorithm, encryptionKey);
+	let unencryptedFile = fs.createReadStream(filePath);
+	let encrypt = crypto.createCipher(encryptionAlgorithm, encryptionKey);
 	let write = fs.createWriteStream(encryptedFilePath);
-  let fileEnding = `${await fileHash(filePath)}.${config.encryptedExtension}`;
+	let fileEnding = `${fileHash(filePath)}.${config.encryptedExtension}`;
 	var encryptedFilePath = "";
 
-  if (isDir(filePath)) {
-    let zip = zlib.createGzip();
+	if (isDir(filePath)) {
+		let zip = zlib.createGzip();
 		encryptedFilePath = `${filePath}.${uniqueGzipExtension}.${fileEnding}`;
-    unencryptedFile
-      .pipe(zip)
-      .pipe(encrypt)
-      .pipe(write);
-  } else {
-		encryptedFilePath = `${filePath}.${fileEnding}`;
-    unencryptedFile
+		unencryptedFile
+			.pipe(zip)
 			.pipe(encrypt)
 			.pipe(write);
-  }
+	} else {
+		encryptedFilePath = `${filePath}.${fileEnding}`;
+		unencryptedFile
+			.pipe(encrypt)
+			.pipe(write);
+	}
 
 	return encryptedFilePath;
 }
@@ -171,8 +164,8 @@ function encryptFile(filePath, encryptionKey, config) {
  * @return {String}               Absolute path of unencrypted file.
  */
 function decryptFile(filePath, decryptionKey, config) {
-  let encryptedFile = fs.createReadStream(filePath);
-  let decrypt = crypto.createDecipher(encryptionAlgorithm, decryptionKey);
+	let encryptedFile = fs.createReadStream(filePath);
+	let decrypt = crypto.createDecipher(encryptionAlgorithm, decryptionKey);
 	let write = fs.createWriteStream(decryptedFilePath);
 
 	var filePathComponents = filePath.split(".");
@@ -224,7 +217,7 @@ function onFileDecryptRequest(filePath, decryptionPhrase) {
 	let decryptedFilePath = decryptFile(filePath, decryptionPhrase, config);
 
 	// Verify decryption by comparing SHA1 sums
-	if (getHashFromFilePath(filePath) == await hashFile(decryptedFilePath)) {
+	if (getHashFromFilePath(filePath) == hashFile(decryptedFilePath)) {
 		console.log("Successful decryption.");
 		if (config.deleteEncryptedFileAfterDecryption) {
 			console.log("Removing encrypted file after successful decryption.");
@@ -241,11 +234,11 @@ function onFileDecryptRequest(filePath, decryptionPhrase) {
 }
 
 function createWindow() {
-  // Create the browser window.
-  win = new BrowserWindow({ width: 400, height: 600 });
+	// Create the browser window.
+	win = new BrowserWindow({ width: 400, height: 600 });
 
-  // win.loadFile("index.html");
-  win.loadURL("http://localhost:3000/");
+	// win.loadFile("index.html");
+	win.loadURL("http://localhost:3000/");
 }
 
-app.on("ready", createWindow);
+app.on("ready", createWindow)
