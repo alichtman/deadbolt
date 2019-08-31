@@ -3,6 +3,7 @@
  **********/
 
 const { app, BrowserWindow } = require("electron");
+const homedir = require('os').homedir();
 const fs = require("fs-extra");
 const crypto = require("crypto");
 const zlib = require("zlib");
@@ -12,7 +13,7 @@ const { spawnSync } = require("child_process");
  * Globals
  *********/
 
-const configFilePath = "~/.quickLock";
+const configFilePath = `${homedir}/.quickLock`;
 const encryptionAlgorithm = "aes-256-ctr";
 const uniqueGzipExtension = ".gz-ql"
 
@@ -26,15 +27,16 @@ const uniqueGzipExtension = ".gz-ql"
  * @return {Object}					Config file contents as dict
  */
 function readConfigFileSync(filePath) {
+	console.log(`Reading config file: ${filePath}`);
 	try {
 		const jsonString = fs.readFileSync(filePath);
 		const config = JSON.parse(jsonString);
+		console.log("Successfully read config file.");
+		return config;
 	} catch (err) {
-		console.log(err);
-		return;
+		console.log(`Error reading config file: ${err}`);
+		process.exit();
 	}
-	console.log("Successfully read config file.");
-	return config;
 }
 
 /**
@@ -43,14 +45,25 @@ function readConfigFileSync(filePath) {
  * @param  {Object} config		Dict of config flags
  */
 function writeConfigFileSync(filePath, config) {
-	const jsonString = JSON.stringify(config);
-	fs.writeFileSync(filePath, jsonString, err => {
+	fs.writeFileSync(filePath, JSON.stringify(config, null, 2) + "\r\n", "utf8", err => {
 		if (err) {
-			console.log("Error writing file", err);
+			console.log("Error writing to config file", err);
 		} else {
-			console.log("Successfully wrote file.");
+			console.log("Successfully wrote new config.");
 		}
 	});
+}
+
+function safeCreateDefaultConfig() {
+	if (!fs.existsSync(configFilePath)) {
+		console.log(`Detected missing config. Writing default at ${configFilePath}.`);
+		let defaultConfig = {
+			deleteEncryptedFileAfterDecryption: "false",
+			deleteUnencryptedFileAfterEncryption: "false",
+			encryptedExtension: ".enc"
+		};
+		writeConfigFileSync(configFilePath, defaultConfig);
+	}
 }
 
 /*********************
@@ -92,6 +105,8 @@ async function removeFileOrDir(path) {
 	}
 }
 
+// TODO: File icon changes.
+
 /********
  * Crypto
  ********/
@@ -104,12 +119,14 @@ async function removeFileOrDir(path) {
  * @return {String}                           SHA1 Hex Digest
  */
 function fileHash(filename, hashingAlgorithm = "sha1") {
+	console.log(`Hashing ${filename} with ${hashingAlgorithm}`);
 	let shasum = crypto.createHash(hashingAlgorithm);
 	let fileStream = fs.ReadStream(filename);
 	fileStream.on("data", function (data) {
 		shasum.update(data);
 	});
 	fileStream.on("end", function () {
+		console.log(`Hash: ${shasum.digest("hex")}`);
 		return shasum.digest("hex");
 	});
 }
@@ -120,8 +137,10 @@ function fileHash(filename, hashingAlgorithm = "sha1") {
  * @return {String}                   SHA1 hex digest.
  */
 function getHashFromFilePath(encryptedFilePath) {
+	console.log(`Extracting hash from ${encryptedFilePath}`);
 	var filePathComponents = filePath.split(".");
 	let hashIdx = filePathComponents.length - 2;
+	console.log(`Hash: ${filePathComponents[hashIdx]}`);
 	return filePathComponents[hashIdx];
 }
 
@@ -133,26 +152,36 @@ function getHashFromFilePath(encryptedFilePath) {
  * @return {String}               Absolute path of encrypted file.
  */
 function encryptFile(filePath, encryptionKey, config) {
+	console.log(`Encrypting ${filePath} with key: ${encryptionKey}`);
 	let unencryptedFile = fs.createReadStream(filePath);
+	// TODO: Apparently this is deprecated?
+	// TODO: Warning: Use Cipheriv for counter mode of aes-256-ctr?
 	let encrypt = crypto.createCipher(encryptionAlgorithm, encryptionKey);
-	let write = fs.createWriteStream(encryptedFilePath);
-	let fileEnding = `${fileHash(filePath)}.${config.encryptedExtension}`;
 	var encryptedFilePath = "";
+	let fileEnding = `${fileHash(filePath)}.${config.encryptedExtension}`;
 
 	if (isDir(filePath)) {
+		console.log("Directory detected.");
 		let zip = zlib.createGzip();
 		encryptedFilePath = `${filePath}.${uniqueGzipExtension}.${fileEnding}`;
+		let write = fs.createWriteStream(encryptedFilePath);
+		console.log(`Encrypting file will be created at ${encryptedFilePath}`);
+		return encryptedFilePath
 		unencryptedFile
 			.pipe(zip)
 			.pipe(encrypt)
 			.pipe(write);
 	} else {
 		encryptedFilePath = `${filePath}.${fileEnding}`;
+		let write = fs.createWriteStream(encryptedFilePath);
+		console.log(`Encrypting file will be created at ${encryptedFilePath}`);
+		return encryptedFilePath
 		unencryptedFile
 			.pipe(encrypt)
 			.pipe(write);
 	}
-
+	console.log(`Encrypting file created at ${encryptedFilePath}`);
+	console.log("Done.");
 	return encryptedFilePath;
 }
 
@@ -241,4 +270,11 @@ function createWindow() {
 	win.loadURL("http://localhost:3000/");
 }
 
-app.on("ready", createWindow)
+function main() {
+	safeCreateDefaultConfig()
+	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test")
+}
+
+main()
+
+// app.on("ready", createWindow)
