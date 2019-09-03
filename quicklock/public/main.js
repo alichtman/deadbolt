@@ -126,16 +126,21 @@ function replaceLast(input, search, replacement) {
  */
 class PrependMetadata extends Transform {
 	constructor(salt, initVect, authTag, opts) {
+		console.log("Constructor called.")
 		super(opts);
 		this.salt = salt;
 		this.initVect = initVect;
 		this.authTag = authTag
+		this.alreadyAppended = false;
 	}
 
 	_transform(chunk, encoding, cb) {
-		this.push(this.salt);
-		this.push(this.initVect);
-		this.push(this.authTag);
+		if (!this.alreadyAppended) {
+			this.push(this.salt);
+			this.push(this.initVect);
+			this.push(this.authTag);
+			this.alreadyAppended = true;
+		}
 		this.push(chunk);
 		cb();
 	}
@@ -188,7 +193,8 @@ function encryptFile(filePath, encryptionKey, config) {
 	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
 	let write = fs.createWriteStream(encryptedFilePath);
 
-	let encryptedBlob = fs.createReadStream(filePath)
+	// Run gzip'd file through cipher
+	let encryptBlob = fs.createReadStream(filePath)
 		.pipe(zlib.createGzip())
 		.pipe(cipher).on("finish", () => {
 			let authTag = cipher.getAuthTag();
@@ -196,10 +202,10 @@ function encryptFile(filePath, encryptionKey, config) {
 			console.log(`AuthTag: ${authTag}`);
 
 			// Store salt, initialization vector and authTag at the head of the encrypted blob.
-			let prependMetadata = new PrependMetadata(salt, initializationVector, authTag);
+			console.log("\n\n\nBREAK\n\n\n");
 
-			encryptedBlob
-				.pipe(prependMetadata)
+			encryptBlob
+				.pipe(new PrependMetadata(salt, initializationVector, authTag))
 				.pipe(write);
 		});
 
