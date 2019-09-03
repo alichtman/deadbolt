@@ -198,7 +198,7 @@ function encryptFile(filePath, encryptionKey, config) {
 		.pipe(zlib.createGzip())
 		.pipe(cipher).on("finish", () => {
 			let authTag = cipher.getAuthTag();
-			authTag = "Auth_Tag".repeat(2);
+			// authTag = "Auth_Tag".repeat(2);
 			console.log(`AuthTag: ${authTag}`);
 
 			// Store salt, initialization vector and authTag at the head of the encrypted blob.
@@ -221,7 +221,7 @@ function encryptFile(filePath, encryptionKey, config) {
  */
 function decryptFile(filePath, decryptionKey, config) {
 	console.log("Extracting metadata from encrypted file.");
-	// Read salt and IV from beginning of file.
+	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
 	readMetadata.on('data', (chunk) => {
@@ -237,6 +237,7 @@ function decryptFile(filePath, decryptionKey, config) {
 		// start decrypting the cipher text
 		const derivedKey = createDerivedKey(salt, decryptionKey);
 		let decrypt = crypto.createDecipheriv(AES_256_GCM, derivedKey, initializationVector);
+		decrypt.setAuthTag(authTag);
 
 		let decryptedFilePath = replaceLast(filePath, config.encryptedExtension, "") + ".1";
 		console.log(`Decrypted file will be at: ${decryptedFilePath}`)
@@ -317,7 +318,10 @@ function main() {
 	// test.txt -> test.txt.enc
 	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test")
 	// test.txt.enc -> test.txt.1
-	// onFileDecryptRequest("/Users/alichtman/Desktop/clean/test.txt.enc", "test")
+	setTimeout(function () {
+		onFileDecryptRequest("/Users/alichtman/Desktop/clean/test.txt.enc", "test")
+	}, 3000);
+
 	// Confirm they're the same with $ diff test.txt test.txt.1
 }
 
