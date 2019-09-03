@@ -73,14 +73,6 @@ function safeCreateDefaultConfig() {
  *********************/
 
 /**
- * @param  {[type]}  path The absolute filePath
- * @return {Boolean}      True if the path is a directory, else false.
- */
-function isDir(path) {
-	return fs.lstatSync(path).isDirectory();
-}
-
-/**
  * Uses the UNIX file utility to determine if the file is encrypted.
  * @param  {String} filePath The absolute filePath
  * @return {Bool}   True if file is encrypted, False otherwise.
@@ -107,21 +99,41 @@ async function removeFileOrDir(path) {
 	}
 }
 
+/**
+ * String Helpers
+ */
+
+/**
+ * Replace last instance of search in input with replacement
+ * @param {String} input Input string
+ * @param {String} search Substring to search for
+ * @param {String} replacement Substring to replace with
+ */
+function replaceLast(input, search, replacement) {
+	// Find last ocurrence
+	const index = input.lastIndexOf(search);
+	if (index === -1) {
+		return input;
+	}
+	// Replace ocurrence
+	return input.substring(0, index) + replacement + input.substring(index + search.length);
+}
+
 // TODO: File icon changes.
 
 /**
  * Transform Stream for prepending metadata to encrypted file.
  */
 class PrependMetadata extends Transform {
-	constructor(initVect, salt, opts) {
+	constructor(salt, initVect, opts) {
 		super(opts);
-		this.initVect = initVect;
 		this.salt = salt;
+		this.initVect = initVect;
 	}
 
 	_transform(chunk, encoding, cb) {
-		this.push(this.initVect);
 		this.push(this.salt);
+		this.push(this.initVect);
 		this.push(chunk);
 		cb();
 	}
@@ -134,6 +146,7 @@ class PrependMetadata extends Transform {
 /** Crypto Constants */
 
 const AES_256_GCM = "aes-256-gcm";
+const METADATA_LEN = 80;
 
 /**
  * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64 byte salt with 10,000 iterations of PBKDF2
@@ -147,7 +160,14 @@ function createDerivedKey(salt, encryptionKey) {
 }
 
 /**
- * Encrypts a file.
+ * Encrypts a file using this format:
+ * (https://gist.github.com/AndiDittrich/4629e7db04819244e843)
+ * +--------------------+-----------------------+----------------+----------------+
+ * | Salt               | Initialization Vector | TODO: Auth Tag | Payload        |
+ * | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
+ * | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-96) Bytes   |
+ * +--------------------+-----------------------+----------------+----------------+
+ *
  * @param  {String} filePath      Absolute path of unencrypted file.
  * @param  {String} encryptionKey User verified encryption key.
  * @param  {Object} config        User config dictionary.
@@ -160,11 +180,13 @@ function encryptFile(filePath, encryptionKey, config) {
 	const salt = crypto.randomBytes(64);
 	const derivedKey = createDerivedKey(salt, encryptionKey);
 	const initializationVector = crypto.randomBytes(16);
+	TEST_GLOBAL_IV = initializationVector;
+	TEST_GLOBAL_SALT = salt;
 	let cipher = crypto.createCipheriv(AES_256_GCM, derivedKey, initializationVector);
 
-	// Store initialization vector
-	// TODO: Store salt and authTag
-	let prependMetadata = new PrependMetadata(initializationVector);
+	// Store salt and initialization vector
+	// TODO: Store authTag
+	let prependMetadata = new PrependMetadata(salt, initializationVector);
 	let encryptedFilePath = `${filePath}${config.encryptedExtension}`;
 	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
 	let write = fs.createWriteStream(encryptedFilePath);
@@ -178,6 +200,10 @@ function encryptFile(filePath, encryptionKey, config) {
 	return encryptedFilePath;
 }
 
+// debugging
+var TEST_GLOBAL_IV = "";
+var TEST_GLOBAL_SALT = "";
+
 /**
  * Decrypts a file.
  * @param  {String} filePath      Absolute path of encrypted file.
@@ -185,32 +211,37 @@ function encryptFile(filePath, encryptionKey, config) {
  * @param  {Object} config        User config dictionary.
  * @return {String}               Absolute path of unencrypted file.
  */
-function decryptFile(filePath, decryptionKey) {
-	// Read initialization vector from end of file.
-	const readIv = fs.createReadStream(filePath, { end: 15 + 32 });
-	let initializationVector;
-	let salt;
-	readIv.on('data', (chunk) => {
-		initializationVector = chunk.slice(0, 15);
-		salt = chunk.slice(16);
-		console.log(`IV: ${initializationVector}`);
-		console.log(`SALT: ${salt}`);
+function decryptFile(filePath, decryptionKey, config) {
+	console.log("Extracting metadata from encrypted file.");
+	// Read salt and IV from beginning of file.
+	let salt, initializationVector;
+	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
+	readMetadata.on('data', (chunk) => {
+		console.log(`METADATA LEN: ${chunk.length}`)
+		salt = chunk.slice(0, 64);
+		initializationVector = chunk.slice(65, 81);
+		console.log(`SALT MATCH: ${salt == TEST_GLOBAL_SALT}`)
+		console.log(`IV MATCH: ${initializationVector == TEST_GLOBAL_IV}`)
+		console.log(`SALT: ${salt.length}`);
+		console.log(`IV: ${initializationVector.length}`);
 	});
-	readIv.on('close', () => {
+	readMetadata.on('close', () => {
 		// start decrypting the cipher text
 		const derivedKey = createDerivedKey(salt, decryptionKey);
-		let decrypt = crypto.createDecipheriv(AES_256_GCM, derivedKey, iv);
+		let decrypt = crypto.createDecipheriv(AES_256_GCM, derivedKey, initializationVector);
+
+		let decryptedFilePath = replaceLast(filePath, config.encryptedExtension, "") + ".1";
+		console.log(`Decrypted file will be at: ${decryptedFilePath}`)
 		let write = fs.createWriteStream(decryptedFilePath);
+
+		const encryptedFile = fs.createReadStream(filePath, { start: METADATA_LEN });
+		encryptedFile
+			.pipe(decrypt)
+			.pipe(zlib.createGunzip())
+			.pipe(write);
+
+		return decryptedFilePath;
 	});
-
-	var filePathComponents = filePath.split(".");
-	var decryptedFilePath = filePathComponents.slice(0, filePathComponents.length - 2).join(".");
-	encryptedFile
-		.pipe(decrypt)
-		.pipe(unzip)
-		.pipe(write);
-
-	return decryptFilePath;
 }
 
 /**************
@@ -224,6 +255,7 @@ function decryptFile(filePath, decryptionKey) {
  * @return {String}                  Absolute path of encrypted file.
  */
 function onFileEncryptRequest(filePath, encryptionPhrase) {
+	console.log("\ENCRYPT FILE REQUEST\n");
 	let config = readConfigFileSync(CONFIG_PATH);
 	let encryptedFilePath = encryptFile(filePath, encryptionPhrase, config);
 	console.log(encryptedFilePath);
@@ -237,26 +269,27 @@ function onFileEncryptRequest(filePath, encryptionPhrase) {
  * @return {Bool}            True if decryption was successful, False otherwise.
  */
 function onFileDecryptRequest(filePath, decryptionPhrase) {
+	console.log("\nDECRYPT FILE REQUEST\n");
 	let config = readConfigFileSync(CONFIG_PATH);
-	let decryptedFilePath = decryptFile(filePath, decryptionPhrase);
+	let decryptedFilePath = decryptFile(filePath, decryptionPhrase, config);
 
-	// Verify decryption by comparing SHA1 sums
-	if (getHashFromFilePath(filePath) == hashFile(decryptedFilePath)) {
-		console.log("Successful decryption.");
-		if (config.deleteEncryptedFileAfterDecryption) {
-			console.log("Removing encrypted file after successful decryption.");
-			// removeFileOrDir(filePath);
-		}
-		return True;
-	} else {
-		console.log(
-			"Failed decryption. Password was incorrect (or there is a bug in my code)."
-		);
-		// DO NOT UNCOMMENT: Remove incorrectly decrypted file.
-		// Scary code until we're sure there's no way a path we don't want to remove gets passed in here...
-		// removeFileOrDir(decryptedFilePath);
-		return False;
-	}
+	// // Verify decryption by comparing SHA1 sums
+	// if (getHashFromFilePath(filePath) == hashFile(decryptedFilePath)) {
+	// 	console.log("Successful decryption.");
+	// 	if (config.deleteEncryptedFileAfterDecryption) {
+	// 		console.log("Removing encrypted file after successful decryption.");
+	// 		// removeFileOrDir(filePath);
+	// 	}
+	// 	return True;
+	// } else {
+	// 	console.log(
+	// 		"Failed decryption. Password was incorrect (or there is a bug in my code)."
+	// 	);
+	// 	// DO NOT UNCOMMENT: Remove incorrectly decrypted file.
+	// 	// Scary code until we're sure there's no way a path we don't want to remove gets passed in here...
+	// 	// removeFileOrDir(decryptedFilePath);
+	// 	return False;
+	// }
 }
 
 function createWindow() {
@@ -273,8 +306,11 @@ function createWindow() {
 
 function main() {
 	safeCreateDefaultConfig()
-	// Important functions are currently nop'd out.
+	// test.txt -> test.txt.enc
 	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test")
+	// test.txt.enc -> test.txt.1
+	onFileDecryptRequest("/Users/alichtman/Desktop/clean/test.txt.enc", "test")
+	// Confirm they're the same with $ diff test.txt test.txt.1
 }
 
 main()
