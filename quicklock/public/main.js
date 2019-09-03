@@ -125,15 +125,17 @@ function replaceLast(input, search, replacement) {
  * Transform Stream for prepending metadata to encrypted file.
  */
 class PrependMetadata extends Transform {
-	constructor(salt, initVect, opts) {
+	constructor(salt, initVect, authTag, opts) {
 		super(opts);
 		this.salt = salt;
 		this.initVect = initVect;
+		this.authTag = authTag
 	}
 
 	_transform(chunk, encoding, cb) {
 		this.push(this.salt);
 		this.push(this.initVect);
+		this.push(this.authTag);
 		this.push(chunk);
 		cb();
 	}
@@ -146,7 +148,7 @@ class PrependMetadata extends Transform {
 /** Crypto Constants */
 
 const AES_256_GCM = "aes-256-gcm";
-const METADATA_LEN = 80;
+const METADATA_LEN = 96;
 
 /**
  * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64 byte salt with 10,000 iterations of PBKDF2
@@ -163,7 +165,7 @@ function createDerivedKey(salt, encryptionKey) {
  * Encrypts a file using this format:
  * (https://gist.github.com/AndiDittrich/4629e7db04819244e843)
  * +--------------------+-----------------------+----------------+----------------+
- * | Salt               | Initialization Vector | TODO: Auth Tag | Payload        |
+ * | Salt               | Initialization Vector | Auth Tag       | Payload        |
  * | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
  * | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-96) Bytes   |
  * +--------------------+-----------------------+----------------+----------------+
@@ -177,32 +179,32 @@ function encryptFile(filePath, encryptionKey, config) {
 	console.log(`Encrypting ${filePath} with key: ${encryptionKey}`);
 
 	// Create cipher
-	const salt = crypto.randomBytes(64);
+	const salt = "Salt".repeat(16); //crypto.randomBytes(64);
 	const derivedKey = createDerivedKey(salt, encryptionKey);
-	const initializationVector = crypto.randomBytes(16);
-	TEST_GLOBAL_IV = initializationVector;
-	TEST_GLOBAL_SALT = salt;
+	const initializationVector = "InitVect".repeat(2); // crypto.randomBytes(16);
 	let cipher = crypto.createCipheriv(AES_256_GCM, derivedKey, initializationVector);
 
-	// Store salt and initialization vector
-	// TODO: Store authTag
-	let prependMetadata = new PrependMetadata(salt, initializationVector);
 	let encryptedFilePath = `${filePath}${config.encryptedExtension}`;
 	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
 	let write = fs.createWriteStream(encryptedFilePath);
 
-	fs.createReadStream(filePath)
+	let encryptedBlob = fs.createReadStream(filePath)
 		.pipe(zlib.createGzip())
-		.pipe(cipher)
-		.pipe(prependMetadata)
-		.pipe(write);
+		.pipe(cipher).on("finish", () => {
+			let authTag = cipher.getAuthTag();
+			authTag = "Auth_Tag".repeat(2);
+			console.log(`AuthTag: ${authTag}`);
+
+			// Store salt, initialization vector and authTag at the head of the encrypted blob.
+			let prependMetadata = new PrependMetadata(salt, initializationVector, authTag);
+
+			encryptedBlob
+				.pipe(prependMetadata)
+				.pipe(write);
+		});
 
 	return encryptedFilePath;
 }
-
-// debugging
-var TEST_GLOBAL_IV = "";
-var TEST_GLOBAL_SALT = "";
 
 /**
  * Decrypts a file.
@@ -214,16 +216,16 @@ var TEST_GLOBAL_SALT = "";
 function decryptFile(filePath, decryptionKey, config) {
 	console.log("Extracting metadata from encrypted file.");
 	// Read salt and IV from beginning of file.
-	let salt, initializationVector;
+	let salt, initializationVector, authTag;
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
 	readMetadata.on('data', (chunk) => {
 		console.log(`METADATA LEN: ${chunk.length}`)
 		salt = chunk.slice(0, 64);
-		initializationVector = chunk.slice(65, 81);
-		console.log(`SALT MATCH: ${salt == TEST_GLOBAL_SALT}`)
-		console.log(`IV MATCH: ${initializationVector == TEST_GLOBAL_IV}`)
-		console.log(`SALT: ${salt.length}`);
-		console.log(`IV: ${initializationVector.length}`);
+		initializationVector = chunk.slice(64, 80);
+		authTag = chunk.slice(80, 96)
+		console.log(`Salt: ${salt.length}`);
+		console.log(`InitVect: ${initializationVector.length}`);
+		console.log(`AuthTag: ${authTag.length}`);
 	});
 	readMetadata.on('close', () => {
 		// start decrypting the cipher text
@@ -309,7 +311,7 @@ function main() {
 	// test.txt -> test.txt.enc
 	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test")
 	// test.txt.enc -> test.txt.1
-	onFileDecryptRequest("/Users/alichtman/Desktop/clean/test.txt.enc", "test")
+	// onFileDecryptRequest("/Users/alichtman/Desktop/clean/test.txt.enc", "test")
 	// Confirm they're the same with $ diff test.txt test.txt.1
 }
 
