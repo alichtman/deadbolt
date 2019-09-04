@@ -181,6 +181,8 @@ function createDerivedKey(salt, encryptionKey) {
  * | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-96) Bytes   |
  * +--------------------+-----------------------+----------------+----------------+
  *
+ * A huge thank you to: https://medium.com/@brandonstilson/lets-encrypt-files-with-node-85037bea8c0e
+ *
  * @param  {String} filePath      Absolute path of unencrypted file.
  * @param  {String} encryptionKey User verified encryption key.
  * @param  {Object} config        User config dictionary.
@@ -270,6 +272,9 @@ function onFileEncryptRequest(filePath, encryptionPhrase) {
 	let encryptedFilePath = encryptFile(filePath, encryptionPhrase, config);
 	console.log(encryptedFilePath);
 	// TODO: Change file icon of new encrypted file.
+	if (config.deleteUnencryptedFileAfterEncryption) {
+		removeFileOrDir(filePath);
+	}
 	return encryptedFilePath;
 }
 
@@ -322,3 +327,6 @@ function main() {
 main()
 
 // app.on("ready", createWindow);
+
+// for unit testing purposes
+module.exports = { safeCreateDefaultConfig, onFileEncryptRequest, onFileDecryptRequest };
