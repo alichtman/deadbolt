@@ -1,0 +1,32 @@
+.formBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 170px;
+}
+
+.buttonsWrapper {
+  position: fixed;
+  bottom: 25px;
+  width: 80%;
+}
+
+.encryptButtonText {
+  padding-left: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.abortButtonText {
+  color: #ffffff;
+  opacity: 0.5;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.abortButtonText:hover {
+  opacity: 1;
+}
