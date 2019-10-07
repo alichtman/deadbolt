@@ -304,13 +304,6 @@ function onFileDecryptRequest(filePath, decryptionPhrase) {
  * CLI Integration / Main
  **/
 
-function checkIfCalledViaCLI(args) {
-	if(args && args.length > 1) {
-		return true;
-	}
-	return false;
-}
-
 function createWindow() {
 	// Create the browser window.
 	win = new BrowserWindow({
@@ -337,13 +330,24 @@ function testing_main() {
 	
 // testing_main()
 
+
+function checkIfCalledViaCLI(args) {
+	if(args && args.length > 1) {
+		return true;
+	}
+	return false;
+}
+
 app.on('ready', () => {
-	let isCalledViaCLI = checkIfCalledViaCLI(process.argv);
-	
-	if(isCalledViaCLI) {
+	if(checkIfCalledViaCLI(process.argv)) {
 		// TODO: Parse arguments and either show encrypt or decrypt screen.
-		let filename = process.argv[1];
+		let filename = process.argv[process.argv.length - 1];
 		console.log(`File passed on command line: ${filename}`)
+		if (isFileEncrypted(filename)) {
+			// TODO: Open to decrypt file screen to prompt for pass
+		} else {
+			// TODO: Open to encrypt file screen to prompt for pass
+		}
 	} else {
 		createWindow();
 	}
