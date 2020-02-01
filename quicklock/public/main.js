@@ -3,79 +3,12 @@
  **********/
 
 const { app, BrowserWindow } = require("electron");
-const homedir = require("os").homedir();
 const fs = require("fs-extra");
 const crypto = require("crypto");
 const zlib = require("zlib");
 const { Transform } = require('stream');
-const { spawnSync } = require("child_process");
 
-/********
- * Config
- ********/
-
-/** Constants */
-
-const CONFIG_PATH = `${homedir}/.quickLock`;
-
-/**
- * Reads config file synchronously.
- * @param  {String} filePath
- * @return {Object}					Config file contents as dict
- */
-function readConfigFileSync(filePath) {
-	console.log(`Reading config file: ${filePath}`);
-	try {
-		const jsonString = fs.readFileSync(filePath);
-		let config = JSON.parse(jsonString);
-		// Turn boolean strings into real booleans
-		Object.keys(config).forEach(function (key) {
-			if (config[key].toLowerCase() == "true") {
-				config[key] = true;
-			} else if (config[key].toLowerCase() == "false") {
-				config[key] = false;
-			}
-		});
-		console.log("Successfully read config file.");
-		console.log(config)
-		return config;
-	} catch (err) {
-		console.log(`Error reading config file: ${err}`);
-		process.exit();
-	}
-}
-
-/**
- * Writes config file synchronously.
- * @param  {String} filePath
- * @param  {Object} config		Dict of config flags
- */
-function writeConfigFileSync(filePath, config) {
-	fs.writeFileSync(
-		filePath,
-		JSON.stringify(config, null, 2) + "\r\n",
-		"utf8",
-		err => {
-			if (err) {
-				console.log("Error writing to config file", err);
-			} else {
-				console.log("Successfully wrote new config.");
-			}
-		}
-	);
-}
-
-function safeCreateDefaultConfig() {
-	if (!fs.existsSync(CONFIG_PATH)) {
-		console.log(`Detected missing config. Writing default at ${CONFIG_PATH}.`);
-		let defaultConfig = {
-			deleteEncryptedFileAfterDecryption: "false",
-			deleteUnencryptedFileAfterEncryption: "false",
-			encryptedExtension: ".enc"
-		};
-		writeConfigFileSync(CONFIG_PATH, defaultConfig);
-	}
-}
+const encryptedExtension = ".qlock"
 
 /*********************
  * File System Helpers
@@ -87,24 +20,9 @@ function safeCreateDefaultConfig() {
  * @return {Bool}   True if file is encrypted, False otherwise.
  */
 function isFileEncrypted(filePath, config) {
-	return filePath.endsWith(config.encryptedExtension);
+	return filePath.endsWith(encryptedExtension);
 }
 
-/**
- * $ rm -rf path ... Be careful. You've been warned.
- * @param  {String} path Absolute path of file or directory
- * @return {Bool}        True on success, False on failure.
- */
-async function removeFileOrDir(path) {
-	try {
-		await fs.remove(path);
-		console.log(`Successfully removed ${path}.`);
-		return true;
-	} catch (err) {
-		console.error(`Error removing ${path}: ${err}`);
-		return false;
-	}
-}
 
 /**
  * String Helpers
@@ -197,7 +115,7 @@ function encryptFile(filePath, encryptionKey, config) {
 	const initializationVector = crypto.randomBytes(16);
 	let cipher = crypto.createCipheriv(AES_256_GCM, derivedKey, initializationVector);
 
-	let encryptedFilePath = `${filePath}${config.encryptedExtension}`;
+	let encryptedFilePath = `${filePath}${encryptedExtension}`;
 	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
 	let write = fs.createWriteStream(encryptedFilePath);
 
@@ -241,7 +159,7 @@ function decryptFile(filePath, decryptionKey, config) {
 		let decrypt = crypto.createDecipheriv(AES_256_GCM, derivedKey, initializationVector);
 		decrypt.setAuthTag(authTag);
 
-		let decryptedFilePath = replaceLast(filePath, config.encryptedExtension, "") + ".1";
+		let decryptedFilePath = replaceLast(filePath, encryptedExtension, "") + ".1";
 		console.log(`Decrypted file will be at: ${decryptedFilePath}`)
 		let write = fs.createWriteStream(decryptedFilePath);
 
@@ -272,9 +190,6 @@ function onFileEncryptRequest(filePath, encryptionPhrase) {
 	let encryptedFilePath = encryptFile(filePath, encryptionPhrase, config);
 	console.log(encryptedFilePath);
 	// TODO: Change file icon of new encrypted file.
-	if (config.deleteUnencryptedFileAfterEncryption) {
-		removeFileOrDir(filePath);
-	}
 	return encryptedFilePath;
 }
 
@@ -289,10 +204,6 @@ function onFileDecryptRequest(filePath, decryptionPhrase) {
 	try {
 		decryptFile(filePath, decryptionPhrase, config);
 		console.log("Successful decryption.");
-		if (config.deleteEncryptedFileAfterDecryption) {
-			console.log("Removing encrypted file after successful decryption.");
-			removeFileOrDir(filePath);
-		}
 		return true;
 	} catch (error) {
 		console.log("Failed decryption. Incorrect password.");
@@ -350,8 +261,9 @@ app.on('ready', () => {
 	} else {
 		createWindow();
 	}
+	createWindow();
 });
 
 
 // for unit testing purposes
-module.exports = { safeCreateDefaultConfig, onFileEncryptRequest, onFileDecryptRequest };
+module.exports = { onFileEncryptRequest, onFileDecryptRequest };

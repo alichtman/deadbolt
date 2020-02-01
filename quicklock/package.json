@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "main": "public/main.js",
+  "build": {
+    "appId": "com.electron.quicklock",
+    "productName": "quicklock",
+    "mac": {
+      "category": "public.app-category.utilities"
+    }
+  },
   "dependencies": {
     "fs-extra": "^8.1.0",
     "react": "^16.9.0",
@@ -14,7 +21,10 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "electron-start": "electron ."
+    "electron-start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
   "eslintConfig": {
     "extends": "react-app"
