@@ -300,6 +300,10 @@ function onFileDecryptRequest(filePath, decryptionPhrase) {
 	}
 }
 
+/**
+ * CLI Integration / Main
+ **/
+
 function createWindow() {
 	// Create the browser window.
 	win = new BrowserWindow({
@@ -312,7 +316,7 @@ function createWindow() {
 	win.webContents.openDevTools();
 }
 
-function main() {
+function testing_main() {
 	safeCreateDefaultConfig()
 	// test.txt -> test.txt.enc
 	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test")
@@ -324,9 +328,30 @@ function main() {
 	// Confirm they're the same with $ diff test.txt test.txt.1
 }
 
-// main()
+// testing_main()
 
-app.on("ready", createWindow);
+function checkIfCalledViaCLI(args) {
+	if(args && args.length > 1) {
+		return true;
+	}
+	return false;
+}
+
+app.on('ready', () => {
+	if(checkIfCalledViaCLI(process.argv)) {
+		// TODO: Parse arguments and either show encrypt or decrypt screen.
+		let filename = process.argv[process.argv.length - 1];
+		console.log(`File passed on command line: ${filename}`)
+		if (isFileEncrypted(filename)) {
+			// TODO: Open to decrypt file screen to prompt for pass
+		} else {
+			// TODO: Open to encrypt file screen to prompt for pass
+		}
+	} else {
+		createWindow();
+	}
+});
+
 
 // for unit testing purposes
 module.exports = { safeCreateDefaultConfig, onFileEncryptRequest, onFileDecryptRequest };
