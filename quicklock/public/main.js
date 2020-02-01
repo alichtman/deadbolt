@@ -324,9 +324,9 @@ function main() {
 	// Confirm they're the same with $ diff test.txt test.txt.1
 }
 
-main()
+// main()
 
-// app.on("ready", createWindow);
+app.on("ready", createWindow);
 
 // for unit testing purposes
 module.exports = { safeCreateDefaultConfig, onFileEncryptRequest, onFileDecryptRequest };
