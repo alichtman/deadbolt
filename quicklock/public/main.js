@@ -6,9 +6,9 @@ const { app, BrowserWindow } = require("electron");
 const fs = require("fs-extra");
 const crypto = require("crypto");
 const zlib = require("zlib");
-const { Transform } = require('stream');
+const { Transform } = require("stream");
 
-const encryptedExtension = ".qlock"
+const encryptedExtension = ".qlock";
 
 /*********************
  * File System Helpers
@@ -22,7 +22,6 @@ const encryptedExtension = ".qlock"
 function isFileEncrypted(filePath, config) {
 	return filePath.endsWith(encryptedExtension);
 }
-
 
 /**
  * String Helpers
@@ -41,7 +40,11 @@ function replaceLast(input, search, replacement) {
 		return input;
 	}
 	// Replace ocurrence
-	return input.substring(0, index) + replacement + input.substring(index + search.length);
+	return (
+		input.substring(0, index) +
+		replacement +
+		input.substring(index + search.length)
+	);
 }
 
 // TODO: File icon changes.
@@ -54,7 +57,7 @@ class PrependMetadata extends Transform {
 		super(opts);
 		this.salt = salt;
 		this.initVect = initVect;
-		this.authTag = authTag
+		this.authTag = authTag;
 		this.alreadyAppended = false;
 	}
 
@@ -87,7 +90,13 @@ const METADATA_LEN = 96;
  * @return {Buffer}               SHA512 hash that will be used as the IV.
  */
 function createDerivedKey(salt, encryptionKey) {
-	return crypto.pbkdf2Sync(encryptionKey, salt, iterations = 10000, keylen = 32, digest = "sha512");
+	return crypto.pbkdf2Sync(
+		encryptionKey,
+		salt,
+		(iterations = 10000),
+		(keylen = 32),
+		(digest = "sha512")
+	);
 }
 
 /**
@@ -113,19 +122,31 @@ function encryptFile(filePath, encryptionKey, config) {
 	const salt = crypto.randomBytes(64);
 	const derivedKey = createDerivedKey(salt, encryptionKey);
 	const initializationVector = crypto.randomBytes(16);
-	let cipher = crypto.createCipheriv(AES_256_GCM, derivedKey, initializationVector);
+	let cipher = crypto.createCipheriv(
+		AES_256_GCM,
+		derivedKey,
+		initializationVector
+	);
 
 	let encryptedFilePath = `${filePath}${encryptedExtension}`;
 	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
 	let write = fs.createWriteStream(encryptedFilePath);
 
 	// Run gzip'd file through cipher
-	let encryptBlob = fs.createReadStream(filePath)
+	let encryptBlob = fs
+		.createReadStream(filePath)
 		.pipe(zlib.createGzip())
-		.pipe(cipher).on("finish", () => {
+		.pipe(cipher)
+		.on("finish", () => {
 			// Store salt, initialization vector and authTag at the head of the encrypted blob for use during decryption.
 			encryptBlob
-				.pipe(new PrependMetadata(salt, initializationVector, cipher.getAuthTag()))
+				.pipe(
+					new PrependMetadata(
+						salt,
+						initializationVector,
+						cipher.getAuthTag()
+					)
+				)
 				.pipe(write);
 		});
 
@@ -144,26 +165,33 @@ function decryptFile(filePath, decryptionKey, config) {
 	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
-	readMetadata.on('data', (chunk) => {
+	readMetadata.on("data", chunk => {
 		// console.log(`METADATA LEN: ${chunk.length}`)
 		salt = chunk.slice(0, 64);
 		initializationVector = chunk.slice(64, 80);
-		authTag = chunk.slice(80, 96)
+		authTag = chunk.slice(80, 96);
 		// console.log(`Salt: ${salt.length}`);
 		// console.log(`InitVect: ${initializationVector.length}`);
 		// console.log(`AuthTag: ${authTag.length}`);
 	});
-	readMetadata.on('close', () => {
+	readMetadata.on("close", () => {
 		// Decrypt the cipher text
 		const derivedKey = createDerivedKey(salt, decryptionKey);
-		let decrypt = crypto.createDecipheriv(AES_256_GCM, derivedKey, initializationVector);
+		let decrypt = crypto.createDecipheriv(
+			AES_256_GCM,
+			derivedKey,
+			initializationVector
+		);
 		decrypt.setAuthTag(authTag);
 
-		let decryptedFilePath = replaceLast(filePath, encryptedExtension, "") + ".1";
-		console.log(`Decrypted file will be at: ${decryptedFilePath}`)
+		let decryptedFilePath =
+			replaceLast(filePath, encryptedExtension, "") + ".1";
+		console.log(`Decrypted file will be at: ${decryptedFilePath}`);
 		let write = fs.createWriteStream(decryptedFilePath);
 
-		const encryptedFile = fs.createReadStream(filePath, { start: METADATA_LEN });
+		const encryptedFile = fs.createReadStream(filePath, {
+			start: METADATA_LEN
+		});
 		// Decryption errors will come from the zlib.createGunzip line
 		encryptedFile
 			.pipe(decrypt)
@@ -185,7 +213,7 @@ function decryptFile(filePath, decryptionKey, config) {
  * @return {String}                  Absolute path of encrypted file.
  */
 function onFileEncryptRequest(filePath, encryptionPhrase) {
-	console.log("\ENCRYPT FILE REQUEST\n");
+	console.log("ENCRYPT FILE REQUEST\n");
 	let config = readConfigFileSync(CONFIG_PATH);
 	let encryptedFilePath = encryptFile(filePath, encryptionPhrase, config);
 	console.log(encryptedFilePath);
@@ -228,12 +256,15 @@ function createWindow() {
 }
 
 function testing_main() {
-	safeCreateDefaultConfig()
+	safeCreateDefaultConfig();
 	// test.txt -> test.txt.enc
-	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test")
+	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test");
 	// test.txt.enc -> test.txt.1
-	setTimeout(function () {
-		onFileDecryptRequest("/Users/alichtman/Desktop/clean/test.txt.enc", "te2st")
+	setTimeout(function() {
+		onFileDecryptRequest(
+			"/Users/alichtman/Desktop/clean/test.txt.enc",
+			"te2st"
+		);
 	}, 3000);
 
 	// Confirm they're the same with $ diff test.txt test.txt.1
@@ -242,28 +273,26 @@ function testing_main() {
 // testing_main()
 
 function checkIfCalledViaCLI(args) {
-	if(args && args.length > 1) {
+	if (args && args.length > 1) {
 		return true;
 	}
 	return false;
 }
 
-app.on('ready', () => {
-	if(checkIfCalledViaCLI(process.argv)) {
+app.on("ready", () => {
+	if (checkIfCalledViaCLI(process.argv)) {
 		// TODO: Parse arguments and either show encrypt or decrypt screen.
 		let filename = process.argv[process.argv.length - 1];
-		console.log(`File passed on command line: ${filename}`)
+		console.log(`File passed on command line: ${filename}`);
 		if (isFileEncrypted(filename)) {
 			// TODO: Open to decrypt file screen to prompt for pass
 		} else {
 			// TODO: Open to encrypt file screen to prompt for pass
 		}
-	} else {
-		createWindow();
 	}
+
 	createWindow();
 });
-
 
 // for unit testing purposes
 module.exports = { onFileEncryptRequest, onFileDecryptRequest };
