@@ -7,43 +7,70 @@ import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
 
 export default class EncryptionForm extends Component {
-  constructor(props) {
-    super(props);
+	constructor(props) {
+		super(props);
 
-    this.state = { password: "", confirmPassword: "" };
-  }
+		this.state = {
+			password: "",
+			confirmPassword: "",
+			displayMatchError: false
+		};
+	}
 
-  render() {
-    const { fileName, onEncrypt, onAbort } = this.props;
-    const { password, confirmPassword } = this.state;
+	/* Event Handlers */
 
-    return (
-      <Fragment>
-        <FileHeader fileName={fileName} />
-        <div className="formBody">
-          <Input
-            placeholder="Enter encryption password"
-            value={password}
-            onChange={event => this.setState({ password: event.target.value })}
-          />
-          <Input
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChange={event =>
-              this.setState({ confirmPassword: event.target.value })
-            }
-          />
-          <div className="buttonsWrapper">
-            <PrimaryButton onClick={() => {}}>
-              <img className="encryptIcon" src="./encryptIcon.svg" />
-              <span className="encryptButtonText">Encrypt</span>
-            </PrimaryButton>
-            <SecondaryButton onClick={onAbort}>
-              <span className="abortButtonText">Abort</span>
-            </SecondaryButton>
-          </div>
-        </div>
-      </Fragment>
-    );
-  }
+	render() {
+		const { fileName, onEncrypt, onAbort } = this.props;
+		const { password, confirmPassword, displayMatchError } = this.state;
+
+		return (
+			<Fragment>
+				<FileHeader fileName={fileName} />
+				<div className="formBody">
+					<Input
+						placeholder="Enter encryption password"
+						value={password}
+						onChange={event =>
+							this.setState({ password: event.target.value })
+						}
+					/>
+					<Input
+						placeholder="Confirm your password"
+						value={confirmPassword}
+						onChange={event =>
+							this.setState({
+								confirmPassword: event.target.value
+							})
+						}
+						inErrorMode={displayMatchError}
+					/>
+					{displayMatchError ? (
+						<span className="errorText">
+							Error: Passwords don't match
+						</span>
+					) : null}
+					<div className="buttonsWrapper">
+						<PrimaryButton
+							onClick={() => {
+								if (password === confirmPassword) {
+									onEncrypt(password);
+								} else {
+									this.setState({ displayMatchError: true });
+								}
+							}}
+						>
+							<img
+								className="encryptIcon"
+								src="./encryptIcon.svg"
+							/>
+							<span className="encryptButtonText">Encrypt</span>
+						</PrimaryButton>
+						<SecondaryButton onClick={onAbort}>
+							<span className="abortButtonText">Abort</span>
+						</SecondaryButton>
+					</div>
+				</div>
+			</Fragment>
+		);
+	}
 }

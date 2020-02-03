@@ -7,6 +7,15 @@
   height: 170px;
 }
 
+.errorText {
+  padding-top: 8px;
+  color: #ff2e3d;
+  position: relative;
+
+  font-size: 12px;
+  width: 80%;
+}
+
 .buttonsWrapper {
   position: fixed;
   bottom: 25px;

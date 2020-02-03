@@ -2,17 +2,17 @@ import React, { Component } from "react";
 import "./Input.css";
 
 export default class Input extends Component {
-  render() {
-    const { placeholder, value, onChange } = this.props;
+	render() {
+		const { placeholder, value, onChange, inErrorMode } = this.props;
 
-    return (
-      <input
-        className="inputBar"
-        type="password"
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-      />
-    );
-  }
+		return (
+			<input
+				className="inputBar"
+				type="password"
+				placeholder={placeholder}
+				value={value}
+				onChange={onChange}
+			/>
+		);
+	}
 }
