@@ -2,7 +2,7 @@
  * Requires
  **********/
 
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs-extra");
 const crypto = require("crypto");
 const zlib = require("zlib");
@@ -19,7 +19,7 @@ const encryptedExtension = ".qlock";
  * @param  {String} filePath The absolute filePath
  * @return {Bool}   True if file is encrypted, False otherwise.
  */
-function isFileEncrypted(filePath, config) {
+function isFileEncrypted(filePath) {
 	return filePath.endsWith(encryptedExtension);
 }
 
@@ -112,10 +112,9 @@ function createDerivedKey(salt, encryptionKey) {
  *
  * @param  {String} filePath      Absolute path of unencrypted file.
  * @param  {String} encryptionKey User verified encryption key.
- * @param  {Object} config        User config dictionary.
  * @return {String}               Absolute path of encrypted file.
  */
-function encryptFile(filePath, encryptionKey, config) {
+function encryptFile(filePath, encryptionKey) {
 	console.log(`Encrypting ${filePath} with key: ${encryptionKey}`);
 
 	// Create cipher
@@ -157,10 +156,9 @@ function encryptFile(filePath, encryptionKey, config) {
  * Decrypts a file.
  * @param  {String} filePath      Absolute path of encrypted file.
  * @param  {String} decryptionKey Unverified decryption key supplied by user
- * @param  {Object} config        User config dictionary.
  * @return {String}               Absolute path of unencrypted file.
  */
-function decryptFile(filePath, decryptionKey, config) {
+function decryptFile(filePath, decryptionKey) {
 	console.log("Extracting metadata from encrypted file.");
 	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
@@ -214,8 +212,7 @@ function decryptFile(filePath, decryptionKey, config) {
  */
 function onFileEncryptRequest(filePath, encryptionPhrase) {
 	console.log("ENCRYPT FILE REQUEST\n");
-	let config = readConfigFileSync(CONFIG_PATH);
-	let encryptedFilePath = encryptFile(filePath, encryptionPhrase, config);
+	let encryptedFilePath = encryptFile(filePath, encryptionPhrase);
 	console.log(encryptedFilePath);
 	// TODO: Change file icon of new encrypted file.
 	return encryptedFilePath;
@@ -228,9 +225,8 @@ function onFileEncryptRequest(filePath, encryptionPhrase) {
  */
 function onFileDecryptRequest(filePath, decryptionPhrase) {
 	console.log("\nDECRYPT FILE REQUEST\n");
-	let config = readConfigFileSync(CONFIG_PATH);
 	try {
-		decryptFile(filePath, decryptionPhrase, config);
+		decryptFile(filePath, decryptionPhrase);
 		console.log("Successful decryption.");
 		return true;
 	} catch (error) {
@@ -248,7 +244,10 @@ function createWindow() {
 	win = new BrowserWindow({
 		width: 330,
 		height: 364,
-		titleBarStyle: "hidden"
+		titleBarStyle: "hidden",
+		webPreferences: {
+			nodeIntegration: true
+		}
 	});
 
 	win.loadURL("http://localhost:3000/");
@@ -256,21 +255,23 @@ function createWindow() {
 }
 
 function testing_main() {
-	safeCreateDefaultConfig();
 	// test.txt -> test.txt.enc
-	onFileEncryptRequest("/Users/alichtman/Desktop/clean/test.txt", "test");
+	onFileEncryptRequest(
+		"/Users/shobrook/Documents/Projects/open_source/saplings/README.md",
+		"test"
+	);
 	// test.txt.enc -> test.txt.1
-	setTimeout(function() {
-		onFileDecryptRequest(
-			"/Users/alichtman/Desktop/clean/test.txt.enc",
-			"te2st"
-		);
-	}, 3000);
+	// setTimeout(function() {
+	// 	onFileDecryptRequest(
+	// 		"/Users/alichtman/Desktop/clean/test.txt.enc",
+	// 		"te2st"
+	// 	);
+	// }, 3000);
 
 	// Confirm they're the same with $ diff test.txt test.txt.1
 }
 
-// testing_main()
+// testing_main();
 
 function checkIfCalledViaCLI(args) {
 	if (args && args.length > 1) {
@@ -292,6 +293,15 @@ app.on("ready", () => {
 	}
 
 	createWindow();
+});
+
+ipcMain.on("encryptFileRequest", (event, arg) => {
+	const { filePath, password } = arg;
+	console.log("filePath:", filePath);
+	console.log("password:", password);
+	let encryptedFilePath = onFileEncryptRequest(filePath, password);
+
+	event.returnValue = encryptedFilePath;
 });
 
 // for unit testing purposes
