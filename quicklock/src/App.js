@@ -7,6 +7,8 @@ import EncryptionForm from "./containers/EncryptionForm";
 import DecryptionForm from "./containers/DecryptionForm";
 import SuccessScreen from "./containers/SuccessScreen";
 
+// const { ipcRenderer } = require("electron");
+// import { ipcRenderer } from "electron";
 const { ipcRenderer } = window.require("electron");
 
 const DEFAULT_STATE = {
