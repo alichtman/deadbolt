@@ -2,11 +2,9 @@
  * Requires
  **********/
 
-// window.require = require;
 const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs-extra");
 const crypto = require("crypto");
-const { Transform } = require("stream");
 
 const encryptedExtension = ".qlock";
 
@@ -22,6 +20,7 @@ const encryptedExtension = ".qlock";
 function isFileEncrypted(filePath) {
 	return filePath.endsWith(encryptedExtension);
 }
+
 
 /**
  * String Helpers
@@ -49,29 +48,6 @@ function replaceLast(input, search, replacement) {
 
 // TODO: File icon changes.
 
-/**
- * Transform Stream for prepending metadata to encrypted file.
- */
-class PrependMetadata extends Transform {
-	constructor(salt, initVect, authTag, opts) {
-		super(opts);
-		this.salt = salt;
-		this.initVect = initVect;
-		this.authTag = authTag;
-		this.alreadyAppended = false;
-	}
-
-	_transform(chunk, encoding, cb) {
-		if (!this.alreadyAppended) {
-			this.push(this.salt);
-			this.push(this.initVect);
-			this.push(this.authTag);
-			this.alreadyAppended = true;
-		}
-		this.push(chunk);
-		cb();
-	}
-}
 
 /**
  * AES-256 Encryption
@@ -129,27 +105,26 @@ function encryptFile(filePath, encryptionKey) {
 
 	let encryptedFilePath = `${filePath}${encryptedExtension}`;
 	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
-	console.log(`Salt: ${salt}\nDerived Key: ${derivedKey}\nIV: ${initializationVector}`)
 	let write = fs.createWriteStream(encryptedFilePath);
+	write.on("error", () => console.log("Write error."));
 
-	// Cipher file
-	let encryptBlob = fs
-		.createReadStream(filePath)
-		.on("data", (chunk) => console.log(`\nHere is chunk: ${chunk}`))
-		.pipe(cipher)
-		.on("finish", () => {
-			// Store salt, initialization vector and authTag at the head of the encrypted blob for use during decryption.
-			encryptBlob
-				.pipe(
-					new PrependMetadata(
-						salt,
-						initializationVector,
-						cipher.getAuthTag()
-					)
-				)
-				.pipe(write)
-				.on("error", () => { console.log("Write error.")});
-		});
+	// Write salt, IV, and temporary auth tag to encrypted file. The auth tag
+	// will be replaced with a real auth tag later.
+	write.write(salt);
+	write.write(initializationVector);
+	let temporary_auth_tag = Buffer.from({ length: 16 }).fill(0xFF);
+	write.write(temporary_auth_tag);
+
+	// Encrypt file and write it to encrypted dest file
+	fs.createReadStream(filePath)
+	.pipe(cipher)
+	.pipe(write)
+	.on("finish", () => {
+	// TODO: On Linux, positional writes don't work when the file is opened in append mode. https://nodejs.org/api/fs.html#fs_fs_write_fd_buffer_offset_length_position_callback
+		let real_auth_tag = cipher.getAuthTag();
+		const fd = fs.openSync(encryptedFilePath, 'a');
+		fs.write(fd, real_auth_tag, 0, 16, 80, () => {})
+	});
 
 	return encryptedFilePath;
 }
@@ -168,15 +143,11 @@ function decryptFile(filePath, decryptionKey) {
 	let read_metadata_flag = false;
 	readMetadata.on("data", chunk => {
 		if (!read_metadata_flag) {
-			// console.log(`METADATA LEN: ${chunk.length}`)
 			salt = chunk.slice(0, 64);
 			initializationVector = chunk.slice(64, 80);
 			authTag = chunk.slice(80, 96);
 			read_metadata_flag = true;
 		}
-		// console.log(`Salt: ${salt.length}`);
-		// console.log(`InitVect: ${initializationVector.length}`);
-		// console.log(`AuthTag: ${authTag.length}`);
 	});
 	readMetadata.on("close", () => {
 		// Decrypt the cipher text
@@ -200,7 +171,6 @@ function decryptFile(filePath, decryptionKey) {
 		});
 		encryptedFile
 			.pipe(decrypt)
-			// .pipe(zlib.createGunzip())
 			.pipe(write);
 
 		return decryptedFilePath;
@@ -218,10 +188,11 @@ function decryptFile(filePath, decryptionKey) {
  * @return {String}                  Absolute path of encrypted file.
  */
 function onFileEncryptRequest(filePath, encryptionPhrase) {
-	console.log("ENCRYPT FILE REQUEST\n");
+	console.log("\nENCRYPT FILE REQUEST\n");
 	let encryptedFilePath = encryptFile(filePath, encryptionPhrase);
 	console.log(encryptedFilePath);
 	// TODO: Change file icon of new encrypted file.
+	// TODO: Reveal in Finder
 	return encryptedFilePath;
 }
 
@@ -246,47 +217,44 @@ function onFileDecryptRequest(filePath, decryptionPhrase) {
  * CLI Integration / Main
  **/
 
-// function createWindow() {
-	// // Create the browser window.
-	// win = new BrowserWindow({
-		// width: 330,
-		// height: 364,
-		// titleBarStyle: "hidden",
-		// webPreferences: {
-			// nodeIntegration: true
-		// }
-	// });
-//
-	// win.loadURL("http://localhost:3000/");
-	// win.webContents.openDevTools();
-// }
-//
-function testing_main() {
-	// let file = "/Users/alichtman/scratchpad/05ap65wxn5c01.jpg";
-	// let file = "/Users/alichtman/scratchpad/test.txt";
-	// let file = "/Users/alichtman/scratchpad/a.out";
-	// let file = "/Users/alichtman/scratchpad/pdf-test.pdf";
-	let file = "/Users/alichtman/scratchpad/flight-plan.pdf";
+function createWindow() {
+	// Create the browser window.
+	win = new BrowserWindow({
+		width: 330,
+		height: 364,
+		titleBarStyle: "hidden",
+		webPreferences: {
+			nodeIntegration: true
+		}
+	});
 
-	// test.txt -> test.txt.enc
-	onFileEncryptRequest(
-		file,
-		"test"
-	);
-	// test.txt.enc -> test.txt.1
-	setTimeout(function() {
-		onFileDecryptRequest(
-			file + ".qlock",
-			"test"
-		);
-
-		console.log(`$ diff ${file} ${file}.1`)
-	}, 3000);
-
-	// Confirm they're the same with $ diff test.txt test.txt.1
+	win.loadURL("http://localhost:3000/");
+	win.webContents.openDevTools();
 }
 
-testing_main();
+// function testing_main() {
+	// // let file = "/Users/alichtman/scratchpad/test.txt";
+	// // let file = "/Users/alichtman/scratchpad/a.out";
+	// // let file = "/Users/alichtman/scratchpad/pdf-test.pdf";
+	// let file = "/Users/alichtman/scratchpad/flight-plan.pdf";
+//
+	// // test.txt -> test.txt.enc
+	// onFileEncryptRequest(
+		// file,
+		// "test"
+	// );
+	// // test.txt.enc -> test.txt.1
+	// setTimeout(function() {
+		// onFileDecryptRequest(
+			// file + ".qlock",
+			// "test"
+		// );
+//
+		// console.log(`$ diff ${file} ${file}.1`)
+	// }, 3000);
+// }
+//
+// testing_main();
 
 function checkIfCalledViaCLI(args) {
 	if (args && args.length > 1) {
@@ -295,29 +263,28 @@ function checkIfCalledViaCLI(args) {
 	return false;
 }
 
-// app.on("ready", () => {
-	// if (checkIfCalledViaCLI(process.argv)) {
-		// // TODO: Parse arguments and either show encrypt or decrypt screen.
-		// let filename = process.argv[process.argv.length - 1];
-		// console.log(`File passed on command line: ${filename}`);
-		// if (isFileEncrypted(filename)) {
-			// // TODO: Open to decrypt file screen to prompt for pass
-		// } else {
-			// // TODO: Open to encrypt file screen to prompt for pass
-		// }
-	// }
-//
-	// createWindow();
-// });
-//
-// ipcMain.on("encryptFileRequest", (event, arg) => {
-	// const { filePath, password } = arg;
-	// console.log("filePath:", filePath);
-	// console.log("password:", password);
-	// let encryptedFilePath = onFileEncryptRequest(filePath, password);
-//
-	// event.returnValue = encryptedFilePath;
-// });
+app.on("ready", () => {
+	if (checkIfCalledViaCLI(process.argv)) {
+		// TODO: Parse arguments and either show encrypt or decrypt screen.
+		let filename = process.argv[process.argv.length - 1];
+		console.log(`File passed on command line: ${filename}`);
+		if (isFileEncrypted(filename)) {
+			// TODO: Open to decrypt file screen to prompt for pass
+		} else {
+			// TODO: Open to encrypt file screen to prompt for pass
+		}
+	}
 
-// for unit testing purposes
+	createWindow();
+});
+
+ipcMain.on("encryptFileRequest", (event, arg) => {
+	const { filePath, password } = arg;
+	console.log("filePath:", filePath);
+	console.log("password:", password);
+	let encryptedFilePath = onFileEncryptRequest(filePath, password);
+
+	event.returnValue = encryptedFilePath;
+});
+
 module.exports = { onFileEncryptRequest, onFileDecryptRequest };
