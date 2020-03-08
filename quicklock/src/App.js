@@ -22,6 +22,7 @@ const DEFAULT_STATE = {
  * 0 = File Upload view
  * 1 = Encrypt/Decrypt view
  * 2 = Success view
+ * 3 = Decryption failure view
  */
 
 export default class App extends Component {
@@ -76,7 +77,20 @@ export default class App extends Component {
 				<DecryptionForm
 					fileName={fileName}
 					onDecrypt={password => {
-						/* TODO: Call Aaron's decryption function, set viewCode=2 */
+                        let decryptedFilePath = ipcRenderer.sendSync(
+							"decryptFileRequest",
+							{ filePath, password }
+						);
+						console.log(decryptedFilePath);
+						if (decryptedFilePath != "QUICKLOCK_ENCRYPTION_FAILURE") {
+						    this.setState({
+							    viewCode: 2
+						    });
+						} else {
+                            this.setState({
+                                viewCode: 3
+                            })
+						}
 					}}
 					onAbort={this.onAbort}
 				/>

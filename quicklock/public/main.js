@@ -153,9 +153,12 @@ function decryptFile(filePath, decryptionKey) {
 			initializationVector
 		);
 
-		// If the password is incorrect, this line will throw.
-		// TODO: Handle decrypt failure
-		decrypt.setAuthTag(authTag);
+		// Handle decryption errors. This will throw if the password is incorrect.
+		try {
+			decrypt.setAuthTag(authTag)
+		} catch (err) {
+			return "QUICKLOCK_ENCRYPTION_FAILURE"
+		}
 
 		let decryptedFilePath = replaceLast(filePath, encryptedExtension, "") + ".1";
 		console.log(`Decrypted file will be at: ${decryptedFilePath}`);
