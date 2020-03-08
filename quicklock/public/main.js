@@ -120,9 +120,8 @@ function encryptFile(filePath, encryptionKey) {
 	.pipe(cipher)
 	.pipe(write)
 	.on("finish", () => {
-	// TODO: On Linux, positional writes don't work when the file is opened in append mode. https://nodejs.org/api/fs.html#fs_fs_write_fd_buffer_offset_length_position_callback
 		let real_auth_tag = cipher.getAuthTag();
-		const fd = fs.openSync(encryptedFilePath, 'a');
+		const fd = fs.openSync(encryptedFilePath, 'r+');
 		fs.write(fd, real_auth_tag, 0, 16, 80, () => {})
 	});
 
@@ -140,14 +139,10 @@ function decryptFile(filePath, decryptionKey) {
 	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
-	let read_metadata_flag = false;
 	readMetadata.on("data", chunk => {
-		if (!read_metadata_flag) {
-			salt = chunk.slice(0, 64);
-			initializationVector = chunk.slice(64, 80);
-			authTag = chunk.slice(80, 96);
-			read_metadata_flag = true;
-		}
+		salt = chunk.slice(0, 64);
+		initializationVector = chunk.slice(64, 80);
+		authTag = chunk.slice(80, 96);
 	});
 	readMetadata.on("close", () => {
 		// Decrypt the cipher text
