@@ -2,10 +2,10 @@
  * Requires
  **********/
 
+// window.require = require;
 const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs-extra");
 const crypto = require("crypto");
-const zlib = require("zlib");
 const { Transform } = require("stream");
 
 const encryptedExtension = ".qlock";
@@ -129,12 +129,13 @@ function encryptFile(filePath, encryptionKey) {
 
 	let encryptedFilePath = `${filePath}${encryptedExtension}`;
 	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
+	console.log(`Salt: ${salt}\nDerived Key: ${derivedKey}\nIV: ${initializationVector}`)
 	let write = fs.createWriteStream(encryptedFilePath);
 
 	// Run gzip'd file through cipher
 	let encryptBlob = fs
 		.createReadStream(filePath)
-		.pipe(zlib.createGzip())
+		.on("data", (chunk) => console.log(`\nHere is chunk: ${chunk}`))
 		.pipe(cipher)
 		.on("finish", () => {
 			// Store salt, initialization vector and authTag at the head of the encrypted blob for use during decryption.
@@ -146,7 +147,8 @@ function encryptFile(filePath, encryptionKey) {
 						cipher.getAuthTag()
 					)
 				)
-				.pipe(write);
+				.pipe(write)
+				.on("error", () => { console.log("Write error.")});
 		});
 
 	return encryptedFilePath;
@@ -163,11 +165,15 @@ function decryptFile(filePath, decryptionKey) {
 	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
+	let read_metadata_flag = false;
 	readMetadata.on("data", chunk => {
-		// console.log(`METADATA LEN: ${chunk.length}`)
-		salt = chunk.slice(0, 64);
-		initializationVector = chunk.slice(64, 80);
-		authTag = chunk.slice(80, 96);
+		if (!read_metadata_flag) {
+			// console.log(`METADATA LEN: ${chunk.length}`)
+			salt = chunk.slice(0, 64);
+			initializationVector = chunk.slice(64, 80);
+			authTag = chunk.slice(80, 96);
+			read_metadata_flag = true;
+		}
 		// console.log(`Salt: ${salt.length}`);
 		// console.log(`InitVect: ${initializationVector.length}`);
 		// console.log(`AuthTag: ${authTag.length}`);
@@ -180,20 +186,21 @@ function decryptFile(filePath, decryptionKey) {
 			derivedKey,
 			initializationVector
 		);
+
+		// If the password is incorrect, this line will throw.
+		// TODO: Handle decrypt failure
 		decrypt.setAuthTag(authTag);
 
-		let decryptedFilePath =
-			replaceLast(filePath, encryptedExtension, "") + ".1";
+		let decryptedFilePath = replaceLast(filePath, encryptedExtension, "") + ".1";
 		console.log(`Decrypted file will be at: ${decryptedFilePath}`);
 		let write = fs.createWriteStream(decryptedFilePath);
 
 		const encryptedFile = fs.createReadStream(filePath, {
 			start: METADATA_LEN
 		});
-		// Decryption errors will come from the zlib.createGunzip line
 		encryptedFile
 			.pipe(decrypt)
-			.pipe(zlib.createGunzip())
+			// .pipe(zlib.createGunzip())
 			.pipe(write);
 
 		return decryptedFilePath;
@@ -254,23 +261,30 @@ function createWindow() {
 	win.webContents.openDevTools();
 }
 
-function testing_main() {
-	// test.txt -> test.txt.enc
-	onFileEncryptRequest(
-		"/Users/shobrook/Documents/Projects/open_source/saplings/README.md",
-		"test"
-	);
-	// test.txt.enc -> test.txt.1
+// function testing_main() {
+	// // let file = "/Users/alichtman/scratchpad/05ap65wxn5c01.jpg";
+	// let file = "/Users/alichtman/scratchpad/test.txt";
+	// // let file = "/Users/alichtman/scratchpad/a.out";
+	// // let file = "/Users/alichtman/scratchpad/hacking-ciphers-with-python.pdf";
+//
+	// // test.txt -> test.txt.enc
+	// onFileEncryptRequest(
+		// file,
+		// "test"
+	// );
+	// // test.txt.enc -> test.txt.1
 	// setTimeout(function() {
-	// 	onFileDecryptRequest(
-	// 		"/Users/alichtman/Desktop/clean/test.txt.enc",
-	// 		"te2st"
-	// 	);
+		// onFileDecryptRequest(
+			// file + ".qlock",
+			// "test"
+		// );
+//
+		// console.log(`$ diff ${file} ${file}.1`)
 	// }, 3000);
-
-	// Confirm they're the same with $ diff test.txt test.txt.1
-}
-
+//
+	// // Confirm they're the same with $ diff test.txt test.txt.1
+// }
+//
 // testing_main();
 
 function checkIfCalledViaCLI(args) {
