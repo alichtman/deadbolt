@@ -132,7 +132,7 @@ function encryptFile(filePath, encryptionKey) {
 	console.log(`Salt: ${salt}\nDerived Key: ${derivedKey}\nIV: ${initializationVector}`)
 	let write = fs.createWriteStream(encryptedFilePath);
 
-	// Run gzip'd file through cipher
+	// Cipher file
 	let encryptBlob = fs
 		.createReadStream(filePath)
 		.on("data", (chunk) => console.log(`\nHere is chunk: ${chunk}`))
