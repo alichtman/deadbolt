@@ -48,9 +48,7 @@ export default class FileUpload extends Component {
 				<div className="fileUploadIcon">
 					<img src="./dropFileIcon.svg" />
 				</div>
-				<span className="fileUploadText">
-					Drop your file here to encrypt or decrypt it.
-				</span>
+				<span className="fileUploadText">Select or Drop</span>
 			</div>
 		);
 	}
