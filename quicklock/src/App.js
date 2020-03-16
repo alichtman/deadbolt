@@ -3,12 +3,9 @@ import "./App.css";
 
 // Containers
 import FileUpload from "./containers/FileUpload";
-import EncryptionForm from "./containers/EncryptionForm";
-import DecryptionForm from "./containers/DecryptionForm";
+import CryptForm from "./containers/CryptForm";
 import SuccessScreen from "./containers/SuccessScreen";
 
-// const { ipcRenderer } = require("electron");
-// import { ipcRenderer } from "electron";
 const { ipcRenderer } = window.require("electron");
 
 const DEFAULT_STATE = {
@@ -40,6 +37,7 @@ export default class App extends Component {
 			filePath: path,
 			fileName: name,
 			fileType: type,
+			cryptedFilePath: "",
 			viewCode: 1
 		});
 
@@ -49,7 +47,13 @@ export default class App extends Component {
 	onAbort = () => this.setState(DEFAULT_STATE);
 
 	render() {
-		const { filePath, fileName, fileType, viewCode } = this.state;
+		const {
+			filePath,
+			fileName,
+			fileType,
+			cryptedFilePath,
+			viewCode
+		} = this.state;
 		const fileIsEncrypted = filePath.endsWith(".qlock");
 
 		let appBody;
@@ -57,16 +61,16 @@ export default class App extends Component {
 			appBody = <FileUpload setFilePath={this.setFilePath} />;
 		} else if (viewCode === 1 && !fileIsEncrypted) {
 			appBody = (
-				<EncryptionForm
+				<CryptForm
 					fileName={fileName}
-					onEncrypt={password => {
+					onSubmit={password => {
 						let encryptedFilePath = ipcRenderer.sendSync(
 							"encryptFileRequest",
 							{ filePath, password }
 						);
-						console.log(encryptedFilePath);
 						this.setState({
-							viewCode: 2
+							viewCode: 2,
+							cryptedFilePath: encryptedFilePath
 						});
 					}}
 					onAbort={this.onAbort}
@@ -74,32 +78,31 @@ export default class App extends Component {
 			);
 		} else if (viewCode === 1 && fileIsEncrypted) {
 			appBody = (
-				<DecryptionForm
+				<CryptForm
 					fileName={fileName}
-					onDecrypt={password => {
-                        let decryptedFilePath = ipcRenderer.sendSync(
+					onSubmit={password => {
+						let decryptedFilePath = ipcRenderer.sendSync(
 							"decryptFileRequest",
 							{ filePath, password }
 						);
-						console.log(decryptedFilePath);
-						if (decryptedFilePath != "QUICKLOCK_ENCRYPTION_FAILURE") {
-						    this.setState({
-							    viewCode: 2
-						    });
-						} else {
-                            this.setState({
-                                viewCode: 3
-                            })
-						}
+						this.setState({
+							viewCode: 2,
+							cryptedFilePath: decryptedFilePath
+						});
+
+						// return (
+						// 	decryptedFilePath !== "QUICKLOCK_ENCRYPTION_FAILURE"
+						// );
 					}}
 					onAbort={this.onAbort}
+					isDecryption={fileIsEncrypted}
 				/>
 			);
 		} else if (viewCode === 2) {
 			appBody = (
 				<SuccessScreen
 					onGoHome={() => this.setState({ viewCode: 0 })}
-					filePath={filePath}
+					filePath={cryptedFilePath}
 				/>
 			);
 		}
