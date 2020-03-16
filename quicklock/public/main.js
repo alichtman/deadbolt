@@ -21,7 +21,6 @@ function isFileEncrypted(filePath) {
 	return filePath.endsWith(encryptedExtension);
 }
 
-
 /**
  * String Helpers
  */
@@ -47,7 +46,6 @@ function replaceLast(input, search, replacement) {
 }
 
 // TODO: File icon changes.
-
 
 /**
  * AES-256 Encryption
@@ -112,18 +110,18 @@ function encryptFile(filePath, encryptionKey) {
 	// will be replaced with a real auth tag later.
 	write.write(salt);
 	write.write(initializationVector);
-	let temporary_auth_tag = Buffer.from({ length: 16 }).fill(0xFF);
+	let temporary_auth_tag = Buffer.from({ length: 16 }).fill(0xff);
 	write.write(temporary_auth_tag);
 
 	// Encrypt file and write it to encrypted dest file
 	fs.createReadStream(filePath)
-	.pipe(cipher)
-	.pipe(write)
-	.on("finish", () => {
-		let real_auth_tag = cipher.getAuthTag();
-		const fd = fs.openSync(encryptedFilePath, 'r+');
-		fs.write(fd, real_auth_tag, 0, 16, 80, () => {})
-	});
+		.pipe(cipher)
+		.pipe(write)
+		.on("finish", () => {
+			let real_auth_tag = cipher.getAuthTag();
+			const fd = fs.openSync(encryptedFilePath, "r+");
+			fs.write(fd, real_auth_tag, 0, 16, 80, () => {});
+		});
 
 	return encryptedFilePath;
 }
@@ -138,6 +136,11 @@ function decryptFile(filePath, decryptionKey) {
 	console.log("Extracting metadata from encrypted file.");
 	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
+	var decryptedFilePath = replaceLast(filePath, encryptedExtension, "");
+	let splitPath = decryptedFilePath.split(".");
+	splitPath.splice(splitPath.length - 1, 0, "qlock");
+	decryptedFilePath = splitPath.join(".");
+
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
 	readMetadata.on("data", chunk => {
 		salt = chunk.slice(0, 64);
@@ -155,24 +158,23 @@ function decryptFile(filePath, decryptionKey) {
 
 		// Handle decryption errors. This will throw if the password is incorrect.
 		try {
-			decrypt.setAuthTag(authTag)
+			decrypt.setAuthTag(authTag);
 		} catch (err) {
-			return "QUICKLOCK_ENCRYPTION_FAILURE"
+			return "QUICKLOCK_ENCRYPTION_FAILURE";
 		}
 
-		let decryptedFilePath = replaceLast(filePath, encryptedExtension, "") + ".1";
 		console.log(`Decrypted file will be at: ${decryptedFilePath}`);
 		let write = fs.createWriteStream(decryptedFilePath);
 
 		const encryptedFile = fs.createReadStream(filePath, {
 			start: METADATA_LEN
 		});
-		encryptedFile
-			.pipe(decrypt)
-			.pipe(write);
+		encryptedFile.pipe(decrypt).pipe(write);
 
 		return decryptedFilePath;
 	});
+
+	return decryptedFilePath;
 }
 
 /**************
@@ -201,14 +203,9 @@ function onFileEncryptRequest(filePath, encryptionPhrase) {
  */
 function onFileDecryptRequest(filePath, decryptionPhrase) {
 	console.log("\nDECRYPT FILE REQUEST\n");
-	try {
-		decryptFile(filePath, decryptionPhrase);
-		console.log("Successful decryption.");
-		return true;
-	} catch (error) {
-		console.log("Failed decryption. Incorrect password.");
-		return false;
-	}
+	let decryptedFilePath = decryptFile(filePath, decryptionPhrase);
+	console.log("decryptedFilePath:", decryptedFilePath);
+	return decryptedFilePath;
 }
 
 /**
@@ -231,25 +228,25 @@ function createWindow() {
 }
 
 // function testing_main() {
-	// // let file = "/Users/alichtman/scratchpad/test.txt";
-	// // let file = "/Users/alichtman/scratchpad/a.out";
-	// // let file = "/Users/alichtman/scratchpad/pdf-test.pdf";
-	// let file = "/Users/alichtman/scratchpad/flight-plan.pdf";
+// // let file = "/Users/alichtman/scratchpad/test.txt";
+// // let file = "/Users/alichtman/scratchpad/a.out";
+// // let file = "/Users/alichtman/scratchpad/pdf-test.pdf";
+// let file = "/Users/alichtman/scratchpad/flight-plan.pdf";
 //
-	// // test.txt -> test.txt.enc
-	// onFileEncryptRequest(
-		// file,
-		// "test"
-	// );
-	// // test.txt.enc -> test.txt.1
-	// setTimeout(function() {
-		// onFileDecryptRequest(
-			// file + ".qlock",
-			// "test"
-		// );
+// // test.txt -> test.txt.enc
+// onFileEncryptRequest(
+// file,
+// "test"
+// );
+// // test.txt.enc -> test.txt.1
+// setTimeout(function() {
+// onFileDecryptRequest(
+// file + ".qlock",
+// "test"
+// );
 //
-		// console.log(`$ diff ${file} ${file}.1`)
-	// }, 3000);
+// console.log(`$ diff ${file} ${file}.1`)
+// }, 3000);
 // }
 //
 // testing_main();
@@ -284,5 +281,8 @@ ipcMain.on("encryptFileRequest", (event, arg) => {
 
 	event.returnValue = encryptedFilePath;
 });
-
-module.exports = { onFileEncryptRequest, onFileDecryptRequest };
+ipcMain.on("decryptFileRequest", (event, arg) => {
+	const { filePath, password } = arg;
+	let decryptedFilePath = onFileDecryptRequest(filePath, password);
+	event.returnValue = decryptedFilePath;
+});
