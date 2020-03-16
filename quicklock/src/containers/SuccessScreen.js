@@ -6,6 +6,8 @@ import SecondaryButton from "../components/SecondaryButton";
 import checkmarkAnimationData from "../checkmark.json";
 import "./SuccessScreen.css";
 
+const { shell, remote } = window.require("electron");
+
 const animationOptions = {
 	loop: false,
 	autoplay: true,
@@ -24,17 +26,21 @@ export default class SuccessScreen extends Component {
 				<div className="successBody">
 					<Lottie
 						options={animationOptions}
-						height={200}
+						height={100}
 						width={200}
 					/>
 					<span className="successText">Success!</span>
 					<div className="buttonsWrapper">
-						<PrimaryButton onClick={() => {}}>
+						<PrimaryButton
+							onClick={() => {
+								const shellToUse = shell || remote.shell;
+								shellToUse.showItemInFolder(filePath);
+							}}
+						>
 							<span className="openFinderText">
 								Reveal in Finder
 							</span>
 						</PrimaryButton>
-						{/* TODO: Run `$ open filePath` */}
 						<SecondaryButton onClick={onGoHome}>
 							<span className="backToQuickLockText">
 								Back to Home
