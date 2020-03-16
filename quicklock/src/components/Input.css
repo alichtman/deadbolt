@@ -4,7 +4,7 @@
   margin-top: 20px;
   border: none;
   border-radius: 5px;
-  background-color: #3f4a67;
+  background-color: #868c9d;
   padding-left: 10px;
   color: #ffffff;
   outline: none;
@@ -13,5 +13,5 @@
 }
 
 .inputBar::placeholder {
-  color: #9fa4b3;
+  color: #c1c4cd;
 }
