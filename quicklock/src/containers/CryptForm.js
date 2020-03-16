@@ -23,7 +23,7 @@ export default class CryptForm extends Component {
 
 		let buttonIconPath, buttonText, errorMessage;
 		if (isDecryption) {
-			buttonIconPath = "./decryptIcon.png";
+			buttonIconPath = "./decryptIcon.svg";
 			buttonText = "Decrypt";
 			errorMessage = "Error: Incorrect password";
 		} else {
