@@ -1,3 +1,14 @@
+.titlebar {
+  width: 100%;
+  height: 32px;
+  background-color: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+}
+
 .app {
   position: absolute;
   display: flex;

@@ -90,9 +90,9 @@ export default class App extends Component {
 							cryptedFilePath: decryptedFilePath
 						});
 
-						// return (
-						// 	decryptedFilePath !== "QUICKLOCK_ENCRYPTION_FAILURE"
-						// );
+						return (
+							decryptedFilePath !== "QUICKLOCK_ENCRYPTION_FAILURE"
+						);
 					}}
 					onAbort={this.onAbort}
 					isDecryption={fileIsEncrypted}
@@ -107,6 +107,11 @@ export default class App extends Component {
 			);
 		}
 
-		return <div className="app">{appBody}</div>;
+		return (
+			<div className="app">
+				<div className="titlebar" />
+				{appBody}
+			</div>
+		);
 	}
 }
