@@ -216,7 +216,7 @@ function createWindow() {
 	// Create the browser window.
 	win = new BrowserWindow({
 		width: 330,
-		height: 364,
+		height: 340, // 364
 		resizable: false,
 		titleBarStyle: "hidden",
 		webPreferences: {
@@ -225,32 +225,8 @@ function createWindow() {
 	});
 
 	win.loadURL("http://localhost:3000/");
-	// win.webContents.openDevTools();
+	win.webContents.openDevTools();
 }
-
-// function testing_main() {
-// // let file = "/Users/alichtman/scratchpad/test.txt";
-// // let file = "/Users/alichtman/scratchpad/a.out";
-// // let file = "/Users/alichtman/scratchpad/pdf-test.pdf";
-// let file = "/Users/alichtman/scratchpad/flight-plan.pdf";
-//
-// // test.txt -> test.txt.enc
-// onFileEncryptRequest(
-// file,
-// "test"
-// );
-// // test.txt.enc -> test.txt.1
-// setTimeout(function() {
-// onFileDecryptRequest(
-// file + ".qlock",
-// "test"
-// );
-//
-// console.log(`$ diff ${file} ${file}.1`)
-// }, 3000);
-// }
-//
-// testing_main();
 
 function checkIfCalledViaCLI(args) {
 	if (args && args.length > 1) {
@@ -276,10 +252,7 @@ app.on("ready", () => {
 
 ipcMain.on("encryptFileRequest", (event, arg) => {
 	const { filePath, password } = arg;
-	console.log("filePath:", filePath);
-	console.log("password:", password);
 	let encryptedFilePath = onFileEncryptRequest(filePath, password);
-
 	event.returnValue = encryptedFilePath;
 });
 ipcMain.on("decryptFileRequest", (event, arg) => {
