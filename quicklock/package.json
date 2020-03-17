@@ -1,32 +1,65 @@
 {
   "name": "quicklock",
   "version": "0.1.0",
-  "private": true,
-  "main": "public/main.js",
+  "description": "An open source encryption app that even your mom can use.",
+  "license": "MIT",
+  "author": "aaronlichtman@gmail.com",
+  "main": "public/electron.js",
+  "homepage": "./",
   "build": {
     "appId": "com.electron.quicklock",
     "productName": "quicklock",
-    "mac": {
-      "category": "public.app-category.utilities"
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 110,
+          "y": 150
+        },
+        {
+          "x": 240,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "win": {
+      "target": "NSIS"
     }
   },
   "dependencies": {
     "electron-builder": "^22.3.2",
     "file-icons-js": "github:websemantics/file-icons-js",
+    "electron-is-dev": "^1.1.0",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
     "react-lottie": "^1.2.3",
     "react-scripts": "^3.3.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "npm install && electron ./app",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron-start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "preelectron-pack": "yarn build",
+    "electron-pack": "build --em.main=build/electron.js"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -44,6 +77,7 @@
     ]
   },
   "devDependencies": {
-    "electron": "^6.0.5"
+    "electron": "^6.0.5",
+    "electron-builder": "^22.4.1"
   }
 }
