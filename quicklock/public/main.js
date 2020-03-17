@@ -217,6 +217,7 @@ function createWindow() {
 	win = new BrowserWindow({
 		width: 330,
 		height: 364,
+		resizable: false,
 		titleBarStyle: "hidden",
 		webPreferences: {
 			nodeIntegration: true
