@@ -1,68 +1,74 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# QuickLock
+> Bringing the simplistic style of Quick Look's file browsing to encryption.
+> Encryption -- so simple your mom can do it.
 
-## Available Scripts
+This tool removes all of the complication of encrypting and decrypting files. Simply select or drop in file you'd like to encrypt, enter a password and you're done. To decrypt, just double click on the file and enter a password.
 
-In the project directory, you can run:
+This app should work on `Linux`, `macOS`, and `Windows`, making it incredibly easy to share encrypted files across different platforms.
 
-### `npm start`
+This script can encrypt any file. To encrypt directories, compress them beforehand (`.zip`, `.tar.gz`, etc.)
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Here's a quick demo:
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+<h1 align="center">
+  <img src="img/demo.gif" width="80%" />
+  <br />
+</h1>
 
-### `npm test`
+## Installation
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+You can install `QuickLock` in a few ways. Choose the one that best suits you.
 
-### `npm run build`
+### Manually Install from GitHub Releases
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Download the latest release from the [QuickLock GitHub Releases](https://github.com/alichtman/quicklock/releases) page.
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+### Homebrew Install
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+$ brew cask install quicklock
+```
 
-### `npm run eject`
+### npm Install
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+```bash
+$ npm install -g quicklock
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Manually Instill with git 
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```bash
+$ git clone https://github.com/alichtman/quicklock.git
+$ cd quicklock
+$ npm run preelectron-pack && npm run dist
+$ mv dist/mac/quicklock.app /Applications/quicklock.app
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Setting `QuickLock` as Default App for `.qlock` Files on macOS
 
-## Learn More
+You can set this app as the default app for `.qlock` files, which means you'll be able to double-click on `.qlock` files to open them with `QuickLock` for decryption.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+You can set this up the first time you double-click on a `.qlock` file, or by right-clicking on a `.qlock` file, selecting `Get Info` and changing the default app in the `Open With:` section.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+To do this programmatically, run the following snippet:
 
-### Code Splitting
+```bash
+# Set QuickLock as default app for .qlock files
+$ defaults write com.apple.LaunchServices LSHandlers -array-add \
+"<dict><key>LSHandlerContentTag</key>
+<string>qlock</string><key>LSHandlerContentTagClass</key>
+<string>public.filename-extension</string><key>LSHandlerRoleAll</key>
+<string>org.alichtman.quicklock</string></dict>"
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+# Restart LaunchServices
+$ /System/Library/Frameworks/CoreServices.framework/Versions/A/Framework/LaunchServices.framework/Versions/A/Support/lsregister -kill -domain local -domain system -domain user
+```
 
-### Analyzing the Bundle Size
+## Usage Notes
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
 
-### Making a Progressive Web App
+## Technical Details
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+This script uses `openssl`'s implementation of the [`AES 256`](https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf) encryption algorithm in [Counter](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_(CTR)) (`CTR`) mode, as is recommended in Professor Rogaway's [_Evaluation of Some Blockcipher Modes of Operation_](https://web.cs.ucdavis.edu/~rogaway/papers/modes.pdf). This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents.
 
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+This script uses the `openssl` `-salt`  option. This makes [Rainbow Table attacks](https://en.wikipedia.org/wiki/Rainbow_table) impractical, however, it also means that if you encrypt a file and forget the password -- that's game. Nobody can recover that file. Back up your passphrases!

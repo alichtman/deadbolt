@@ -3,3 +3,4 @@ dist/Quick Lock.workflow-dev
 tags
 dist
 package-lock.json
+quicklock/package-lock.json
