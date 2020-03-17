@@ -4,3 +4,4 @@ tags
 dist
 package-lock.json
 quicklock/package-lock.json
+quicklock/node_modules/
