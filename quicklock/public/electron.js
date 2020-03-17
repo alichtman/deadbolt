@@ -6,6 +6,10 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs");
 const crypto = require("crypto");
 
+const path = require('path');
+const url = require('url');
+const isDev = require('electron-is-dev');
+
 const encryptedExtension = ".qlock";
 
 /*********************
@@ -120,7 +124,7 @@ function encryptFile(filePath, encryptionKey) {
 		.on("finish", () => {
 			let real_auth_tag = cipher.getAuthTag();
 			const fd = fs.openSync(encryptedFilePath, "r+");
-			fs.write(fd, real_auth_tag, 0, 16, 80, () => {});
+			fs.write(fd, real_auth_tag, 0, 16, 80, () => { });
 		});
 
 	return encryptedFilePath;
@@ -212,9 +216,11 @@ function onFileDecryptRequest(filePath, decryptionPhrase) {
  * CLI Integration / Main
  **/
 
+let mainWindow;
+
 function createWindow() {
 	// Create the browser window.
-	win = new BrowserWindow({
+	mainWindow = new BrowserWindow({
 		width: 330,
 		height: 364,
 		resizable: false,
@@ -224,8 +230,8 @@ function createWindow() {
 		}
 	});
 
-	win.loadURL("http://localhost:3000/");
-	// win.webContents.openDevTools();
+	mainWindow.loadURL(isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, '../build/index.html')}`);
+	mainWindow.on('closed', () => mainWindow = null);
 }
 
 // function testing_main() {
@@ -272,6 +278,18 @@ app.on("ready", () => {
 	}
 
 	createWindow();
+});
+
+app.on('activate', () => {
+	if (mainWindow === null) {
+		createWindow();
+	}
+});
+
+app.on('window-all-closed', () => {
+	if (process.platform !== 'darwin') {
+		app.quit();
+	}
 });
 
 ipcMain.on("encryptFileRequest", (event, arg) => {
