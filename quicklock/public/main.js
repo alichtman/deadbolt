@@ -3,7 +3,7 @@
  **********/
 
 const { app, BrowserWindow, ipcMain } = require("electron");
-const fs = require("fs-extra");
+const fs = require("fs");
 const crypto = require("crypto");
 
 const encryptedExtension = ".qlock";
@@ -225,7 +225,7 @@ function createWindow() {
 	});
 
 	win.loadURL("http://localhost:3000/");
-	win.webContents.openDevTools();
+	// win.webContents.openDevTools();
 }
 
 // function testing_main() {
