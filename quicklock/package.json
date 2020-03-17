@@ -42,8 +42,8 @@
   },
   "dependencies": {
     "electron-builder": "^22.3.2",
-    "file-icons-js": "github:websemantics/file-icons-js",
     "electron-is-dev": "^1.1.0",
+    "file-icons-js": "github:websemantics/file-icons-js",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
     "react-lottie": "^1.2.3",
