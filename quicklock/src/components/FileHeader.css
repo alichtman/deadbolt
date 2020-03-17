@@ -22,9 +22,16 @@
   height: 26px;
 }
 
-.fileName span {
-  padding-left: 10px;
+.filePathWrapper {
   color: #ffffff;
   font-size: 22px;
   letter-spacing: 1px;
+}
+
+.filePath {
+  padding-left: 8px;
+}
+
+#fileIcon::before {
+  font-size: 20px;
 }
