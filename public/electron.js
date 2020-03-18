@@ -10,7 +10,7 @@ const path = require("path");
 const url = require("url");
 const isDev = require("electron-is-dev");
 
-const encryptedExtension = ".qlock";
+const encryptedExtension = ".dbolt";
 
 /*********************
  * File System Helpers
@@ -142,7 +142,7 @@ function decryptFile(filePath, decryptionKey) {
 	let salt, initializationVector, authTag;
 	var decryptedFilePath = replaceLast(filePath, encryptedExtension, "");
 	let splitPath = decryptedFilePath.split(".");
-	splitPath.splice(splitPath.length - 1, 0, "qlock");
+	splitPath.splice(splitPath.length - 1, 0, "dbolt");
 	decryptedFilePath = splitPath.join(".");
 
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
