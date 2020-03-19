@@ -21,15 +21,15 @@ esac
 npm version "$bump"
 git push
 
-# Build electron app
+# Build electron app for Linux, Windows and macOS
 
 npm run preelectron-pack && npm run dist
-
-# Publish on npm
-
-npm publish
 
 # Push new release to GitHub
 
 version=$(node -p "require('./package.json').version")
 hub release create -m "deadbolt v$version" "$version" -a dist/deadbolt-"$version"-mac.dmg
+
+# Homebrew
+
+echo "Make sure to update the Homebrew tap with the new release.\n"
