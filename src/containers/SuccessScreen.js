@@ -1,10 +1,10 @@
 import React, { Component, Fragment } from "react";
-import Lottie from "react-lottie";
-import PrimaryButton from "../components/PrimaryButton";
-import SecondaryButton from "../components/SecondaryButton";
-
-import checkmarkAnimationData from "../checkmark.json";
 import "./SuccessScreen.css";
+
+import Lottie from "react-lottie";
+import checkmarkAnimationData from "../checkmark.json";
+
+import Button from "../components/Button";
 
 const { shell, remote } = window.require("electron");
 
@@ -18,8 +18,15 @@ const animationOptions = {
 };
 
 export default class SuccessScreen extends Component {
+	onRevealInFinder = () => {
+		const { filePath } = this.props;
+		const shellToUse = shell || remote.shell;
+
+		shellToUse.showItemInFolder(filePath);
+	};
+
 	render() {
-		const { onGoHome, filePath } = this.props;
+		const { onGoHome } = this.props;
 
 		return (
 			<Fragment>
@@ -31,21 +38,19 @@ export default class SuccessScreen extends Component {
 					/>
 					<span className="successText">Success!</span>
 					<div className="buttonsWrapper">
-						<PrimaryButton
-							onClick={() => {
-								const shellToUse = shell || remote.shell;
-								shellToUse.showItemInFolder(filePath);
-							}}
+						<Button
+							isPrimary={true}
+							onClick={this.onRevealInFinder}
 						>
 							<span className="openFinderText">
 								Reveal in Finder
 							</span>
-						</PrimaryButton>
-						<SecondaryButton onClick={onGoHome}>
+						</Button>
+						<Button isPrimary={false} onClick={onGoHome}>
 							<span className="backToQuickLockText">
 								Back to Home
 							</span>
-						</SecondaryButton>
+						</Button>
 					</div>
 				</div>
 			</Fragment>

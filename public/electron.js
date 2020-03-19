@@ -1,33 +1,21 @@
-/**********
- * Requires
- **********/
+/***********
+ * Constants
+ ***********/
 
 const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs");
 const crypto = require("crypto");
-
 const path = require("path");
 const url = require("url");
 const isDev = require("electron-is-dev");
 
-const encryptedExtension = ".dbolt";
+const ENCRYPTED_FILE_EXTENSION = ".dbolt";
+const AES_256_GCM = "aes-256-gcm";
+const METADATA_LEN = 96;
 
-/*********************
- * File System Helpers
- *********************/
-
-/**
- * Uses the file extension to determine if it's encrypted.
- * @param  {String} filePath The absolute filePath
- * @return {Bool}   True if file is encrypted, False otherwise.
- */
-function isFileEncrypted(filePath) {
-	return filePath.endsWith(encryptedExtension);
-}
-
-/**
- * String Helpers
- */
+/***********
+ * Utilities
+ ***********/
 
 /**
  * Replace last instance of search in input with replacement
@@ -49,16 +37,18 @@ function replaceLast(input, search, replacement) {
 	);
 }
 
-// TODO: File icon changes.
+function createDecryptedFilePath(filePath) {
+	let decryptedFilePath = replaceLast(filePath, ENCRYPTED_FILE_EXTENSION, "");
+	let splitPath = decryptedFilePath.split(".");
+	splitPath.splice(splitPath.length - 1, 0, "dbolt");
+	decryptedFilePath = splitPath.join(".");
 
-/**
+	return decryptedFilePath;
+}
+
+/********************
  * AES-256 Encryption
- */
-
-/** Crypto Constants */
-
-const AES_256_GCM = "aes-256-gcm";
-const METADATA_LEN = 96;
+ ********************/
 
 /**
  * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64 byte salt with 10,000 iterations of PBKDF2
@@ -93,8 +83,6 @@ function createDerivedKey(salt, encryptionKey) {
  * @return {String}               Absolute path of encrypted file.
  */
 function encryptFile(filePath, encryptionKey) {
-	console.log(`Encrypting ${filePath} with key: ${encryptionKey}`);
-
 	// Create cipher
 	const salt = crypto.randomBytes(64);
 	const derivedKey = createDerivedKey(salt, encryptionKey);
@@ -105,26 +93,25 @@ function encryptFile(filePath, encryptionKey) {
 		initializationVector
 	);
 
-	let encryptedFilePath = `${filePath}${encryptedExtension}`;
-	console.log(`Encrypted file will be created at ${encryptedFilePath}`);
-	let write = fs.createWriteStream(encryptedFilePath);
-	write.on("error", () => console.log("Write error."));
+	const encryptedFilePath = `${filePath}${ENCRYPTED_FILE_EXTENSION}`;
+	const tempAuthTag = Buffer.from({ length: 16 }).fill(0xff);
+	const writeStream = fs.createWriteStream(encryptedFilePath);
 
 	// Write salt, IV, and temporary auth tag to encrypted file. The auth tag
 	// will be replaced with a real auth tag later.
-	write.write(salt);
-	write.write(initializationVector);
-	let temporary_auth_tag = Buffer.from({ length: 16 }).fill(0xff);
-	write.write(temporary_auth_tag);
+	writeStream.write(salt);
+	writeStream.write(initializationVector);
+	writeStream.write(tempAuthTag);
 
 	// Encrypt file and write it to encrypted dest file
 	fs.createReadStream(filePath)
 		.pipe(cipher)
-		.pipe(write)
+		.pipe(writeStream)
 		.on("finish", () => {
-			let real_auth_tag = cipher.getAuthTag();
+			const realAuthTag = cipher.getAuthTag();
 			const fd = fs.openSync(encryptedFilePath, "r+");
-			fs.write(fd, real_auth_tag, 0, 16, 80, () => {});
+
+			fs.write(fd, realAuthTag, 0, 16, 80, () => {});
 		});
 
 	return encryptedFilePath;
@@ -133,19 +120,16 @@ function encryptFile(filePath, encryptionKey) {
 /**
  * Decrypts a file.
  * @param  {String} filePath      Absolute path of encrypted file.
- * @param  {String} decryptionKey Unverified decryption key supplied by user
+ * @param  {String} decryptionKey Unverified decryption key supplied by user.
+ * @param  {Object} event         Reference to the IPC Renderer channel.
  * @return {String}               Absolute path of unencrypted file.
  */
 function decryptFile(filePath, decryptionKey, event) {
-	console.log("Extracting metadata from encrypted file.");
 	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
-	var decryptedFilePath = replaceLast(filePath, encryptedExtension, "");
-	let splitPath = decryptedFilePath.split(".");
-	splitPath.splice(splitPath.length - 1, 0, "dbolt");
-	decryptedFilePath = splitPath.join(".");
-
+	const decryptedFilePath = createDecryptedFilePath(filePath);
 	const readMetadata = fs.createReadStream(filePath, { end: METADATA_LEN });
+
 	readMetadata.on("data", chunk => {
 		salt = chunk.slice(0, 64);
 		initializationVector = chunk.slice(64, 80);
@@ -154,7 +138,7 @@ function decryptFile(filePath, decryptionKey, event) {
 	readMetadata.on("close", () => {
 		// Decrypt the cipher text
 		const derivedKey = createDerivedKey(salt, decryptionKey);
-		let decrypt = crypto.createDecipheriv(
+		const decrypt = crypto.createDecipheriv(
 			AES_256_GCM,
 			derivedKey,
 			initializationVector
@@ -163,24 +147,27 @@ function decryptFile(filePath, decryptionKey, event) {
 		// Handle decryption errors. This will throw if the password is incorrect.
 		decrypt.setAuthTag(authTag);
 
-		// BUG: Incorrectly decrypted file still created.
-		console.log(`Decrypted file will be at: ${decryptedFilePath}`);
-		let write = fs.createWriteStream(decryptedFilePath);
-
-		const encryptedFile = fs.createReadStream(filePath, {
+		const decryptedFileWriteStream = fs.createWriteStream(
+			decryptedFilePath
+		);
+		const encryptedFileWriteStream = fs.createReadStream(filePath, {
 			start: METADATA_LEN
 		});
-		encryptedFile
+		encryptedFileWriteStream
 			.pipe(decrypt)
 			.on("error", () => {
 				fs.unlinkSync(decryptedFilePath);
 				event.reply("decryptFileResponse", {
-					decryptedFilePath: "QUICKLOCK_ENCRYPTION_FAILURE"
+					decryptedFilePath,
+					error: true
 				});
 			})
-			.pipe(write)
+			.pipe(decryptedFileWriteStream)
 			.on("finish", () =>
-				event.reply("decryptFileResponse", { decryptedFilePath })
+				event.reply("decryptFileResponse", {
+					decryptedFilePath,
+					error: false
+				})
 			);
 	});
 
@@ -188,27 +175,8 @@ function decryptFile(filePath, decryptionKey, event) {
 }
 
 /**************
- * Entry Points
+ * Window Setup
  **************/
-
-/**
- * QuickLock file encryption process.
- * @param  {String} filePath         Absolute path of file.
- * @param  {String} encryptionPhrase Passphrase for encryption that has been verified by the user already in the GUI.
- * @return {String}                  Absolute path of encrypted file.
- */
-function onFileEncryptRequest(filePath, encryptionPhrase) {
-	console.log("\nENCRYPT FILE REQUEST\n");
-	let encryptedFilePath = encryptFile(filePath, encryptionPhrase);
-	console.log(encryptedFilePath);
-	// TODO: Change file icon of new encrypted file.
-	// TODO: Reveal in Finder
-	return encryptedFilePath;
-}
-
-/**
- * CLI Integration / Main
- **/
 
 let mainWindow;
 
@@ -216,7 +184,7 @@ function createWindow() {
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
 		width: 330,
-		height: 340, // 364
+		height: 340,
 		resizable: false,
 		titleBarStyle: "hidden",
 		webPreferences: {
@@ -233,34 +201,14 @@ function createWindow() {
 	// mainWindow.webContents.openDevTools();
 }
 
-function checkIfCalledViaCLI(args) {
-	if (args && args.length > 1) {
-		return true;
-	}
-	return false;
-}
-
 app.on("ready", () => {
-	if (checkIfCalledViaCLI(process.argv)) {
-		// TODO: Parse arguments and either show encrypt or decrypt screen.
-		let filename = process.argv[process.argv.length - 1];
-		console.log(`File passed on command line: ${filename}`);
-		if (isFileEncrypted(filename)) {
-			// TODO: Open to decrypt file screen to prompt for pass
-		} else {
-			// TODO: Open to encrypt file screen to prompt for pass
-		}
-	}
-
 	createWindow();
 });
-
 app.on("activate", () => {
 	if (mainWindow === null) {
 		createWindow();
 	}
 });
-
 app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") {
 		app.quit();
@@ -269,11 +217,9 @@ app.on("window-all-closed", () => {
 
 ipcMain.on("encryptFileRequest", (event, arg) => {
 	const { filePath, password } = arg;
-	let encryptedFilePath = onFileEncryptRequest(filePath, password);
-	event.returnValue = encryptedFilePath;
+	event.returnValue = encryptFile(filePath, password);
 });
 ipcMain.on("decryptFileRequest", (event, arg) => {
 	const { filePath, password } = arg;
-	let decryptedFilePath = decryptFile(filePath, password, event);
-	event.returnValue = decryptedFilePath;
+	decryptFile(filePath, password, event);
 });

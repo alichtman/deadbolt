@@ -3,8 +3,7 @@ import "./CryptForm.css";
 
 import FileHeader from "../components/FileHeader";
 import Input from "../components/Input";
-import PrimaryButton from "../components/PrimaryButton";
-import SecondaryButton from "../components/SecondaryButton";
+import Button from "../components/Button";
 
 export default class CryptForm extends Component {
 	constructor(props) {
@@ -66,12 +65,11 @@ export default class CryptForm extends Component {
 						<span className="errorText">{errorMessage}</span>
 					) : null}
 					<div className="buttonsWrapper">
-						<PrimaryButton
+						<Button
+							isPrimary={true}
 							onClick={() => {
 								if (isDecryption) {
 									onSubmit(password);
-									// TODO: handleCrypt should return whether or not the password
-									// was valid
 								} else if (password === confirmPassword) {
 									onSubmit(password);
 								} else {
@@ -86,10 +84,10 @@ export default class CryptForm extends Component {
 							<span className="primaryButtonText">
 								{buttonText}
 							</span>
-						</PrimaryButton>
-						<SecondaryButton onClick={onAbort}>
+						</Button>
+						<Button isPrimary={false} onClick={onAbort}>
 							<span className="abortButtonText">Abort</span>
-						</SecondaryButton>
+						</Button>
 					</div>
 				</div>
 			</Fragment>
