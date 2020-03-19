@@ -46,6 +46,34 @@ export default class App extends Component {
 
 	onAbort = () => this.setState(DEFAULT_STATE);
 
+	onDecrypt = password => {
+		const { filePath } = this.state;
+
+		ipcRenderer.sendSync("decryptFileRequest", {
+			filePath,
+			password
+		});
+		ipcRenderer.on("decryptFileResponse", (event, arg) => {
+			let { decryptedFilePath } = arg;
+			const isDecryptSuccessful =
+				decryptedFilePath !== "QUICKLOCK_ENCRYPTION_FAILURE";
+
+			console.log(decryptedFilePath);
+			console.log(isDecryptSuccessful);
+
+			if (isDecryptSuccessful) {
+				this.setState({
+					viewCode: 2,
+					cryptedFilePath: decryptedFilePath
+				});
+			} else {
+				this.setState({
+					viewCode: 3
+				});
+			}
+		});
+	};
+
 	render() {
 		const {
 			filePath,
@@ -54,7 +82,9 @@ export default class App extends Component {
 			cryptedFilePath,
 			viewCode
 		} = this.state;
-		const fileIsEncrypted = filePath.endsWith(".qlock");
+		const fileIsEncrypted = filePath.endsWith(".dbolt");
+
+		console.log(viewCode);
 
 		let appBody;
 		if (viewCode === 0) {
@@ -80,20 +110,7 @@ export default class App extends Component {
 			appBody = (
 				<CryptForm
 					fileName={fileName}
-					onSubmit={password => {
-						let decryptedFilePath = ipcRenderer.sendSync(
-							"decryptFileRequest",
-							{ filePath, password }
-						);
-						this.setState({
-							viewCode: 2,
-							cryptedFilePath: decryptedFilePath
-						});
-
-						return (
-							decryptedFilePath !== "QUICKLOCK_ENCRYPTION_FAILURE"
-						);
-					}}
+					onSubmit={this.onDecrypt}
 					onAbort={this.onAbort}
 					isDecryption={fileIsEncrypted}
 				/>
@@ -103,6 +120,17 @@ export default class App extends Component {
 				<SuccessScreen
 					onGoHome={() => this.setState({ viewCode: 0 })}
 					filePath={cryptedFilePath}
+				/>
+			);
+		} else if (viewCode === 3) {
+			console.log("THIS GETS HITS");
+			appBody = (
+				<CryptForm
+					fileName={fileName}
+					onSubmit={this.onDecrypt}
+					onAbort={this.onAbort}
+					isDecryption={fileIsEncrypted}
+					displayError={true}
 				/>
 			);
 		}

@@ -13,8 +13,14 @@ export default class CryptForm extends Component {
 		this.state = {
 			password: "",
 			confirmPassword: "",
-			displayError: false
+			displayError: props.displayError
 		};
+	}
+
+	componentDidUpdate(prevProps) {
+		if (this.props.displayError !== prevProps.displayError) {
+			this.setState({ displayError: this.props.displayError });
+		}
 	}
 
 	render() {
@@ -91,5 +97,6 @@ export default class CryptForm extends Component {
 }
 
 CryptForm.defaultProps = {
-	isDecryption: false
+	isDecryption: false,
+	displayError: false
 };
