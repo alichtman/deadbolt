@@ -7,9 +7,9 @@
 
 `deadbolt` removes all of the complication of encrypting and decrypting files. Select a file you'd like to encrypt, enter a password and... that's it. Decrypting the file is as easy as entering the password.
 
-`deadbolt` is built to work on `Linux`, `macOS`, and `Windows`, making it incredibly easy to share encrypted files across different platforms.
+`deadbolt` is built to work on `Linux`, `macOS`, and `Windows`, meaning that you can share encrypted files across platforms.
 
-This script can encrypt any file. To encrypt directories, compress them beforehand (`.zip`, `.tar.gz`, etc.)
+`deadbolt` can encrypt any file. To encrypt directories, compress them beforehand (`.zip`, `.tar.gz`, etc.)
 
 ## Installation
 
@@ -35,10 +35,16 @@ $ git clone https://github.com/alichtman/deadbolt.git
 $ cd deadbolt
 $ npm run preelectron-pack && npm run dist
 # macOS installation
-$ mv dist/mac/deadbolt.app /Applications/deadbolt.app
+$ mv dist/mac/Deadbolt.app /Applications/Deadbolt.app
 ```
 
-## Setting `deadbolt` as Default App for `.dbolt` Files on macOS
+## FAQ
+
+### Showing Extensions on `macOS`
+
+By default, `macOS` hides file extensions. To reduce confusion about what type each file is, I recommend configuring `macOS` to show file extensions. You can do that with the following command: `$ defaults write NSGlobalDomain AppleShowAllExtensions -bool true && killall Finder`.
+
+### Setting `deadbolt` as Default App for `.dbolt` Files on macOS
 
 You can set this app as the default app for `.dbolt` files, which means you'll be able to double-click on `.dbolt` files to open them with `deadbolt` for decryption.
 
@@ -47,15 +53,17 @@ You can set this up the first time you double-click on a `.dbolt` file, or by ri
 To do this programmatically, run the following snippet:
 
 ```bash
-# Set deadbolt as default app for .dbolt files
-$ defaults write com.apple.LaunchServices LSHandlers -array-add \
-"<dict><key>LSHandlerContentTag</key>
-<string>dbolt</string><key>LSHandlerContentTagClass</key>
-<string>public.filename-extension</string><key>LSHandlerRoleAll</key>
-<string>org.alichtman.deadbolt</string></dict>"
+$ brew install duti
+$ duti -s org.alichtman.deadbolt dyn.ah62d4rv4ge80k2xtrv4a all
+```
 
-# Restart LaunchServices
-$ /System/Library/Frameworks/CoreServices.framework/Versions/A/Framework/LaunchServices.framework/Versions/A/Support/lsregister -kill -domain local -domain system -domain user
+The output of `$ duti -x dbolt` should then be:
+
+```bash
+$ duti -x dbolt
+Deadbolt.app
+/Applications/Deadbolt.app
+org.alichtman.deadbolt
 ```
 
 ## Technical Details
