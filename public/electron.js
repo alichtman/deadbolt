@@ -136,7 +136,7 @@ function encryptFile(filePath, encryptionKey) {
  * @param  {String} decryptionKey Unverified decryption key supplied by user
  * @return {String}               Absolute path of unencrypted file.
  */
-function decryptFile(filePath, decryptionKey) {
+function decryptFile(filePath, decryptionKey, event) {
 	console.log("Extracting metadata from encrypted file.");
 	// Read salt, IV and authTag from beginning of file.
 	let salt, initializationVector, authTag;
@@ -161,20 +161,26 @@ function decryptFile(filePath, decryptionKey) {
 		);
 
 		// Handle decryption errors. This will throw if the password is incorrect.
-		try {
-			decrypt.setAuthTag(authTag);
-		} catch (err) {
-			return "QUICKLOCK_ENCRYPTION_FAILURE";
-		}
+		decrypt.setAuthTag(authTag);
 
-        // BUG: Incorrectly decrypted file still created.
+		// BUG: Incorrectly decrypted file still created.
 		console.log(`Decrypted file will be at: ${decryptedFilePath}`);
 		let write = fs.createWriteStream(decryptedFilePath);
 
 		const encryptedFile = fs.createReadStream(filePath, {
 			start: METADATA_LEN
 		});
-		encryptedFile.pipe(decrypt).pipe(write);
+		encryptedFile
+			.pipe(decrypt)
+			.on("error", () =>
+				event.reply("decryptFileResponse", {
+					decryptedFilePath: "QUICKLOCK_ENCRYPTION_FAILURE"
+				})
+			)
+			.pipe(write)
+			.on("finish", () =>
+				event.reply("decryptFileResponse", { decryptedFilePath })
+			);
 	});
 
 	return decryptedFilePath;
@@ -197,18 +203,6 @@ function onFileEncryptRequest(filePath, encryptionPhrase) {
 	// TODO: Change file icon of new encrypted file.
 	// TODO: Reveal in Finder
 	return encryptedFilePath;
-}
-
-/**
- * QuickLock file decryption process.
- * @param  {String} filePath Absolute path of file.
- * @return {Bool}            true if decryption was successful, false otherwise.
- */
-function onFileDecryptRequest(filePath, decryptionPhrase) {
-	console.log("\nDECRYPT FILE REQUEST\n");
-	let decryptedFilePath = decryptFile(filePath, decryptionPhrase);
-	console.log("decryptedFilePath:", decryptedFilePath);
-	return decryptedFilePath;
 }
 
 /**
@@ -235,7 +229,7 @@ function createWindow() {
 			: `file://${path.join(__dirname, "../build/index.html")}`
 	);
 	mainWindow.on("closed", () => (mainWindow = null));
-	// mainWindow.webContents.openDevTools();
+	mainWindow.webContents.openDevTools();
 }
 
 function checkIfCalledViaCLI(args) {
@@ -279,6 +273,6 @@ ipcMain.on("encryptFileRequest", (event, arg) => {
 });
 ipcMain.on("decryptFileRequest", (event, arg) => {
 	const { filePath, password } = arg;
-	let decryptedFilePath = onFileDecryptRequest(filePath, password);
+	let decryptedFilePath = decryptFile(filePath, password, event);
 	event.returnValue = decryptedFilePath;
 });
