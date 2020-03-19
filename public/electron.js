@@ -167,6 +167,7 @@ function decryptFile(filePath, decryptionKey) {
 			return "QUICKLOCK_ENCRYPTION_FAILURE";
 		}
 
+        // BUG: Incorrectly decrypted file still created.
 		console.log(`Decrypted file will be at: ${decryptedFilePath}`);
 		let write = fs.createWriteStream(decryptedFilePath);
 
@@ -174,8 +175,6 @@ function decryptFile(filePath, decryptionKey) {
 			start: METADATA_LEN
 		});
 		encryptedFile.pipe(decrypt).pipe(write);
-
-		return decryptedFilePath;
 	});
 
 	return decryptedFilePath;
