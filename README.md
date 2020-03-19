@@ -1,45 +1,40 @@
-# deadbolt 
-> Encryption -- so simple your mom can do it.
-
-This tool removes all of the complication of encrypting and decrypting files. Simply select or drop in file you'd like to encrypt, enter a password and you're done. To decrypt, just double click on the file and enter a password.
-
-This app should work on `Linux`, `macOS`, and `Windows`, making it incredibly easy to share encrypted files across different platforms.
-
-This script can encrypt any file. To encrypt directories, compress them beforehand (`.zip`, `.tar.gz`, etc.)
-
-Here's a quick demo:
-
 <h1 align="center">
-  <img src="img/demo.gif" width="80%" />
+  <img src="img/deadbolt-header.png" width="80%" />
   <br />
 </h1>
 
+> Encryption -- so simple your mom can do it.
+
+`deadbolt` removes all of the complication of encrypting and decrypting files. Select a file you'd like to encrypt, enter a password and... that's it. Decrypting the file is as easy as entering the password.
+
+`deadbolt` is built to work on `Linux`, `macOS`, and `Windows`, making it incredibly easy to share encrypted files across different platforms.
+
+This script can encrypt any file. To encrypt directories, compress them beforehand (`.zip`, `.tar.gz`, etc.)
+
 ## Installation
 
-You can install `deadbolt` in a few ways. Choose the one that best suits you.
+There are three ways to install `deadbolt`.
 
-### Manually Install from GitHub Releases
+### Homebrew (Recommended)
 
-Download the latest release from the [deadbolt GitHub Releases](https://github.com/alichtman/deadbolt/releases) page.
-
-### Homebrew Install
+If you're on `macOS`, `Linux` or `Windows` (with `WSL`), this is the recommended installation method. The `Homebrew` formula will install the latest version for your OS.
 
 ```bash
 $ brew install alichtman/taps/deadbolt
 ```
 
-### npm Install
+### GitHub Releases
 
-```bash
-$ npm install -g deadbolt
-```
+Download the latest release from the [deadbolt GitHub Releases](https://github.com/alichtman/deadbolt/releases) page.
 
-### Manually Instill with git 
+
+### git 
 
 ```bash
 $ git clone https://github.com/alichtman/deadbolt.git
 $ cd deadbolt
 $ npm run preelectron-pack && npm run dist
+# macOS installation
 $ mv dist/mac/deadbolt.app /Applications/deadbolt.app
 ```
 
