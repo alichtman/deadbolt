@@ -3,7 +3,13 @@ import "./Input.css";
 
 export default class Input extends Component {
 	render() {
-		const { placeholder, value, onChange, inErrorMode } = this.props;
+		const {
+			placeholder,
+			value,
+			onChange,
+			inErrorMode,
+			autofocus
+		} = this.props;
 
 		return (
 			<input
@@ -12,7 +18,12 @@ export default class Input extends Component {
 				placeholder={placeholder}
 				value={value}
 				onChange={onChange}
+				autofocus={autofocus ? "true" : "false"}
 			/>
 		);
 	}
 }
+
+Input.defaultProps = {
+	autofocus: false
+};

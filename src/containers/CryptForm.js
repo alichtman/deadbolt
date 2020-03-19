@@ -48,6 +48,7 @@ export default class CryptForm extends Component {
 							this.setState({ password: event.target.value })
 						}
 						inErrorMode={displayError}
+						autofocus
 					/>
 					{!isDecryption ? (
 						<Input
