@@ -8,6 +8,7 @@ export default class Input extends Component {
 			value,
 			onChange,
 			inErrorMode,
+			onKeyPress,
 			autofocus
 		} = this.props;
 
@@ -18,12 +19,14 @@ export default class Input extends Component {
 				placeholder={placeholder}
 				value={value}
 				onChange={onChange}
-				autofocus={autofocus ? "true" : "false"}
+				autoFocus={autofocus}
+				onKeyPress={onKeyPress}
 			/>
 		);
 	}
 }
 
 Input.defaultProps = {
-	autofocus: false
+	autofocus: false,
+	onKeyPress() {}
 };

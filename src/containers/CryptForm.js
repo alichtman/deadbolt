@@ -22,8 +22,27 @@ export default class CryptForm extends Component {
 		}
 	}
 
+	onSubmitWrapper = () => {
+		const { onSubmit, isDecryption } = this.props;
+		const { password, confirmPassword } = this.state;
+
+		if (isDecryption) {
+			onSubmit(password);
+		} else if (password === confirmPassword) {
+			onSubmit(password);
+		} else {
+			this.setState({ displayError: true });
+		}
+	};
+
+	onKeyPress = event => {
+		if (event.key === "Enter") {
+			this.onSubmitWrapper();
+		}
+	};
+
 	render() {
-		const { fileName, onSubmit, onAbort, isDecryption } = this.props;
+		const { fileName, onAbort, isDecryption } = this.props;
 		const { password, confirmPassword, displayError } = this.state;
 
 		let buttonIconPath, buttonText, errorMessage;
@@ -48,6 +67,7 @@ export default class CryptForm extends Component {
 							this.setState({ password: event.target.value })
 						}
 						inErrorMode={displayError}
+						onKeyPress={this.onKeyPress}
 						autofocus
 					/>
 					{!isDecryption ? (
@@ -59,6 +79,7 @@ export default class CryptForm extends Component {
 									confirmPassword: event.target.value
 								})
 							}
+							onKeyPress={this.onKeyPress}
 							inErrorMode={displayError}
 						/>
 					) : null}
@@ -66,18 +87,7 @@ export default class CryptForm extends Component {
 						<span className="errorText">{errorMessage}</span>
 					) : null}
 					<div className="buttonsWrapper">
-						<Button
-							isPrimary={true}
-							onClick={() => {
-								if (isDecryption) {
-									onSubmit(password);
-								} else if (password === confirmPassword) {
-									onSubmit(password);
-								} else {
-									this.setState({ displayError: true });
-								}
-							}}
-						>
+						<Button isPrimary={true} onClick={this.onSubmitWrapper}>
 							<img
 								className="primaryButtonIcon"
 								src={buttonIconPath}
