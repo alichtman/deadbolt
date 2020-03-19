@@ -8,7 +8,7 @@
     "Jonathan Shobrook <shobrookj@gmail.com> (https://github.com/shobrook)"
   ],
   "main": "public/electron.js",
-  "homepage": "https://github.com/alichtman/deadbolt#readme",
+  "homepage": "./",
   "repository": {
     "type": "git",
     "url": "https://github.com/alichtman/deadbolt.git"
@@ -18,10 +18,11 @@
   },
   "build": {
     "appId": "org.alichtman.deadbolt",
-    "productName": "deadbolt",
+    "productName": "Deadbolt",
     "files": [
       "build/**/*",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "build/icon.png"
     ],
     "directories": {
       "buildResources": "assets"
@@ -29,29 +30,12 @@
     "mac": {
       "category": "public.app-category.utilities"
     },
-    "dmg": {
-      "contents": [
-        {
-          "x": 110,
-          "y": 150
-        },
-        {
-          "x": 240,
-          "y": 150,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
     "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
+      "target": "deb",
       "category": "Utility"
     },
     "win": {
-      "target": "NSIS"
+      "target": "portable"
     }
   },
   "dependencies": {
@@ -64,7 +48,7 @@
   },
   "scripts": {
     "build": "react-scripts build",
-    "dist": "electron-builder -mlw",
+    "dist": "rm -r dist/* && electron-builder -mlw",
     "eject": "react-scripts eject",
     "electron-pack": "build --em.main=build/electron.js",
     "electron-start": "electron .",
