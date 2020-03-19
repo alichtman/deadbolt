@@ -25,7 +25,7 @@ Download the latest release from the [deadbolt GitHub Releases](https://github.c
 ### Homebrew Install
 
 ```bash
-$ brew cask install deadbolt
+$ brew install alichtman/taps/deadbolt
 ```
 
 ### npm Install
