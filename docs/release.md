@@ -1,6 +1,10 @@
 # Release Process
 
-**UNTESTED**
+`deadbolt` is distributed in four ways. Three of these are managed in the `scripts/release.sh` script. `Homebrew` is managed manually.
+
+## TL;DR
+
+`$ ./scripts/release.sh` and then do the Homebrew stuff.
 
 ## Create macOS App
 
@@ -8,7 +12,7 @@
 $ npm run preelectron-pack && npm run dist
 ```
 
-The macOS installer can be found at `dist/deadbolt-0.1.0-mac.zip`.
+The macOS installer can be found at `dist/deadbolt-x.y.z-mac.zip`.
 
 ## Publish on `npm`
 
@@ -21,11 +25,7 @@ $ npm publish
 
 1. Bump the version number in `package.json`.
 2. Commit and push.
-
-```bash
-version=$(npm version | rg deadbolt | cut -d ":" -f 2 | sed s/\'//g | sed s/,//g | sed s/\ //g)
-hub release create -m "deadbolt v$version" $version
-```
+3. `$ ./scripts/github-release.sh`
 
 ## Release on Homebrew
 
