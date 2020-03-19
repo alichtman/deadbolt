@@ -7,7 +7,7 @@ export default class Input extends Component {
 
 		return (
 			<input
-				className="inputBar"
+				className={inErrorMode ? "inputBarError" : "inputBar"}
 				type="password"
 				placeholder={placeholder}
 				value={value}

@@ -48,6 +48,7 @@ export default class CryptForm extends Component {
 						onChange={event =>
 							this.setState({ password: event.target.value })
 						}
+						inErrorMode={displayError}
 					/>
 					{!isDecryption ? (
 						<Input
