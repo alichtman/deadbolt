@@ -19,6 +19,7 @@ case $n in
 esac
 
 npm version "$bump"
+git push
 
 # Build electron app
 
@@ -30,5 +31,5 @@ npm publish
 
 # Push new release to GitHub
 
-version="$(npm version | rg deadbolt | cut -d ":" -f 2 | sed s/\'//g | sed s/,//g | sed s/\ //g)"
+version=$(node -p "require('./package.json').version")
 hub release create -m "deadbolt v$version" "$version" -a dist/deadbolt-"$version"-mac.dmg

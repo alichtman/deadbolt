@@ -1,6 +1,6 @@
 {
   "name": "deadbolt-app",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "An open source encryption app that even your mom can use.",
   "license": "MIT",
   "author": "aaronlichtman@gmail.com",
@@ -49,16 +49,16 @@
     "react-scripts": "^3.3.1"
   },
   "scripts": {
-    "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "dist": "electron-builder",
     "eject": "react-scripts eject",
+    "electron-pack": "build --em.main=build/electron.js",
     "electron-start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder",
     "postinstall": "electron-builder install-app-deps",
     "preelectron-pack": "yarn build",
-    "electron-pack": "build --em.main=build/electron.js"
+    "start": "react-scripts start",
+    "test": "react-scripts test"
   },
   "eslintConfig": {
     "extends": "react-app"
