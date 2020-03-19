@@ -1,8 +1,6 @@
 #!/bin/bash
 # deadbolt release process
 
-# Increment version
-
 echo "Version increment?"
 echo "  1) Major"
 echo "  2) Minor"

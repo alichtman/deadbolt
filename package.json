@@ -1,6 +1,6 @@
 {
   "name": "deadbolt",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "An open source encryption app that even your mom can use.",
   "license": "MIT",
   "author": "Aaron Lichtman <aaronlichtman@gmail.com>",
