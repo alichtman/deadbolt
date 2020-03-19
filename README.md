@@ -68,4 +68,4 @@ org.alichtman.deadbolt
 
 ## Technical Details
 
- `deadbolt` uses `crypto.js` from the `node.js` standard library for all cryptographic operations. The `AES-256-GCM` cipher. The derived key for the cipher is created using `pbkdf2Sync`, taking in a 64B randomly generated salt and the user generated password, with 10,000 iterations, a 32B key length and `SHA512` digest. The authenticity of the data is verified with the authentication tag provided by using `GCM`.
+ `deadbolt` uses `crypto.js` from the `node.js` standard library for all cryptographic operations. `AES-256-GCM` is the default encryption algorithm used. The derived key for the cipher is created using `pbkdf2Sync`, taking in a 64B randomly generated salt and the user generated password, with 10,000 iterations, a 32B key length and `SHA512` digest. The authenticity of the data is verified with the authentication tag provided by using `GCM`.
