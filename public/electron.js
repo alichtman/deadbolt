@@ -172,11 +172,12 @@ function decryptFile(filePath, decryptionKey, event) {
 		});
 		encryptedFile
 			.pipe(decrypt)
-			.on("error", () =>
+			.on("error", () => {
+				fs.unlinkSync(decryptedFilePath);
 				event.reply("decryptFileResponse", {
 					decryptedFilePath: "QUICKLOCK_ENCRYPTION_FAILURE"
-				})
-			)
+				});
+			})
 			.pipe(write)
 			.on("finish", () =>
 				event.reply("decryptFileResponse", { decryptedFilePath })
