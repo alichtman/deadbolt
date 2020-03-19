@@ -201,9 +201,7 @@ function createWindow() {
 	// mainWindow.webContents.openDevTools();
 }
 
-app.on("ready", () => {
-	createWindow();
-});
+app.on("ready", () => createWindow());
 app.on("activate", () => {
 	if (mainWindow === null) {
 		createWindow();
