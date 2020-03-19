@@ -28,7 +28,7 @@ npm run preelectron-pack && npm run dist
 # Push new release to GitHub
 
 version=$(node -p "require('./package.json').version")
-hub release create -a "dist/Deadbolt-$version-mac.zip" -a "dist/Deadbolt $version.exe" -a "dist/deadbolt_$version_amd64.deb" -m "deadbolt v$version" "$version"
+hub release create -a "dist/Deadbolt-${version}-mac.zip" -a "dist/Deadbolt ${version}.exe" -a "dist/deadbolt_${version}_amd64.deb" -m "deadbolt v${version}" "${version}"
 
 # Homebrew
 
