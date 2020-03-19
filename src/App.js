@@ -77,13 +77,7 @@ export default class App extends Component {
 	};
 
 	render() {
-		const {
-			filePath,
-			fileName,
-			fileType,
-			cryptedFilePath,
-			viewCode
-		} = this.state;
+		const { filePath, fileName, cryptedFilePath, viewCode } = this.state;
 		const fileIsEncrypted = filePath.endsWith(".dbolt");
 
 		let appBody;
