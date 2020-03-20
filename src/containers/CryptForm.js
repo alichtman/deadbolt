@@ -39,6 +39,7 @@ export default class CryptForm extends Component {
 		if (event.key === "Enter") {
 			this.onSubmitWrapper();
 		}
+		this.setState({ displayError: false });
 	};
 
 	render() {
