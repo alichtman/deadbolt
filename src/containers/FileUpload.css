@@ -29,3 +29,11 @@
   font-size: 20px;
   letter-spacing: 1px;
 }
+
+.versionTag {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 8px;
+  color: #ffffff;
+}
