@@ -39,6 +39,10 @@
   text-overflow: ellipsis; */
 }
 
+.filePathEncrypted {
+  padding-left: 0px;
+}
+
 #fileIcon::before {
   font-size: 20px;
 }
