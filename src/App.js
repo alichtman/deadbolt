@@ -5,12 +5,11 @@ import FileUpload from "./containers/FileUpload";
 import CryptForm from "./containers/CryptForm";
 import SuccessScreen from "./containers/SuccessScreen";
 
-const { ipcRenderer } = window.require("electron");
+const { ipcRenderer, remote } = window.require("electron");
 
 const DEFAULT_STATE = {
 	filePath: "",
 	fileName: "",
-	fileType: "",
 	viewCode: 0
 };
 
@@ -31,11 +30,10 @@ export default class App extends Component {
 	/* Utilities */
 
 	setFilePath = file => {
-		const { name, path, type } = file;
+		const { name, path } = file;
 		this.setState({
 			filePath: path,
 			fileName: name,
-			fileType: type,
 			cryptedFilePath: "",
 			viewCode: 1
 		});
@@ -77,8 +75,18 @@ export default class App extends Component {
 	};
 
 	render() {
-		const { filePath, fileName, cryptedFilePath, viewCode } = this.state;
+		const { cryptedFilePath, viewCode } = this.state;
 		const fileIsEncrypted = filePath.endsWith(".dbolt");
+
+		let filePath, fileName;
+		if (remote.process.argv.length >= 2) {
+			filePath = remote.process.argv[1];
+			let splitFilePath = filePath.split("/");
+			fileName = splitFilePath[splitFilePath.length - 1];
+		} else {
+			filePath = this.state.filePath;
+			fileName = this.state.fileName;
+		}
 
 		let appBody;
 		if (viewCode === 0) {
