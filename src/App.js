@@ -76,7 +76,6 @@ export default class App extends Component {
 
 	render() {
 		const { cryptedFilePath, viewCode } = this.state;
-		const fileIsEncrypted = filePath.endsWith(".dbolt");
 
 		let filePath, fileName;
 		if (remote.process.argv.length >= 2) {
@@ -87,6 +86,8 @@ export default class App extends Component {
 			filePath = this.state.filePath;
 			fileName = this.state.fileName;
 		}
+
+		const fileIsEncrypted = filePath.endsWith(".dbolt");
 
 		let appBody;
 		if (viewCode === 0) {
