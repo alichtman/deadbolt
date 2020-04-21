@@ -28,7 +28,8 @@
       "buildResources": "assets"
     },
     "mac": {
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "target": "dmg"
     },
     "linux": {
       "target": "deb",

@@ -1,6 +1,6 @@
 # Release Process
 
-`deadbolt` is distributed in four ways. Three of these are managed in the `scripts/release.sh` script. `Homebrew` is managed manually.
+`deadbolt` is distributed in three ways. Two of these are managed in the `scripts/release.sh` script. `Homebrew` is managed manually.
 
 ## TL;DR
 
@@ -28,6 +28,3 @@ $ npm publish
 3. `$ ./scripts/github-release.sh`
 
 ## Release on Homebrew
-
-
-
