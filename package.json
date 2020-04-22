@@ -1,0 +1,81 @@
+{
+  "name": "deadbolt",
+  "version": "0.0.0",
+  "description": "An open source encryption app that even your mom can use.",
+  "license": "MIT",
+  "author": "Aaron Lichtman <aaronlichtman@gmail.com>",
+  "contributors": [
+    "Jonathan Shobrook <shobrookj@gmail.com> (https://github.com/shobrook)"
+  ],
+  "main": "public/electron.js",
+  "homepage": "./",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alichtman/deadbolt.git"
+  },
+  "bugs": {
+    "url" : "https://github.com/alichtman/deadbolt/issues"
+  },
+  "build": {
+    "appId": "org.alichtman.deadbolt",
+    "productName": "Deadbolt",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*",
+      "build/icon.png"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "deb",
+      "category": "Utility"
+    },
+    "win": {
+      "target": "portable"
+    }
+  },
+  "dependencies": {
+    "electron-is-dev": "^1.1.0",
+    "file-icons-js": "github:websemantics/file-icons-js",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-lottie": "^1.2.3",
+    "react-scripts": "^3.3.1"
+  },
+  "scripts": {
+    "build": "react-scripts build",
+    "dist": "rm -r dist/* && electron-builder -mlw",
+    "eject": "react-scripts eject",
+    "electron-pack": "build --em.main=build/electron.js",
+    "electron-start": "electron .",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "preelectron-pack": "yarn build",
+    "start": "react-scripts start",
+    "test": "react-scripts test"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^6.0.5",
+    "electron-builder": "^22.4.1"
+  }
+}

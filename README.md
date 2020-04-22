@@ -1,67 +1,71 @@
-# macOS Quick Lock
-> Bringing the simplistic style of Quick Look's file browsing to encryption.
-
-This tool removes all of the complication of encrypting and decrypting files. Simply right click on a file you'd like to encrypt, select `Quick Actions > Quick Lock` and follow the prompts. To decrypt, just double click on the file.
-
-Here's a quick demo:
-
 <h1 align="center">
-  <img src="img/demo.gif" width="80%" />
+  <img src="img/deadbolt-header.png" width="80%" />
   <br />
 </h1>
+
+> Encryption -- so simple your mom can do it.
+
+`deadbolt` removes all of the complication of encrypting and decrypting files. Select a file you'd like to encrypt, enter a password and... that's it. Decrypting the file is as easy as entering the password.
+
+`deadbolt` is built to work on `Linux`, `macOS`, and `Windows`, meaning that you can share encrypted files across platforms.
+
+`deadbolt` can encrypt any file. To encrypt directories, compress them beforehand (`.zip`, `.tar.gz`, etc.)
 
 ## Installation
 
-Open `Terminal.app` and enter the following commands:
+There are three ways to install `deadbolt`.
+
+### Homebrew (Recommended)
+
+If you're on `macOS`, `Linux` or `Windows` (with `WSL`), this is the recommended installation method. The `Homebrew` formula will install the latest version for your OS.
 
 ```bash
-$ git clone https://github.com/alichtman/macOS-quick-lock.git
-$ cd macOS-quick-lock
-$ ./install.sh
+$ brew install alichtman/taps/deadbolt
 ```
 
-You will see a prompt like this. Click `Install`:
+### GitHub Releases
 
-<h1 align="center">
-  <img src="img/do-you-want-to-install-prompt.png" width="70%" />
-  <br />
-</h1>
+Download the latest release from the [deadbolt GitHub Releases](https://github.com/alichtman/deadbolt/releases) page.
 
-After, you will see this prompt asking to allow a `Quick Action` to interact with files on your computer through Finder, which will let you to encrypt and decrypt files by right-clicking on them. Without this permission, nothing will work, so I'd recommend clicking `OK`.
 
-<h1 align="center">
-  <img src="img/ServicesUIAgent-permissions-prompt.png" width="70%" />
-  <br />
-</h1>
+### git 
 
-If you'd like to add a keyboard shortcut, go to `Preferences > Keyboard > Shortcuts > Services`.
+```bash
+$ git clone https://github.com/alichtman/deadbolt.git
+$ cd deadbolt
+$ npm run preelectron-pack && npm run dist
+# macOS installation
+$ mv dist/mac/Deadbolt.app /Applications/Deadbolt.app
+```
 
-<h1 align="center">
-  <img src="img/keyboard-shortcut.png" width="70%" />
-  <br />
-</h1>
+## FAQ
 
-This script also installs the `Quick Lock.app`. You can set this app as the default app for `.encrypted` files, which means you'll be able to double-click on files with that extension and be prompted for a decryption password. You can set this up the first time you double-click on a `.encrypted` file, or by right-clicking on a `.encrypted` file, selecting `Get Info` and changing the default app in the `Open With:` section.
+### Showing Extensions on `macOS`
 
-## Usage Notes
+By default, `macOS` hides file extensions. To reduce confusion about what type each file is, I recommend configuring `macOS` to show file extensions. You can do that with the following command: `$ defaults write NSGlobalDomain AppleShowAllExtensions -bool true && killall Finder`.
 
-- This script can encrypt any file or directory. It uses `AES-256` in `CTR` mode.
+### Setting `deadbolt` as Default App for `.dbolt` Files on macOS
 
-- After files are encrypted, they will have an extension like `.aef99d86babcf82102fa.encrypted`. This extension holds a `SHA1` hash of the decrypted file which is used to verify the decryption password you enter is correct. If you alter this extension, decryption will fail because the file hashes won't match. You'll still be able to decrypt your file on the command line with `$ openssl enc -d -aes-256-ctr -in ENCRYPTED_FILE -out DECRYPTED_FILE`, though.
+You can set this app as the default app for `.dbolt` files, which means you'll be able to double-click on `.dbolt` files to open them with `deadbolt` for decryption.
 
-## Configuration
+You can set this up the first time you double-click on a `.dbolt` file, or by right-clicking on a `.dbolt` file, selecting `Get Info` and changing the default app in the `Open With:` section.
 
-There are two options you can configure in the file `~/.quick-lock.plist`. This file is automatically created when you run the install script.
+To do this programmatically, run the following snippet:
 
-- `deleteEncryptedFileAfterDecryption`
-	* **Default**: `False`.
-	* Set this to `True` if you'd like to automatically remove the encrypted versions of successfully decrypted files.
-- `encryptedFileExtension`
-	* **Default**: `.encrypted`.
-	* Change this if you'd like to set a non-default extension for encrypted files. Note that encrypted files with an extension differing from the extension in the config file will not decrypt successfully.
+```bash
+$ brew install duti
+$ duti -s org.alichtman.deadbolt dyn.ah62d4rv4ge80k2xtrv4a all
+```
+
+The output of `$ duti -x dbolt` should then be:
+
+```bash
+$ duti -x dbolt
+Deadbolt.app
+/Applications/Deadbolt.app
+org.alichtman.deadbolt
+```
 
 ## Technical Details
 
-This script uses `openssl`'s implementation of the [`AES 256`](https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf) encryption algorithm in [Counter](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_(CTR)) (`CTR`) mode, as is recommended in Professor Rogaway's [_Evaluation of Some Blockcipher Modes of Operation_](https://web.cs.ucdavis.edu/~rogaway/papers/modes.pdf). This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents.
-
-This script uses the `openssl` `-salt`  option. This makes [Rainbow Table attacks](https://en.wikipedia.org/wiki/Rainbow_table) impractical, however, it also means that if you encrypt a file and forget the password -- that's game. Nobody can recover that file. Back up your passphrases!
+ `deadbolt` uses `crypto.js` from the `node.js` standard library for all cryptographic operations. `AES-256-GCM` is the default encryption algorithm used. The derived key for the cipher is created using `pbkdf2Sync`, taking in a 64B randomly generated salt and the user generated password, with 10,000 iterations, a 32B key length and `SHA512` digest. The authenticity of the data is verified with the authentication tag provided by using `GCM`.

@@ -1,0 +1,39 @@
+.successBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 270px;
+  margin-top: 75px;
+}
+
+.successText {
+  color: #ffffff;
+  margin-bottom: 50px;
+  font-size: 20px;
+}
+
+.buttonsWrapper {
+  position: fixed;
+  bottom: 25px;
+  width: 80%;
+}
+
+.openFinderText {
+  padding-left: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.backToQuickLockText {
+  color: #ffffff;
+  opacity: 0.5;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.backToQuickLockText:hover {
+  opacity: 1;
+}
