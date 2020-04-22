@@ -3,6 +3,13 @@
 
 set -e
 
+trap ctrl_c INT
+
+function ctrl_c() {
+        echo -e "\nWARNING: You may have to revert the last commit depending on where you exited the release process.";
+        exit;
+}
+
 echo "Version increment?"
 echo "  1) Major"
 echo "  2) Minor"
@@ -18,17 +25,20 @@ case $n in
   *) echo "Invalid option"; exit;;
 esac
 
-version=$(node -p "require('./package.json').version")
-echo "New version: ${version}"
+curr_version=$(node -p "require('./package.json').version")
+echo "Current version: ${curr_version}"
 
-npm version "$bump" -m "Version bump to v${version}"
+npm version "$bump"
+new_version=$(node -p "require('./package.json').version")
+echo "New version: ${new_version}"
 
-read -p "New version: ${version} -- Continue (y/N)?" choice
+read -p "Continue (y/N)?" choice
 case "$choice" in
   y|Y ) echo "yes";;
   n|N|* ) echo "Revert last commit!" && exit;;
 esac
 
+git commit --amend -m "Version bump to v$new_version"
 git push
 
 # Build electron app for Linux, Windows and macOS
@@ -36,8 +46,8 @@ git push
 npm run preelectron-pack && npm run dist
 
 # Push new releases to GitHub
-hub release create -a "dist/Deadbolt-${version}-mac.zip" -a "dist/Deadbolt ${version}.exe" -a "dist/deadbolt_${version}_amd64.deb" -m "deadbolt v${version}" "${version}"
+hub release create -a "dist/Deadbolt-${new_version}.dmg" -a "dist/Deadbolt ${new_version}.exe" -a "dist/deadbolt_${new_version}_amd64.deb" -m "deadbolt v${new_version}" "${new_version}"
 
 # Homebrew
 
-echo "Make sure to update the Homebrew tap with the new release.\n"
+echo -e "Make sure to update the Homebrew tap with the new release.\n"
