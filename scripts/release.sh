@@ -6,7 +6,7 @@ set -e
 trap ctrl_c INT
 
 function ctrl_c() {
-        echo "WARNING: You may have to revert the last commit depending on where you exited the release process.";
+        echo -e "\nWARNING: You may have to revert the last commit depending on where you exited the release process.";
         exit;
 }
 
@@ -50,4 +50,4 @@ hub release create -a "dist/Deadbolt-${new_version}-mac.zip" -a "dist/Deadbolt $
 
 # Homebrew
 
-echo "Make sure to update the Homebrew tap with the new release.\n"
+echo -e "Make sure to update the Homebrew tap with the new release.\n"
