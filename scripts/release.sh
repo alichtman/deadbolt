@@ -28,7 +28,7 @@ esac
 curr_version=$(node -p "require('./package.json').version")
 echo "Current version: ${curr_version}"
 
-npm version "$bump" -m "Version bump to v${version}"
+npm version "$bump"
 new_version=$(node -p "require('./package.json').version")
 echo "New version: ${new_version}"
 
@@ -38,6 +38,7 @@ case "$choice" in
   n|N|* ) echo "Revert last commit!" && exit;;
 esac
 
+git commit --amend -m "Version bump to v$new_version"
 git push
 
 # Build electron app for Linux, Windows and macOS
