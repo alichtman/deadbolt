@@ -51,3 +51,5 @@ hub release create -a "dist/Deadbolt-${new_version}.dmg" -a "dist/Deadbolt ${new
 # Homebrew
 
 echo -e "Make sure to update the Homebrew tap with the new release.\n"
+
+openssl dgst -sha256 "dist/Deadbolt-${new_version}.dmg" "dist/Deadbolt ${new_version}.exe" "dist/deadbolt_${new_version}_amd64.deb"
