@@ -14,7 +14,7 @@
     "url": "https://github.com/alichtman/deadbolt.git"
   },
   "bugs": {
-    "url" : "https://github.com/alichtman/deadbolt/issues"
+    "url": "https://github.com/alichtman/deadbolt/issues"
   },
   "build": {
     "appId": "org.alichtman.deadbolt",

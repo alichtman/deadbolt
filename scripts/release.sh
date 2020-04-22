@@ -3,6 +3,13 @@
 
 set -e
 
+trap ctrl_c INT
+
+function ctrl_c() {
+        echo "WARNING: You may have to revert the last commit depending on where you exited the release process.";
+        exit;
+}
+
 echo "Version increment?"
 echo "  1) Major"
 echo "  2) Minor"
@@ -18,12 +25,14 @@ case $n in
   *) echo "Invalid option"; exit;;
 esac
 
-version=$(node -p "require('./package.json').version")
-echo "New version: ${version}"
+curr_version=$(node -p "require('./package.json').version")
+echo "Current version: ${curr_version}"
 
 npm version "$bump" -m "Version bump to v${version}"
+new_version=$(node -p "require('./package.json').version")
+echo "New version: ${new_version}"
 
-read -p "New version: ${version} -- Continue (y/N)?" choice
+read -p "Continue (y/N)?" choice
 case "$choice" in
   y|Y ) echo "yes";;
   n|N|* ) echo "Revert last commit!" && exit;;
@@ -36,7 +45,7 @@ git push
 npm run preelectron-pack && npm run dist
 
 # Push new releases to GitHub
-hub release create -a "dist/Deadbolt-${version}-mac.zip" -a "dist/Deadbolt ${version}.exe" -a "dist/deadbolt_${version}_amd64.deb" -m "deadbolt v${version}" "${version}"
+hub release create -a "dist/Deadbolt-${new_version}-mac.zip" -a "dist/Deadbolt ${new_version}.exe" -a "dist/deadbolt_${new_version}_amd64.deb" -m "deadbolt v${new_version}" "${new_version}"
 
 # Homebrew
 
