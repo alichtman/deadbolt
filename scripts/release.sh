@@ -1,6 +1,8 @@
 #!/bin/bash
 # deadbolt release process
 
+set -e
+
 echo "Version increment?"
 echo "  1) Major"
 echo "  2) Minor"
@@ -16,16 +18,24 @@ case $n in
   *) echo "Invalid option"; exit;;
 esac
 
-npm version "$bump"
+version=$(node -p "require('./package.json').version")
+echo "New version: ${version}"
+
+npm version "$bump" -m "Version bump to v${version}"
+
+read -p "New version: ${version} -- Continue (y/N)?" choice
+case "$choice" in
+  y|Y ) echo "yes";;
+  n|N|* ) echo "Revert last commit!" && exit;;
+esac
+
 git push
 
 # Build electron app for Linux, Windows and macOS
 
 npm run preelectron-pack && npm run dist
 
-# Push new release to GitHub
-
-version=$(node -p "require('./package.json').version")
+# Push new releases to GitHub
 hub release create -a "dist/Deadbolt-${version}-mac.zip" -a "dist/Deadbolt ${version}.exe" -a "dist/deadbolt_${version}_amd64.deb" -m "deadbolt v${version}" "${version}"
 
 # Homebrew
