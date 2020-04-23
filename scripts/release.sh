@@ -51,5 +51,6 @@ hub release create -a "dist/Deadbolt-${new_version}.dmg" -a "dist/Deadbolt ${new
 # Homebrew
 
 echo -e "Make sure to update the Homebrew tap with the new release.\n"
+echo -e "This PR is for adding this to the main homebrew cask repository: https://github.com/Homebrew/homebrew-cask/pull/81197"
 
-openssl dgst -sha256 "dist/Deadbolt-${new_version}.dmg" "dist/Deadbolt ${new_version}.exe" "dist/deadbolt_${new_version}_amd64.deb"
+openssl dgst -sha256 "dist/Deadbolt-${new_version}.dmg"

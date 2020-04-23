@@ -3,7 +3,7 @@
   <br />
 </h1>
 
-> Encryption -- so simple your mom can do it.
+> Because encryption shouldn't be so hard.
 
 `deadbolt` removes all of the complication of encrypting and decrypting files. Select a file you'd like to encrypt, enter a password and... that's it. Decrypting the file is as easy as entering the password.
 
