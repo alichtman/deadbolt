@@ -13,30 +13,17 @@
 
 ## Installation
 
-There are three ways to install `deadbolt`.
+There are two recommended ways to install `deadbolt`.
 
-### Homebrew (Recommended)
-
-If you're on `macOS`, `Linux` or `Windows` (with `WSL`), this is the recommended installation method. The `Homebrew` formula will install the latest version for your OS.
+### Homebrew (Recommended for `macOS`)
 
 ```bash
-$ brew install alichtman/taps/deadbolt
+$ brew cask install alichtman/taps/deadbolt
 ```
 
-### GitHub Releases
+### GitHub Releases (Recommended for `Linux` and `Windows`)
 
 Download the latest release from the [deadbolt GitHub Releases](https://github.com/alichtman/deadbolt/releases) page.
-
-
-### git 
-
-```bash
-$ git clone https://github.com/alichtman/deadbolt.git
-$ cd deadbolt
-$ npm run preelectron-pack && npm run dist
-# macOS installation
-$ mv dist/mac/Deadbolt.app /Applications/Deadbolt.app
-```
 
 ## FAQ
 
@@ -68,4 +55,4 @@ org.alichtman.deadbolt
 
 ## Technical Details
 
- `deadbolt` uses `crypto.js` from the `node.js` standard library for all cryptographic operations. `AES-256-GCM` is the default encryption algorithm used. The derived key for the cipher is created using `pbkdf2Sync`, taking in a 64B randomly generated salt and the user generated password, with 10,000 iterations, a 32B key length and `SHA512` digest. The authenticity of the data is verified with the authentication tag provided by using `GCM`.
+ `deadbolt` uses `AES-256-GCM` as the encryption algorithms from `crypto.js` in the `node.js` standard library. The derived key for the cipher is created using 10,000 iterations of `pbkdf2Sync`, taking in a 64B randomly generated salt, the user generated password, a 32B key length and `SHA512` digest. The authenticity of the data is verified with the authentication tag provided by using `GCM`.
