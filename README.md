@@ -18,7 +18,7 @@ There are two recommended ways to install `deadbolt`.
 ### Homebrew (Recommended for `macOS`)
 
 ```bash
-$ brew cask install alichtman/taps/deadbolt
+$ brew cask install deadbolt
 ```
 
 ### GitHub Releases (Recommended for `Linux` and `Windows`)
