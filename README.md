@@ -3,27 +3,25 @@
   <br />
 </h1>
 
-> Because encryption shouldn't be so hard.
+`deadbolt` removes all the complication of encrypting and decrypting files. Select a file to encrypt, enter a password, and … that’s it. Decrypting the file is as simple as entering the password.
 
-`deadbolt` removes all of the complication of encrypting and decrypting files. Select a file you'd like to encrypt, enter a password and... that's it. Decrypting the file is as easy as entering the password.
+You can download `deadbolt` for **Mac OS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
 
-`deadbolt` is built to work on `Linux`, `macOS`, and `Windows`, meaning that you can share encrypted files across platforms.
-
-`deadbolt` can encrypt any file. To encrypt directories, compress them beforehand (`.zip`, `.tar.gz`, etc.)
+> Note: `deadbolt` can only encrypt files. To encrypt a directory, compress it into a .zip file before using `deadbolt`.
 
 ## Installation
 
-There are two recommended ways to install `deadbolt`.
-
-### Homebrew (Recommended for `macOS`)
+If you're running **Mac OS**, install `deadbolt` with Homebrew:
 
 ```bash
 $ brew cask install deadbolt
 ```
 
-### GitHub Releases (Recommended for `Linux` and `Windows`)
+If you're running **Windows** or **Linux**, download the latest release [here.](https://github.com/alichtman/deadbolt/releases)
 
-Download the latest release from the [deadbolt GitHub Releases](https://github.com/alichtman/deadbolt/releases) page.
+## How it Works
+
+`deadbolt` is built on Electron and uses crypto.js from the node.js standard library. The encryption protocol used is AES-256-GCM. The derived key for the cipher is created using 10,000 iterations of pbkdf2Sync, taking in a 64B randomly generated salt, the user generated password, a 32B key length and SHA512 digest. The authenticity of the data is verified with the authentication tag provided by using GCM.
 
 ## FAQ
 
@@ -52,7 +50,3 @@ Deadbolt.app
 /Applications/Deadbolt.app
 org.alichtman.deadbolt
 ```
-
-## Technical Details
-
- `deadbolt` uses `AES-256-GCM` as the encryption algorithms from `crypto.js` in the `node.js` standard library. The derived key for the cipher is created using 10,000 iterations of `pbkdf2Sync`, taking in a 64B randomly generated salt, the user generated password, a 32B key length and `SHA512` digest. The authenticity of the data is verified with the authentication tag provided by using `GCM`.
