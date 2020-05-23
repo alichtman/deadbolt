@@ -1,9 +1,6 @@
 # deadbolt
 
-<h1 align="center">
-  <img src="img/deadbolt-header.png" width="80%" />
-  <br />
-</h1>
+<img src="img/deadbolt-header.png" />
 
 `deadbolt` removes all the complication of encrypting and decrypting files. Select a file to encrypt, enter a password, and … that’s it. Decrypting the file is as simple as entering the password.
 
