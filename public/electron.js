@@ -62,7 +62,7 @@ function createDerivedKey(salt, encryptionKey) {
 		encryptionKey,
 		salt,
 		(iterations = 10000),
-		(keylen = 32),
+		(keylen = 32), // This value is in bytes
 		(digest = "sha512")
 	);
 }
