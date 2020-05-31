@@ -26,7 +26,7 @@ If you're running **Windows** or **Linux**, download the latest release [here.](
 
 ### Technical Version
 
-`deadbolt` is built on Electron and uses crypto.js from the node.js standard library. The encryption protocol used is AES-256-GCM. This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents. The derived key for the cipher is created using 11,000 iterations of `pbkdf2Sync`, taking in a 64B randomly generated salt, the user generated password, a 32-byte (256-bit) key length and SHA512 digest. The authenticity of the data is verified with the authentication tag provided by using GCM. These parameters were chosen by following the [NIST Guidelines for pbkdf2](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf).
+`deadbolt` is built on Electron and uses crypto.js from the node.js standard library. The encryption protocol used is AES-256-GCM. This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents. A 256-bit derived key for the cipher is created using 11,000 iterations of `pbkdf2Sync` with the SHA-512 HMAC digest algorithm, a 64-byte randomly generated salt, and a user generated password. The authenticity of the data is verified with the authentication tag provided by using GCM. These parameters were chosen by following the [NIST Guidelines for pbkdf2](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf).
 
 ## FAQ
 
