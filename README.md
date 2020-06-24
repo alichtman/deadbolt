@@ -2,7 +2,9 @@
 
 <img src="img/deadbolt-header.png" />
 
-`deadbolt` removes all the complication of encrypting and decrypting files. Select a file to encrypt, enter a password, and … that’s it. Decrypting the file is as simple as entering the password.
+`deadbolt` simplifies encrypting and decrypting files. All you need is a password. 
+
+Select a file to encrypt, enter a password, and … that’s it. Decryption is just as easy.
 
 You can download `deadbolt` for **Mac OS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
 
@@ -17,6 +19,8 @@ $ brew cask install deadbolt
 ```
 
 If you're running **Windows** or **Linux**, download the latest release [here.](https://github.com/alichtman/deadbolt/releases)
+
+> I'm working on packaging it for `snap`, `apt` and AppImage, as well as `aur`. 
 
 ## How it Works
 
