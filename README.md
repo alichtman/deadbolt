@@ -8,7 +8,7 @@ Select a file to encrypt, enter a password, and … that’s it. Decryption is j
 
 You can download `deadbolt` for **Mac OS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
 
-> Note: `deadbolt` can only encrypt files. To encrypt a directory, compress it into a .zip file before using `deadbolt`.
+> Note: `deadbolt` can not encrypt directories. To encrypt a directory, compress it into a `.zip` (or any archive format) file before using `deadbolt`.
 
 ## Installation
 
