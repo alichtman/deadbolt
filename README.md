@@ -15,7 +15,7 @@ You can download `deadbolt` for **Mac OS**, **Windows**, or **Linux**. Any encry
 If you're running **Mac OS**, install `deadbolt` with Homebrew:
 
 ```bash
-$ brew cask install deadbolt
+$ brew install --cask deadbolt
 ```
 
 If you're running **Windows** or **Linux**, download the latest release [here.](https://github.com/alichtman/deadbolt/releases)
