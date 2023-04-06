@@ -190,9 +190,7 @@ function createWindow() {
         titleBarStyle: "hidden",
         webPreferences: {
             nodeIntegration: true,
-            nodeIntegrationInWorker: true,
             contextIsolation: false,
-            enableRemoteModule: true, 
         }
     });
 

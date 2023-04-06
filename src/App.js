@@ -45,7 +45,6 @@ export default class App extends Component {
 
     onEncrypt = password => {
         const { filePath } = this.state;
-        // const encryptedFilePath = window.electronAPI.encryptFileRequest(filePath, password);
         const encryptedFilePath = ipcRenderer.sendSync("encryptFileRequest", {
             filePath,
             password
