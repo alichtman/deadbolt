@@ -29,13 +29,8 @@
     },
     "mac": {
       "category": "public.app-category.utilities",
-      "target": "dmg"
+      "target": "zip"
     },
-    "deb": {},
-    "snap": {
-      "confinement": "classic"
-    },
-    "appImage": {},
     "linux": {
       "target": "deb",
       "category": "Utility"
@@ -54,7 +49,7 @@
   },
   "scripts": {
     "build": "export NODE_OPTIONS=--openssl-legacy-provider; react-scripts build",
-    "dist": "rm -rf dist/* && electron-builder",
+    "dist": "rm -rf dist/* && electron-builder -mlw",
     "eject": "react-scripts eject",
     "electron-pack": "build --em.main=build/electron.js",
     "electron-start": "electron . --inspect=5858",
@@ -81,6 +76,6 @@
   },
   "devDependencies": {
     "electron": "^19.0.7",
-    "electron-builder": "^22.4.1"
+    "electron-builder": "^22.14.13"
   }
 }
