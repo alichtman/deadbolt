@@ -14,32 +14,42 @@ echo "Version increment?"
 echo "  1) Major"
 echo "  2) Minor"
 echo "  3) Patch"
+echo "  4) None! Version bumped already."
 
 bump=""
 
-read n
+read -r n
 case $n in
   1) bump="major";;
   2) bump="minor";;
   3) bump="patch";;
+  4) bump="NONE";;
   *) echo "Invalid option"; exit;;
 esac
 
 curr_version=$(node -p "require('./package.json').version")
 echo "Current version: ${curr_version}"
 
-npm version "$bump"
-new_version=$(node -p "require('./package.json').version")
-echo "New version: ${new_version}"
+if [ "$bump" == "NONE" ]; then
+  echo "Skipping version bump."
+else
+  echo "Bumping version..."
+  npm version "$bump"
+fi
 
-read -p "Continue (y/N)?" choice
+new_version=$(node -p "require('./package.json').version")
+echo "Publishing version: ${new_version}"
+
+read -r -p "Continue (y/N)?" choice
 case "$choice" in
   y|Y ) echo "yes";;
   n|N|* ) echo "Revert last commit!" && exit;;
 esac
 
-git commit --amend -m "Version bump to v$new_version"
-git push
+if [ "$bump" != "NONE" ]; then
+  git commit --amend -m "Version bump to v$new_version"
+  git push
+fi
 
 # Build electron app for Linux, Windows and macOS
 
