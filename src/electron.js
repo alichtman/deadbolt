@@ -2,11 +2,11 @@
  * Constants
  ***********/
 
-const {app, BrowserWindow, ipcMain} = require("electron");
+const {app, BrowserWindow} = require("electron");
+const ipcMain = require('electron').ipcMain;
 const fs = require("fs");
-const crypto = require("crypto");
 const path = require("path");
-const url = require("url");
+const crypto = require("crypto");
 const isDev = require("electron-is-dev");
 
 const ENCRYPTED_FILE_EXTENSION = ".dbolt";
@@ -61,9 +61,9 @@ function createDerivedKey(salt, encryptionKey) {
     return crypto.pbkdf2Sync(
         encryptionKey,
         salt,
-        (iterations = 10000),
-        (keylen = 32), // This value is in bytes
-        (digest = "sha512")
+        10000,
+        32, // This value is in bytes
+        "sha512"
     );
 }
 
@@ -190,7 +190,9 @@ function createWindow() {
         titleBarStyle: "hidden",
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            nodeIntegrationInWorker: true,
+            contextIsolation: false,
+            enableRemoteModule: true, 
         }
     });
 
@@ -199,6 +201,7 @@ function createWindow() {
         // mainWindow.loadURL("http://localhost:3000");
         mainWindow.loadFile('build/index.html')
     } else {
+        mainWindow.loadFile('build/index.html')
     }
     // : `file://${path.join(__dirname, "../build/index.html")}`
     mainWindow.on("closed", () => (mainWindow = null));
