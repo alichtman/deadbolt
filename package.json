@@ -7,7 +7,7 @@
   "contributors": [
     "Jonathan Shobrook <shobrookj@gmail.com> (https://github.com/shobrook)"
   ],
-  "main": "src/electron.js",
+  "main": "public/electron.js",
   "homepage": "./",
   "repository": {
     "type": "git",
