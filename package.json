@@ -7,7 +7,7 @@
   "contributors": [
     "Jonathan Shobrook <shobrookj@gmail.com> (https://github.com/shobrook)"
   ],
-  "main": "public/electron.js",
+  "main": "src/electron.js",
   "homepage": "./",
   "repository": {
     "type": "git",
@@ -57,7 +57,7 @@
     "dist": "rm -rf dist/* && electron-builder",
     "eject": "react-scripts eject",
     "electron-pack": "build --em.main=build/electron.js",
-    "electron-start": "electron .",
+    "electron-start": "electron . --inspect=5858",
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps",
     "preelectron-pack": "yarn build",
