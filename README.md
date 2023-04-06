@@ -20,6 +20,21 @@ $ brew install --cask deadbolt
 
 If you're running **Windows** or **Linux**, download the latest release [here.](https://github.com/alichtman/deadbolt/releases)
 
+### Ubuntu / Debian
+
+First try:
+
+
+```bash
+$ sudo apt install deadbolt_1.0.0_amd64.deb
+```
+
+but if `apt` suggests removing `ubuntu-desktop`, etc, use: 
+
+```bash
+$ sudo apt install deadbolt_1.0.0_amd64.deb --no-install-recommends
+```
+
 > I'm working on packaging it for `snap`, `apt` and AppImage, as well as `aur`. 
 
 ## How it Works
