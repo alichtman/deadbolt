@@ -1,4 +1,4 @@
-import React, {Component} from "react";
+import React, { Component } from "react";
 import "./App.css";
 
 import FileUpload from "./containers/FileUpload";
@@ -6,7 +6,6 @@ import CryptForm from "./containers/CryptForm";
 import SuccessScreen from "./containers/SuccessScreen";
 
 const ipcRenderer = window.require("electron").ipcRenderer;
-const remote = window.require("electron").remote;
 
 const DEFAULT_STATE = {
     filePath: "",
@@ -31,7 +30,7 @@ export default class App extends Component {
     /* Utilities */
 
     setFilePath = file => {
-        const {name, path} = file;
+        const { name, path } = file;
         this.setState({
             filePath: path,
             fileName: name,
@@ -45,7 +44,7 @@ export default class App extends Component {
     onAbort = () => this.setState(DEFAULT_STATE);
 
     onEncrypt = password => {
-        const {filePath} = this.state;
+        const { filePath } = this.state;
         // const encryptedFilePath = window.electronAPI.encryptFileRequest(filePath, password);
         const encryptedFilePath = ipcRenderer.sendSync("encryptFileRequest", {
             filePath,
@@ -59,11 +58,11 @@ export default class App extends Component {
     };
 
     onDecrypt = password => {
-        const {filePath} = this.state;
+        const { filePath } = this.state;
 
-        ipcRenderer.send("decryptFileRequest", {filePath, password});
+        ipcRenderer.send("decryptFileRequest", { filePath, password });
         ipcRenderer.on("decryptFileResponse", (event, arg) => {
-            const {decryptedFilePath, error} = arg;
+            const { decryptedFilePath, error } = arg;
 
             if (!error) {
                 this.setState({
@@ -71,23 +70,17 @@ export default class App extends Component {
                     cryptedFilePath: decryptedFilePath
                 });
             } else {
-                this.setState({viewCode: 3});
+                this.setState({ viewCode: 3 });
             }
         });
     };
 
     render() {
-        const {cryptedFilePath, viewCode} = this.state;
+        const { cryptedFilePath, viewCode } = this.state;
 
         let filePath, fileName;
-        // if (remote.process.argv.length >= 2) {
-            // filePath = remote.process.argv[1];
-            // let splitFilePath = filePath.split("/");
-            // fileName = splitFilePath[splitFilePath.length - 1];
-        // } else {
-            filePath = this.state.filePath;
-            fileName = this.state.fileName;
-        // }
+        filePath = this.state.filePath;
+        fileName = this.state.fileName;
 
         const fileIsEncrypted = filePath.endsWith(".dbolt");
 
@@ -114,7 +107,7 @@ export default class App extends Component {
         } else if (viewCode === 2) {
             appBody = (
                 <SuccessScreen
-                    onGoHome={() => this.setState({viewCode: 0})}
+                    onGoHome={() => this.setState({ viewCode: 0 })}
                     filePath={cryptedFilePath}
                 />
             );
