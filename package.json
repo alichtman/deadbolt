@@ -31,6 +31,11 @@
       "category": "public.app-category.utilities",
       "target": "dmg"
     },
+    "deb": {},
+    "snap": {
+      "confinement": "classic"
+    },
+    "appImage": {},
     "linux": {
       "target": "deb",
       "category": "Utility"
@@ -48,15 +53,15 @@
     "react-scripts": "^3.3.1"
   },
   "scripts": {
-    "build": "react-scripts build",
-    "dist": "rm -r dist/* && electron-builder -mlw",
+    "build": "export NODE_OPTIONS=--openssl-legacy-provider; react-scripts build",
+    "dist": "rm -rf dist/* && electron-builder",
     "eject": "react-scripts eject",
     "electron-pack": "build --em.main=build/electron.js",
     "electron-start": "electron .",
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps",
     "preelectron-pack": "yarn build",
-    "start": "react-scripts start",
+    "start": "export NODE_OPTIONS=--openssl-legacy-provider; react-scripts start",
     "test": "react-scripts test"
   },
   "eslintConfig": {
@@ -75,7 +80,7 @@
     ]
   },
   "devDependencies": {
-    "electron": "^6.0.5",
+    "electron": "^19.0.7",
     "electron-builder": "^22.4.1"
   }
 }
