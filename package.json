@@ -7,7 +7,7 @@
   "contributors": [
     "Jonathan Shobrook <shobrookj@gmail.com> (https://github.com/shobrook)"
   ],
-  "main": "public/electron.js",
+  "main": "main.js",
   "homepage": "./",
   "repository": {
     "type": "git",
@@ -41,22 +41,27 @@
   },
   "dependencies": {
     "electron-is-dev": "^1.1.0",
-    "file-icons-js": "github:websemantics/file-icons-js",
+    "path": "^0.12.7",
+    "path-browserify": "^1.0.1",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
+    "react-file-icon": "^1.5.0",
+    "react-icons": "^5.3.0",
     "react-lottie": "^1.2.3",
-    "react-scripts": "^3.3.1"
+    "react-native-fontawesomeicon": "^1.0.1",
+    "react-scripts": "^5.0.1"
   },
   "scripts": {
-    "build": "export NODE_OPTIONS=--openssl-legacy-provider; react-scripts build",
+    "build": "react-scripts build",
     "dist": "rm -rf dist/* && electron-builder -mlw",
+    "clean": "rm -rf build/* node_modules/* dist/*",
     "eject": "react-scripts eject",
     "electron-pack": "build --em.main=build/electron.js",
     "electron-start": "electron . --inspect=5858",
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps",
     "preelectron-pack": "yarn build",
-    "start": "export NODE_OPTIONS=--openssl-legacy-provider; react-scripts start",
+    "start": "electron .",
     "test": "react-scripts test"
   },
   "eslintConfig": {
@@ -75,7 +80,12 @@
     ]
   },
   "devDependencies": {
-    "electron": "^19.0.7",
-    "electron-builder": "^22.14.13"
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "browser": {
+    "fs": false,
+    "path": false,
+    "os": false
   }
 }

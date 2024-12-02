@@ -12,7 +12,7 @@ export default class CryptForm extends Component {
 		this.state = {
 			password: "",
 			confirmPassword: "",
-			displayError: props.displayError
+			displayError: props.displayError,
 		};
 	}
 
@@ -35,7 +35,7 @@ export default class CryptForm extends Component {
 		}
 	};
 
-	onKeyPress = event => {
+	onKeyPress = (event) => {
 		if (event.key === "Enter") {
 			this.onSubmitWrapper();
 		}
@@ -64,7 +64,7 @@ export default class CryptForm extends Component {
 					<Input
 						placeholder="Enter password"
 						value={password}
-						onChange={event =>
+						onChange={(event) =>
 							this.setState({ password: event.target.value })
 						}
 						inErrorMode={displayError}
@@ -75,9 +75,9 @@ export default class CryptForm extends Component {
 						<Input
 							placeholder="Confirm password"
 							value={confirmPassword}
-							onChange={event =>
+							onChange={(event) =>
 								this.setState({
-									confirmPassword: event.target.value
+									confirmPassword: event.target.value,
 								})
 							}
 							onKeyPress={this.onKeyPress}
@@ -91,6 +91,7 @@ export default class CryptForm extends Component {
 						<Button isPrimary={true} onClick={this.onSubmitWrapper}>
 							<img
 								className="primaryButtonIcon"
+								alt="buttonIcon"
 								src={buttonIconPath}
 							/>
 							<span className="primaryButtonText">
@@ -109,5 +110,5 @@ export default class CryptForm extends Component {
 
 CryptForm.defaultProps = {
 	isDecryption: false,
-	displayError: false
+	displayError: false,
 };

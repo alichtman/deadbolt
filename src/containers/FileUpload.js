@@ -2,9 +2,7 @@ import React, { Component, Fragment } from "react";
 import "./FileUpload.css";
 
 const { version } = require("../../package.json");
-// const path = require("path");
-// const packageJSON = path.dirname(require.resolve("deadbolt")) + "/package.json";
-// const { version } = require(packageJSON);
+// const { dialog } = require("electron");
 
 export default class FileUpload extends Component {
 	constructor(props) {
@@ -12,12 +10,12 @@ export default class FileUpload extends Component {
 		this.onClick = this.onClick.bind(this);
 	}
 
-	onDragOver = event => {
+	onDragOver = (event) => {
 		event.preventDefault();
 		return false;
 	};
 
-	onClick = event => {
+	onClick = () => {
 		this.refs.fileUploader.click();
 	};
 
@@ -31,10 +29,9 @@ export default class FileUpload extends Component {
 					onDragOver={this.onDragOver}
 					onDragLeave={() => false}
 					onDragEnd={() => false}
-					onDrop={event => {
+					onDrop={(event) => {
 						event.preventDefault();
 						let file = event.dataTransfer.files[0];
-
 						return setFilePath(file);
 					}}
 					onClick={this.onClick}
@@ -43,7 +40,8 @@ export default class FileUpload extends Component {
 						type="file"
 						ref="fileUploader"
 						style={{ display: "none" }}
-						onChange={event => {
+						onChange={(event) => {
+							console.log(event.target.files[0]);
 							event.stopPropagation();
 							event.preventDefault();
 							let file = event.target.files[0];
@@ -52,7 +50,7 @@ export default class FileUpload extends Component {
 						}}
 					/>
 					<div className="fileUploadIcon">
-						<img src="./dropFileIcon.svg" />
+						<img alt="dropFileIcon" src="./dropFileIcon.svg" />
 					</div>
 					<span className="fileUploadText">Select or Drop</span>
 				</div>

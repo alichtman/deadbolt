@@ -1,21 +1,24 @@
 import React, { Component } from "react";
 import "./FileHeader.css";
-
-import "file-icons-js/css/style.css";
-import icons from "file-icons-js";
+import { FileIcon } from "react-file-icon";
+import { FaLock } from "react-icons/fa";
 
 export default class FileHeader extends Component {
 	render() {
 		const { fileName } = this.props;
-		const iconClassName = icons.getClass(fileName);
 		const fileIsEncrypted = fileName.endsWith(".dbolt");
 
 		return (
 			<div className="fileHeader">
 				<div className="fileName">
 					<span className="filePathWrapper">
-						{fileIsEncrypted ? null : (
-							<span className={iconClassName} id="fileIcon" />
+						{fileIsEncrypted ? (
+							<FaLock />
+						) : (
+							<FileIcon
+								extension={fileName.split(".").pop()}
+								{...this.props}
+							/>
 						)}
 						<span
 							className={

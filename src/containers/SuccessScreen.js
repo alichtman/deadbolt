@@ -6,23 +6,26 @@ import checkmarkAnimationData from "../checkmark.json";
 
 import Button from "../components/Button";
 
-const { shell, remote } = window.require("electron");
+// TODO: Add native file drag and drop: https://www.electronjs.org/docs/latest/tutorial/native-file-drag-drop
+
+// const { shell, remote } = window.require("electron");
 
 const animationOptions = {
 	loop: false,
 	autoplay: true,
 	animationData: checkmarkAnimationData,
 	rendererSettings: {
-		preserveAspectRatio: "xMidYMid slice"
-	}
+		preserveAspectRatio: "xMidYMid slice",
+	},
 };
 
 export default class SuccessScreen extends Component {
 	onRevealInFinder = () => {
-		const { filePath } = this.props;
-		const shellToUse = shell || remote.shell;
-
-		shellToUse.showItemInFolder(filePath);
+		return;
+		// const { filePath } = this.props;
+		// const shellToUse = shell || remote.shell;
+		//
+		// shellToUse.showItemInFolder(filePath);
 	};
 
 	render() {
