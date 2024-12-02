@@ -35,7 +35,13 @@ but if `apt` suggests removing `ubuntu-desktop`, etc, use:
 $ sudo apt install deadbolt_1.0.0_amd64.deb --no-install-recommends
 ```
 
-> I'm working on packaging it for `snap`, `apt` and AppImage, as well as `aur`. 
+### Arch
+
+`deadbolt` is [packaged as `deadbolt-bin` on aur](https://aur.archlinux.org/packages/deadbolt-bin).
+
+```bash
+$ yay -S deadbolt-bin
+```
 
 ## How it Works
 
