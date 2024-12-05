@@ -1,4 +1,4 @@
-```
-$ npm run build
-$ npm run electron-start
+```bash
+$ npm install --save
+$ npm run start
 ```

@@ -1,0 +1,91 @@
+.formBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 170px;
+  top: 10px;
+}
+
+.errorText {
+  padding-top: 8px;
+  color: #ff6978;
+  position: relative;
+
+  font-size: 12px;
+  width: 80%;
+}
+
+.buttonsWrapper {
+  position: fixed;
+  bottom: 25px;
+  width: 80%;
+}
+
+.primaryButtonText {
+  padding-left: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.abortButtonText {
+  color: #ffffff;
+  opacity: 0.5;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.abortButtonText:hover {
+  opacity: 1;
+}
+
+.fileHeader {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 70px;
+  background-color: #2a3149;
+  padding-bottom: 15px;
+}
+
+.fileName {
+  padding-top: 30px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-left: 10%;
+  width: 80%;
+}
+
+.fileName img {
+  width: 21px;
+  height: 26px;
+}
+
+.filePathWrapper {
+  color: #ffffff;
+  font-size: 22px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filePath {
+  padding-left: 8px;
+  /* white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; */
+}
+
+.filePathEncrypted {
+  padding-left: 0px;
+}
+
+#fileIcon::before {
+  font-size: 20px;
+}

@@ -1,0 +1,164 @@
+.fileUploadIcon {
+  opacity: 0.8;
+  align-items: center;
+  justify-content: center;
+  grid: flex;
+}
+
+.fileUploadIcon:hover {
+  opacity: 1;
+}
+
+.fileUploadText {
+  padding-top: 15px;
+  text-align: center;
+  /* font-family: ; */
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.fileUploadRoot {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 72%;
+  height: 130px;
+  color: #ffffff;
+}
+
+.versionTag {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.drag-drop {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.document-uploader {
+  border: 2px dashed #4282fe;
+  background-color: #f4fbff;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &.active {
+    border-color: #6dc24b;
+  }
+
+  .upload-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    svg {
+      font-size: 36px;
+      margin-right: 1rem;
+    }
+
+    div {
+      p {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      p:first-child {
+        font-weight: bold;
+      }
+    }
+  }
+
+  .file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    height: 30vh;
+
+    &__container {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+  }
+
+  .file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+
+    .file-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1;
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: #333;
+      }
+    }
+
+    .file-actions {
+      cursor: pointer;
+
+      svg {
+        font-size: 18px;
+        color: #888;
+      }
+
+      &:hover {
+        svg {
+          color: #d44;
+        }
+      }
+    }
+  }
+
+  .browse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: var(--primary-color);
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+
+  .success-file {
+    display: flex;
+    align-items: center;
+    color: #6dc24b;
+
+    p {
+      margin: 0;
+      font-size: 14px;
+      font-weight: bold;
+    }
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+}
