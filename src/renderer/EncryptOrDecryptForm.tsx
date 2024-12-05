@@ -1,13 +1,11 @@
-import React, { Fragment, useState } from "react";
-import "./EncryptOrDecryptForm.css";
-import { FileIcon } from "react-file-icon";
-import { FaLock } from "react-icons/fa";
-import PasswordInput from "./PasswordInput";
-import Button from "./Button";
-import DecryptIcon from "./assets/decryptIcon.svg";
-import EncryptIcon from "./assets/encryptIcon.svg";
-
-
+import React, { useState } from 'react';
+import './EncryptOrDecryptForm.css';
+import { FileIcon } from 'react-file-icon';
+import { FaLock } from 'react-icons/fa';
+import PasswordInput from './PasswordInput';
+import Button from './Button';
+import DecryptIcon from './assets/decryptIcon.svg';
+import EncryptIcon from './assets/encryptIcon.svg';
 
 export default function EncryptOrDecryptForm({
   isDecryption,
@@ -20,34 +18,33 @@ export default function EncryptOrDecryptForm({
   onSubmit: (filePath: string, password: string) => void;
   onCancel: () => void;
 }): React.ReactNode | null {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [displayError, setDisplayError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
 
   const onKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
+    if (event.key === 'Enter') {
       if (isDecryption) {
         onSubmit(file.path, password);
       } else if (password === confirmPassword) {
         onSubmit(file.path, password);
-      } else { // Encryption, passwords don't match
+      } else {
+        // Encryption, passwords don't match
         setDisplayError(true);
         setErrorMessage("Passwords don't match");
       }
-    };
-  }
+    }
+  };
 
   return (
-    <Fragment>
+    <div className="modal">
       <FileHeader fileName={file.path} />
       <div className="formBody">
         <PasswordInput
           placeholder="Enter password"
           value={password}
-          onChange={(event) =>
-            setPassword(event.target.value)
-          }
+          onChange={(event) => setPassword(event.target.value)}
           inErrorMode={displayError}
           onKeyPress={onKeyPress}
           autofocus
@@ -56,9 +53,7 @@ export default function EncryptOrDecryptForm({
           <PasswordInput
             placeholder="Confirm password"
             value={confirmPassword}
-            onChange={(event) =>
-              setConfirmPassword(event.target.value)
-            }
+            onChange={(event) => setConfirmPassword(event.target.value)}
             onKeyPress={onKeyPress}
             inErrorMode={displayError}
           />
@@ -67,14 +62,17 @@ export default function EncryptOrDecryptForm({
           <span className="errorText">{errorMessage}</span>
         ) : null}
         <div className="buttonsWrapper">
-          <Button isPrimary={true} onClick={() => onSubmit(file.path, password)}>
+          <Button
+            isPrimary={true}
+            onClick={() => onSubmit(file.path, password)}
+          >
             <img
               className="primaryButtonIcon"
               alt="buttonIcon"
               src={isDecryption ? DecryptIcon : EncryptIcon}
             />
             <span className="primaryButtonText">
-              {isDecryption ? "Decrypt" : "Encrypt"}
+              {isDecryption ? 'Decrypt' : 'Encrypt'}
             </span>
           </Button>
           <Button isPrimary={false} onClick={() => onCancel()}>
@@ -82,10 +80,9 @@ export default function EncryptOrDecryptForm({
           </Button>
         </div>
       </div>
-    </Fragment>
+    </div>
   );
 }
-
 
 /**
  * Renders a file header component.
@@ -93,22 +90,30 @@ export default function EncryptOrDecryptForm({
  * @param {string} fileName - The name of the file to display in the header.
  * @returns {JSX.Element | null} The file header component, or null if no file name is provided.
  */
-function FileHeader({ fileName }: { fileName: string }): React.ReactNode | null {
-  if (!fileName) { return null; }
+function FileHeader({
+  fileName,
+}: {
+  fileName: string;
+}): React.ReactNode | null {
+  if (!fileName) {
+    return null;
+  }
   return (
     <div className="fileHeader">
-      <div className="fileName">
-        <span className="filePathWrapper">
-          {fileName.endsWith(".dbolt") ? (
-            <FaLock />
-          ) : (
-            <FileIcon extension={fileName.split(".").pop()} />
-          )}
-          <span className={fileName.endsWith(".dbolt") ? "filePathEncrypted" : "filePath"}>
-            {fileName}
-          </span>
+      <span className="filepathwrapper">
+        {fileName.endsWith('.dbolt') ? (
+          <FaLock />
+        ) : (
+          <FileIcon extension={fileName.split('.').pop()} />
+        )}
+        <span
+          className={
+            fileName.endsWith('.dbolt') ? 'filePathEncrypted' : 'filePath'
+          }
+        >
+          {fileName}
         </span>
-      </div>
+      </span>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import EncryptOrDecryptForm from './EncryptOrDecryptForm';
 import SucessOrErrorModal from './SuccessOrErrorModal';
 
-export const DEADBOLT_EXTENSION = ".dbolt";
+export const DEADBOLT_EXTENSION = '.dbolt';
 
 enum ViewState {
   FILE_UPLOAD,
@@ -24,39 +24,55 @@ export function isDeadboltFile(filePath: string | undefined): boolean {
   return filePath.endsWith(DEADBOLT_EXTENSION);
 }
 
-
 export default function App() {
   // This is just a handle on the file for the path -- you can't actually read or write to it in the renderer process.
-  const [fileToWorkWith, setFileToWorkWith] = useState<File | undefined>(undefined);
-  const [pathToEncryptedFile, setPathToEncryptedFile] = useState<string | null>(null);
+  const [fileToWorkWith, setFileToWorkWith] = useState<File | undefined>(
+    undefined,
+  );
+  const [pathToEncryptedFile, setPathToEncryptedFile] = useState<string | null>(
+    null,
+  );
   const [viewState, setViewState] = useState<ViewState>(ViewState.FILE_UPLOAD);
 
-  const encryptFile = (fileName: string, password: string) => window.electronAPI.encryptFileRequest(fileName, password) as Promise<string>;
-  const decryptFile = (fileName: string, password: string) => window.electronAPI.decryptFileRequest(fileName, password) as Promise<string>;
+  const encryptFile = (fileName: string, password: string) =>
+    window.electronAPI.encryptFileRequest(
+      fileName,
+      password,
+    ) as Promise<string>;
+  const decryptFile = (fileName: string, password: string) =>
+    window.electronAPI.decryptFileRequest(
+      fileName,
+      password,
+    ) as Promise<string>;
 
   const fileIsEncrypted = isDeadboltFile(fileToWorkWith?.path);
 
   let appBody;
   if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
-    appBody = <FileUpload setFilePath={setFileToWorkWith} onChange={() => setViewState(ViewState.ENCRYPT_OR_DECRYPT)} />;
+    appBody = (
+      <FileUpload
+        setFilePath={setFileToWorkWith}
+        onChange={() => setViewState(ViewState.ENCRYPT_OR_DECRYPT)}
+      />
+    );
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && !fileIsEncrypted) {
     appBody = (
       <EncryptOrDecryptForm
         file={fileToWorkWith}
         onSubmit={(fileName, password) => {
           encryptFile(fileName, password).then((response) => {
-            if (response.startsWith("ERROR!!")) {
-              console.error("Error from encryptFile:", response);
+            if (response.startsWith('ERROR!!')) {
+              console.error('Error from encryptFile:', response);
               setViewState(ViewState.ERROR);
               return;
             }
 
             if (isDeadboltFile(response)) {
-              console.log("SUCCESS! Response from encryptFile:", response);
+              console.log('SUCCESS! Response from encryptFile:', response);
               setPathToEncryptedFile(response);
               setViewState(ViewState.SUCCESS);
             }
-          })
+          });
         }}
         onCancel={() => {
           setViewState(ViewState.FILE_UPLOAD);
@@ -85,7 +101,8 @@ export default function App() {
         isSuccess={true}
       />
     );
-  } else if (viewState === ViewState.ERROR) { // Some error
+  } else if (viewState === ViewState.ERROR) {
+    // Some error
     appBody = (
       <SucessOrErrorModal
         onGoHome={() => {
@@ -98,14 +115,11 @@ export default function App() {
     );
   }
 
-
   return (
-    <>
-      {/* <div className="deadbolt">deadbolt</div> */}
-
+    <div className="app">
       <br />
 
       {appBody}
-    </>
+    </div>
   );
 }

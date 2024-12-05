@@ -8,6 +8,13 @@
   top: 10px;
 }
 
+.modal {
+  height: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
 .errorText {
   padding-top: 8px;
   color: #ff6978;
@@ -68,7 +75,7 @@
 
 .filePathWrapper {
   color: #ffffff;
-  font-size: 22px;
+  font-size: 18px;
   letter-spacing: 1px;
   white-space: nowrap;
   overflow: hidden;
