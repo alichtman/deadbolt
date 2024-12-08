@@ -39,6 +39,7 @@ export default function SuccessOrErrorModal({ onGoHome, encryptedFilePath, isSuc
             <Button
               isPrimary={true}
               onClick={() => {
+                // TODO: Expose this as an IPC thing
                 // shell.showItemInFolder(encryptedFilePath);
               }}
             >

@@ -93,7 +93,7 @@ export default function App() {
       <EncryptOrDecryptForm
         file={fileToWorkWith}
         onSubmit={decryptFile}
-        onCancel={() => ViewState.FILE_UPLOAD}
+        onCancel={() => setViewState(ViewState.FILE_UPLOAD)}
         isDecryption={fileIsEncrypted}
       />
     );
