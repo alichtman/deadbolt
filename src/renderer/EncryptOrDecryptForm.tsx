@@ -7,6 +7,7 @@ import Button from './Button';
 import DecryptIcon from './assets/decryptIcon.svg';
 import EncryptIcon from './assets/encryptIcon.svg';
 
+
 export default function EncryptOrDecryptForm({
   isDecryption,
   file,
@@ -95,24 +96,28 @@ function FileHeader({
 }: {
   fileName: string;
 }): React.ReactNode | null {
+  const [prettyFilePath, setPrettyFilePath] = useState<string | undefined>(fileName);
   if (!fileName) {
     return null;
   }
+ (window.electronAPI.prettyPrintFilePath(
+      fileName,
+    ) as Promise<string>).then((result) => setPrettyFilePath(result));
   return (
     <div className="fileHeader">
-      <span className="filepathwrapper">
-        {fileName.endsWith('.dbolt') ? (
-          <FaLock />
-        ) : (
-          <FileIcon extension={fileName.split('.').pop()} />
-        )}
-        <span
-          className={
-            fileName.endsWith('.dbolt') ? 'filePathEncrypted' : 'filePath'
-          }
-        >
-          {fileName}
-        </span>
+      <div className="fileHeaderImage">
+      {fileName.endsWith('.dbolt') ? (
+        <FaLock />
+      ) : (
+        <FileIcon extension={fileName.split('.').pop()} />
+      )}
+      </div>
+      <span
+        className={
+          fileName.endsWith('.dbolt') ? 'filePathEncrypted' : 'filePath'
+        }
+      >
+        {prettyFilePath}
       </span>
     </div>
   );

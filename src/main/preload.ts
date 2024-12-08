@@ -4,5 +4,6 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   encryptFileRequest: (filePath: string, password: string) => ipcRenderer.invoke('encryptFileRequest', [filePath, password]),
-  decryptFileRequest: (filePath: string, password: string) => ipcRenderer.invoke('decryptFileRequest', [filePath, password])
-})
+  decryptFileRequest: (filePath: string, password: string) => ipcRenderer.invoke('decryptFileRequest', [filePath, password]),
+  prettyPrintFilePath: (filePath: string | undefined) => ipcRenderer.invoke('prettyPrintFilePath', [filePath]),
+});

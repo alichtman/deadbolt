@@ -9,6 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
+import { homedir } from 'os';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -26,7 +27,7 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-ipcMain.handle("encryptFileRequest", (event, [filePath, password]) => {
+ipcMain.handle("encryptFileRequest", (_event, [filePath, password]) => {
   console.log("encryptFileRequest", "{", filePath, "} with password: ", password);
   try {
     const encryptedFilePath = encryptFile(filePath, password);
@@ -37,8 +38,19 @@ ipcMain.handle("encryptFileRequest", (event, [filePath, password]) => {
     return "ERROR!!";
   }
 });
-ipcMain.handle("decryptFileRequest", (event, [filePath, password]) => {
+
+ipcMain.handle("decryptFileRequest", (_event, [filePath, password]) => {
   decryptFile(filePath, password)
+});
+
+ipcMain.handle("prettyPrintFilePath", (_event, [filePath]) => {
+  console.log("prettyPrintFilePath", "{", filePath, "}");
+  // If poth starts with os.getHomeDir(), replace it with '~'
+  if (filePath.startsWith(homedir())) {
+    filePath = filePath.replace(homedir(), '~');
+  }
+
+  return filePath;
 });
 
 

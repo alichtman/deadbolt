@@ -5,14 +5,14 @@ import packageInfo from '../../package.json';
 import dropFileIcon from './assets/dropFileIcon.svg';
 
 export default function FileUpload({
-  setFilePath,
+  setFileToWorkWith,
   onChange,
 }: {
-  setFilePath: (file: File) => void;
+  setFileToWorkWith: (file: File) => void;
   onChange: () => void;
 }) {
-  const onDropAccepted = (files: File[], event: DropEvent) => {
-    setFilePath(files[0]);
+  const onDropAccepted = (files: File[], _event: DropEvent) => {
+    setFileToWorkWith(files[0]);
     console.log(files[0]);
     onChange();
   };

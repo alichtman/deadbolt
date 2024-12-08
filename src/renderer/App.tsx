@@ -1,6 +1,6 @@
 import './App.css';
 import FileUpload from './FileUpload';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import EncryptOrDecryptForm from './EncryptOrDecryptForm';
 import SucessOrErrorModal from './SuccessOrErrorModal';
 
@@ -33,6 +33,7 @@ export default function App() {
     null,
   );
   const [viewState, setViewState] = useState<ViewState>(ViewState.FILE_UPLOAD);
+  const [fileIsEncrypted, setFileIsEncrypted] = useState(false);
 
   const encryptFile = (fileName: string, password: string) =>
     window.electronAPI.encryptFileRequest(
@@ -45,14 +46,20 @@ export default function App() {
       password,
     ) as Promise<string>;
 
-  const fileIsEncrypted = isDeadboltFile(fileToWorkWith?.path);
+  useEffect(() => {
+    console.log('Inside useEffect -- fileToWorkWith:', fileToWorkWith);
+    setFileIsEncrypted(isDeadboltFile(fileToWorkWith?.path));
+    console.log('File is encrypted!!', fileIsEncrypted);
+  }, [fileToWorkWith]);
 
   let appBody;
   if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
     appBody = (
       <FileUpload
-        setFilePath={setFileToWorkWith}
-        onChange={() => setViewState(ViewState.ENCRYPT_OR_DECRYPT)}
+        setFileToWorkWith={setFileToWorkWith}
+        onChange={() => {
+          setViewState(ViewState.ENCRYPT_OR_DECRYPT);
+        }}
       />
     );
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && !fileIsEncrypted) {
