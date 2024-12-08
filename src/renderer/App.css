@@ -6,12 +6,9 @@ body {
   position: relative;
   color: white;
   height: 100vh;
-  background: linear-gradient(
-    200.96deg,
-    #fedc2a -29.09%,
-    #dd5789 51.77%,
-    #7a2c9e 129.35%
-  );
+  background: linear-gradient(45deg,
+      rgba(40, 47, 68, 1) 0%,
+      rgba(81, 92, 121, 1) 100%);
   font-family: sans-serif;
   overflow-y: hidden;
   display: flex;
@@ -37,10 +34,6 @@ button {
 button:hover {
   transform: scale(1.05);
   opacity: 1;
-}
-
-li {
-  list-style: none;
 }
 
 a {
@@ -77,9 +70,4 @@ div {
   justify-content: center;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    45deg,
-    rgba(40, 47, 68, 1) 0%,
-    rgba(81, 92, 121, 1) 100%
-  );
 }
