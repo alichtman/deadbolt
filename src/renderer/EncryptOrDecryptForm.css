@@ -1,15 +1,14 @@
 .formBody {
-  position: relative;
+  /* position: relative; */
   display: flex;
   flex-direction: column;
-  align-items: center;
   width: 100%;
   height: 170px;
   top: 10px;
 }
 
 .modal {
-  height: 30%;
+  margin-top: 16px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -52,14 +51,15 @@
 }
 
 .fileHeader {
-  position: absolute;
+  position: fixed;
   top: 0;
   display: flex;
   align-items: center;
   width: 100%;
   height: 70px;
   background-color: #2a3149;
-  padding-bottom: 15px;
+  padding-bottom: 10px;
+  padding-top: 10px;
 }
 
 /* .fileHeader {
@@ -88,8 +88,8 @@
 }
 
 .fileHeaderImage {
-  width: 21px;
-  height: 26px;
+  width: 50px;
+  height: 50px;
 }
 
 .filePath {

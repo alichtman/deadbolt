@@ -8,11 +8,20 @@ body {
   background: linear-gradient(45deg,
       rgba(40, 47, 68, 1) 0%,
       rgba(81, 92, 121, 1) 100%);
-  font-family: sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-y: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
 }
 
 button {
@@ -45,17 +54,6 @@ a {
 a:hover {
   opacity: 1;
   text-decoration: none;
-}
-
-.titlebar {
-  width: 100%;
-  height: 32px;
-  background-color: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  -webkit-user-select: none;
-  -webkit-app-region: drag;
 }
 
 div {

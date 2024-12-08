@@ -101,6 +101,10 @@ function FileHeader({
     return null;
   }
   // This looks gross, but ... direct consequences of choosing to write this on top of Electron
+  // We can't import ths os module (or anything that interacts with the filesystem) in the renderer process.
+
+  // TODO: Pass the window width in here to figure out where to middle truncate to make the path fit.
+  //       Currently, we swap out $HOME at the beginning, and then pray that it all fits.
  (window.electronAPI.prettyPrintFilePath(
       fileName,
     ) as Promise<string>).then((result) => setPrettyFilePath(result));
