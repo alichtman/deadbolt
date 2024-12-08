@@ -15,11 +15,19 @@
 }
 
 .secondaryButton {
+  height: 30px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   width: 100%;
   cursor: pointer;
-  padding-top: 15px;
+  padding-top: 4px;
+  margin-top: 10px;
+}
+
+.secondaryButton:hover {
+  opacity: 1;
+  background-color: #db3830;
+  border-radius: 5px;
 }

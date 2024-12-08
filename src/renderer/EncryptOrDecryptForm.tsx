@@ -77,7 +77,7 @@ export default function EncryptOrDecryptForm({
             </span>
           </Button>
           <Button isPrimary={false} onClick={() => onCancel()}>
-            <span className="abortButtonText">Cancel</span>
+            <span className="cancelButtonText">Cancel</span>
           </Button>
         </div>
       </div>
@@ -100,6 +100,7 @@ function FileHeader({
   if (!fileName) {
     return null;
   }
+  // This looks gross, but ... direct consequences of choosing to write this on top of Electron
  (window.electronAPI.prettyPrintFilePath(
       fileName,
     ) as Promise<string>).then((result) => setPrettyFilePath(result));

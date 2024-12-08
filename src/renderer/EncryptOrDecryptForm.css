@@ -19,13 +19,13 @@
   padding-top: 8px;
   color: #ff6978;
   position: relative;
-
   font-size: 12px;
   width: 80%;
 }
 
 .buttonsWrapper {
   position: fixed;
+  flex-direction: column;
   bottom: 25px;
   width: 80%;
 }
@@ -37,15 +37,17 @@
   font-weight: 500;
 }
 
-.abortButtonText {
+.cancelButtonText {
   color: #ffffff;
   opacity: 0.5;
   font-size: 14px;
   font-weight: 500;
+  padding-bottom: 4px;
 }
 
-.abortButtonText:hover {
+.cancelButtonText:hover {
   opacity: 1;
+  color: #2a3149
 }
 
 .fileHeader {

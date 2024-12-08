@@ -3,7 +3,6 @@
  *        See https://github.com/webpack-contrib/sass-loader#imports
  */
 body {
-  position: relative;
   color: white;
   height: 100vh;
   background: linear-gradient(45deg,
