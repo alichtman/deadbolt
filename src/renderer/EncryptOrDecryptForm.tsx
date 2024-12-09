@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import './EncryptOrDecryptForm.css';
 import { FileIcon } from 'react-file-icon';
 import { FaLock } from 'react-icons/fa';
@@ -6,7 +6,6 @@ import PasswordInput from './PasswordInput';
 import Button from './Button';
 import DecryptIcon from './assets/decryptIcon.svg';
 import EncryptIcon from './assets/encryptIcon.svg';
-
 
 export default function EncryptOrDecryptForm({
   isDecryption,
@@ -96,7 +95,9 @@ function FileHeader({
 }: {
   fileName: string;
 }): React.ReactNode | null {
-  const [prettyFilePath, setPrettyFilePath] = useState<string | undefined>(fileName);
+  const [prettyFilePath, setPrettyFilePath] = useState<string | undefined>(
+    fileName,
+  );
   if (!fileName) {
     return null;
   }
@@ -105,17 +106,20 @@ function FileHeader({
 
   // TODO: Pass the window width in here to figure out where to middle truncate to make the path fit.
   //       Currently, we swap out $HOME at the beginning, and then pray that it all fits.
- (window.electronAPI.prettyPrintFilePath(
-      fileName,
-    ) as Promise<string>).then((result) => setPrettyFilePath(result));
+  const prettyFilePathMemoized = useMemo(() => {
+    return (
+      window.electronAPI.prettyPrintFilePath(fileName) as Promise<string>
+    ).then((result) => setPrettyFilePath(result));
+  }, [fileName]);
+
   return (
     <div className="fileHeader">
       <div className="fileHeaderImage">
-      {fileName.endsWith('.dbolt') ? (
-        <FaLock />
-      ) : (
-        <FileIcon extension={fileName.split('.').pop()} />
-      )}
+        {fileName.endsWith('.dbolt') ? (
+          <FaLock />
+        ) : (
+          <FileIcon extension={fileName.split('.').pop()} />
+        )}
       </div>
       <span
         className={

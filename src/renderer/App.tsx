@@ -35,6 +35,11 @@ export default function App() {
   const [viewState, setViewState] = useState<ViewState>(ViewState.FILE_UPLOAD);
   const [fileIsEncrypted, setFileIsEncrypted] = useState(false);
 
+  const resetToFileUpload = () => {
+    setViewState(ViewState.FILE_UPLOAD);
+    setFileToWorkWith(undefined);
+  };
+
   const encryptFile = (fileName: string, password: string) =>
     window.electronAPI.encryptFileRequest(
       fileName,
@@ -82,8 +87,7 @@ export default function App() {
           });
         }}
         onCancel={() => {
-          setViewState(ViewState.FILE_UPLOAD);
-          setFileToWorkWith(undefined);
+          resetToFileUpload();
         }}
         isDecryption={fileIsEncrypted}
       />
@@ -93,7 +97,9 @@ export default function App() {
       <EncryptOrDecryptForm
         file={fileToWorkWith}
         onSubmit={decryptFile}
-        onCancel={() => setViewState(ViewState.FILE_UPLOAD)}
+        onCancel={() => {
+          resetToFileUpload();
+        }}
         isDecryption={fileIsEncrypted}
       />
     );
@@ -101,8 +107,7 @@ export default function App() {
     appBody = (
       <SucessOrErrorModal
         onGoHome={() => {
-          setViewState(0);
-          setFileToWorkWith(undefined);
+          resetToFileUpload();
         }}
         encryptedFilePath={pathToEncryptedFile}
         isSuccess={true}
@@ -113,8 +118,7 @@ export default function App() {
     appBody = (
       <SucessOrErrorModal
         onGoHome={() => {
-          setViewState(0);
-          setFileToWorkWith(undefined);
+          resetToFileUpload();
         }}
         encryptedFilePath={undefined}
         isSuccess={false}
@@ -122,10 +126,5 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="app">
-      <br />
-      {appBody}
-    </div>
-  );
+  return <div className="app">{appBody}</div>;
 }

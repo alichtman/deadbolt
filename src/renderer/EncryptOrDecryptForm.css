@@ -1,14 +1,12 @@
 .formBody {
-  /* position: relative; */
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 170px;
-  top: 10px;
+  justify-content: flex-start;
 }
 
 .modal {
-  margin-top: 16px;
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -24,9 +22,10 @@
 }
 
 .buttonsWrapper {
-  position: fixed;
+  position: relative;
+  display: flex;
+  margin-top: 0;
   flex-direction: column;
-  bottom: 25px;
   width: 80%;
 }
 
