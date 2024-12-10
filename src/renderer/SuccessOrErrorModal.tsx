@@ -1,39 +1,41 @@
-import { Fragment } from "react";
-import "./SuccessOrErrorModal.css";
+import { Fragment } from 'react';
+import './SuccessOrErrorModal.css';
 
-import Lottie from "react-lottie";
-import errorAnimationData from "./assets/error-animation.json";
-import checkmarkAnimationData from "./assets/checkmark-animation.json";
+import Lottie from 'react-lottie';
+import errorAnimationData from './assets/error-animation.json';
+import checkmarkAnimationData from './assets/checkmark-animation.json';
 
-import Button from "./Button";
+import Button from './Button';
 
 // TODO: Add native file drag and drop: https://www.electronjs.org/docs/latest/tutorial/native-file-drag-drop
 
-
-export default function SuccessOrErrorModal({ onGoHome, encryptedFilePath, isSuccess }: {
-  onGoHome: () => void,
-  encryptedFilePath?: string,
-  isSuccess: boolean
+export default function SuccessOrErrorModal({
+  onGoHome,
+  encryptedFilePath,
+  isSuccess,
+  errorMessage,
+}: {
+  onGoHome: () => void;
+  encryptedFilePath?: string;
+  isSuccess: boolean;
+  errorMessage?: string;
 }) {
-
   const animationOptions = {
     loop: false,
     autoplay: true,
     animationData: isSuccess ? checkmarkAnimationData : errorAnimationData,
     rendererSettings: {
-      preserveAspectRatio: "xMidYMid slice",
+      preserveAspectRatio: 'xMidYMid slice',
     },
   };
+
+  const mainText = isSuccess ? 'Success!' : 'Something went wrong!';
 
   return (
     <Fragment>
       <div className="successBody">
-        <Lottie
-          options={animationOptions}
-          height={100}
-          width={200}
-        />
-        <span className="successText">{isSuccess ? "Success!" : "Something went wrong!"}</span>
+        <Lottie options={animationOptions} height={100} width={200} />
+        <span className="successText">{mainText}</span>
         <div className="buttonsWrapper">
           {isSuccess && (
             <Button
@@ -43,15 +45,12 @@ export default function SuccessOrErrorModal({ onGoHome, encryptedFilePath, isSuc
                 // shell.showItemInFolder(encryptedFilePath);
               }}
             >
-              <span className="openFinderText">
-                Reveal in Finder
-              </span>
+              <span className="openFinderText">Reveal in Finder</span>
             </Button>
           )}
+          {!isSuccess && <p>{errorMessage}</p>}
           <Button isPrimary={false} onClick={onGoHome}>
-            <span className="backToQuickLockText">
-              Back to Home
-            </span>
+            <span className="backToQuickLockText">Back to Home</span>
           </Button>
         </div>
       </div>

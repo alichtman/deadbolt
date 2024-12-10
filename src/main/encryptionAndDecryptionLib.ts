@@ -3,12 +3,29 @@
  ***********/
 
 import fs from "fs";
-// import path from "path";
-import crypto from 'crypto'; // Removed duplicate declaration
+import crypto from 'crypto';
 
 export const ENCRYPTED_FILE_EXTENSION = ".dbolt";
 const AES_256_GCM = "aes-256-gcm";
 const METADATA_LEN = 96;
+
+/*************
+ * Error Types
+ ************/
+
+export class EncryptionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EncryptionError";
+  }
+}
+
+export class DecryptionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DecryptionError";
+  }
+}
 
 /***********
  * Utilities
@@ -94,11 +111,12 @@ export function encryptFile(filePath: string, encryptionKey: crypto.BinaryLike):
   const encryptedFilePath = `${filePath}${ENCRYPTED_FILE_EXTENSION}`;
   const tempAuthTag = Buffer.alloc(16, 0xff);
   const writeStream = fs.createWriteStream(encryptedFilePath, { flags: "w+" }).on("error", () => {
-    return "ERROR!! File failed to be written.";
+    // TODO: When this error is thrown, it's not caught for some reason, and crashes the app. The one below is caught just fine. idk!
+    throw new EncryptionError(`${encryptedFilePath} failed to be opened for writing. Is the directory writable?`);
   });
 
-  // Write salt, IV, and temporary auth tag to encrypted file. The auth tag
-  // will be replaced with a real auth tag later.
+  // Write salt, IV, and temp auth tag to encrypted file.
+  // The temp auth tag will be replaced with a real auth tag later.
   writeStream.write(salt);
   writeStream.write(initializationVector);
   writeStream.write(tempAuthTag);
@@ -116,16 +134,12 @@ export function encryptFile(filePath: string, encryptionKey: crypto.BinaryLike):
       writeStream.close(() => { });
     });
 
-  console.log("Encrypted file path: ", encryptedFilePath);
-  setTimeout(() => {
-    if (fs.existsSync(encryptedFilePath)) {
-      return encryptedFilePath;
-    } else {
-      return "ERROR!! File failed to be written.";
-    }
-  }, 1000)
-
-  return encryptedFilePath;
+  if (fs.existsSync(encryptedFilePath)) {
+    console.log("Encrypted file path exists! ", encryptedFilePath);
+    return encryptedFilePath;
+  } else {
+    throw new EncryptionError(`${encryptedFilePath} failed to be written.`);
+  }
 }
 
 /**
@@ -165,9 +179,9 @@ export function decryptFile(filePath: string, decryptionKey: crypto.BinaryLike):
   encryptedFileReadStream
     .pipe(decrypt)
     .on("error", () => {
-      fs.unlinkSync(decryptedFilePath);
+      fs.unlinkSync(decryptedFilePath); // Delete the (improperly) decrypted file, if it exists
       throw new
-        Error("The password is incorrect, or the file is inaccessible.");
+        DecryptionError("The password is incorrect, the file can't be read, or the destination being written to is inaccessible.");
     })
     .pipe(
       fs.createWriteStream(decryptedFilePath)

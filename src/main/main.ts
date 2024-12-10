@@ -15,7 +15,16 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import { encryptFile, decryptFile } from './encryptionAndDecryptionLib';
+import { encryptFile, decryptFile, EncryptionError, DecryptionError } from './encryptionAndDecryptionLib';
+
+
+// Electron doesn't let you pass custom error messages from IPCMain to the renderer process
+// https://github.com/electron/electron/issues/24427
+// There are some workarounds floating around, like https://m-t-a.medium.com/electron-getting-custom-error-messages-from-ipc-main-617916e85151
+// but we're going to galaxy brain it and just return a string with a prefix to indicate that it's an error.
+// ....
+
+const ERROR_MESSAGE_PREFIX = "ERROR_FROM_ELECTRON_MAIN_THREAD";
 
 class AppUpdater {
   constructor() {
@@ -28,19 +37,28 @@ class AppUpdater {
 let mainWindow: BrowserWindow | null = null;
 
 ipcMain.handle("encryptFileRequest", (_event, [filePath, password]) => {
-  console.log("encryptFileRequest", "{", filePath, "} with password: ", password);
+  console.log("encryptFileRequest", "{", filePath, "} with password of length: ", password.length);
+  // You have no idea how much time I killed trying to debug why throwing here and .catch'ing the promise in the renderer process didn't work.
   try {
     const encryptedFilePath = encryptFile(filePath, password);
     console.log("Returning encrypted file path: { ", encryptedFilePath, " }");
     return encryptedFilePath;
   } catch (error) {
-    console.error("Error from encryptFile:", error);
-    return "ERROR!!";
+    const err = error as Error;
+    // In the renderer process, we can check for the prefix and display the error message. Otherwise, the return value is a filepath
+    return `${ERROR_MESSAGE_PREFIX}: ${err.message}`
   }
 });
 
 ipcMain.handle("decryptFileRequest", (_event, [filePath, password]) => {
-  decryptFile(filePath, password)
+  console.log("decryptFileRequest", "{", filePath, "}");
+  try {
+    const decryptedFilePath = decryptFile(filePath, password);
+    console.log("Returning decrypted file path: { ", decryptedFilePath, " }");
+  } catch (error) {
+    const err = error as Error;
+    return `${ERROR_MESSAGE_PREFIX}: ${err.message}`
+  }
 });
 
 ipcMain.handle("prettyPrintFilePath", (_event, [filePath]) => {

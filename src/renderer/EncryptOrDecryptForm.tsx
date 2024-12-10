@@ -27,13 +27,30 @@ export default function EncryptOrDecryptForm({
     if (event.key === 'Enter') {
       if (isDecryption) {
         onSubmit(file.path, password);
-      } else if (password === confirmPassword) {
+      } else if (validatePassword()) {
         onSubmit(file.path, password);
       } else {
         // Encryption, passwords don't match
         setDisplayError(true);
         setErrorMessage("Passwords don't match");
       }
+    }
+  };
+
+  // Must match the confirmation, and be more than 3 characters
+  const validatePassword = () => {
+    if (password.length < 4) {
+      setDisplayError(true);
+      setErrorMessage('Password must be at least 4 characters');
+      return false;
+    } else if (password === confirmPassword) {
+      setDisplayError(false);
+      setErrorMessage('');
+      return true;
+    } else {
+      setDisplayError(true);
+      setErrorMessage("Passwords don't match");
+      return false;
     }
   };
 
@@ -47,7 +64,7 @@ export default function EncryptOrDecryptForm({
           onChange={(event) => setPassword(event.target.value)}
           inErrorMode={displayError}
           onKeyPress={onKeyPress}
-          autofocus
+          autofocus={true}
         />
         {!isDecryption ? (
           <PasswordInput
@@ -64,7 +81,13 @@ export default function EncryptOrDecryptForm({
         <div className="buttonsWrapper">
           <Button
             isPrimary={true}
-            onClick={() => onSubmit(file.path, password)}
+            onClick={() => {
+              if (!isDecryption && validatePassword()) {
+                onSubmit(file.path, password);
+              } else if (isDecryption) {
+                onSubmit(file.path, password);
+              }
+            }}
           >
             <img
               className="primaryButtonIcon"

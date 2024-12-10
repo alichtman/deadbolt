@@ -6,6 +6,15 @@ import SucessOrErrorModal from './SuccessOrErrorModal';
 
 export const DEADBOLT_EXTENSION = '.dbolt';
 
+// This is sync'd from src/main/main.ts, but we can't actually import the value here, so we redefine it.
+// This follows the DRYUYRHT (Don't Repeat Yourself Unless You Really Have To) principle.
+const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
+
+function extractErrorMessageFromErrorString(errorString: string): string {
+  const removedPrefix = errorString.replace(`${ERROR_MESSAGE_PREFIX}: `, '');
+  return removedPrefix.split('\n')[0];
+}
+
 enum ViewState {
   FILE_UPLOAD,
   ENCRYPT_OR_DECRYPT,
@@ -21,6 +30,7 @@ enum ViewState {
  */
 export function isDeadboltFile(filePath: string | undefined): boolean {
   if (!filePath) return false;
+  if (filePath.startsWith(ERROR_MESSAGE_PREFIX)) return false;
   return filePath.endsWith(DEADBOLT_EXTENSION);
 }
 
@@ -29,32 +39,70 @@ export default function App() {
   const [fileToWorkWith, setFileToWorkWith] = useState<File | undefined>(
     undefined,
   );
-  const [pathToEncryptedFile, setPathToEncryptedFile] = useState<string | null>(
-    null,
-  );
+  const [pathToEncryptedOrDecryptedFile, setPathToEncryptedOrDecryptedFile] =
+    useState<string | undefined>(undefined);
   const [viewState, setViewState] = useState<ViewState>(ViewState.FILE_UPLOAD);
   const [fileIsEncrypted, setFileIsEncrypted] = useState(false);
+  const [
+    fileDecryptOrEncryptErrorMessage,
+    setFileDecryptOrEncryptErrorMessage,
+  ] = useState<string | undefined>(undefined);
 
   const resetToFileUpload = () => {
     setViewState(ViewState.FILE_UPLOAD);
     setFileToWorkWith(undefined);
   };
 
-  const encryptFile = (fileName: string, password: string) =>
-    window.electronAPI.encryptFileRequest(
-      fileName,
-      password,
-    ) as Promise<string>;
-  const decryptFile = (fileName: string, password: string) =>
-    window.electronAPI.decryptFileRequest(
+  const encryptFile = (fileName: string, password: string) => {
+    const encryptedFileResult = window.electronAPI.encryptFileRequest(
       fileName,
       password,
     ) as Promise<string>;
 
+    encryptedFileResult.then((resolvedFilePathOrError) => {
+      console.log('Resolved file path:', resolvedFilePathOrError);
+      if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
+        console.error('Error from encryptFile:', resolvedFilePathOrError);
+        setViewState(ViewState.ERROR);
+        setFileDecryptOrEncryptErrorMessage(
+          extractErrorMessageFromErrorString(resolvedFilePathOrError),
+        );
+        // setPathToEncryptedOrDecryptedFile(undefined);
+        return;
+      } else {
+        setViewState(ViewState.SUCCESS);
+        setFileDecryptOrEncryptErrorMessage(undefined);
+        setPathToEncryptedOrDecryptedFile(resolvedFilePathOrError);
+      }
+    });
+  };
+  const decryptFile = (fileName: string, password: string) => {
+    const decryptedFileResult = window.electronAPI.decryptFileRequest(
+      fileName,
+      password,
+    ) as Promise<string>;
+
+    decryptedFileResult.then((resolvedFilePathOrError) => {
+      if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
+        console.error('Error from decryptFile:', resolvedFilePathOrError);
+        setViewState(ViewState.ERROR);
+        setFileDecryptOrEncryptErrorMessage(
+          extractErrorMessageFromErrorString(resolvedFilePathOrError),
+        );
+        setPathToEncryptedOrDecryptedFile(undefined);
+        return;
+      } else {
+        setViewState(ViewState.SUCCESS);
+        setFileDecryptOrEncryptErrorMessage(undefined);
+        setPathToEncryptedOrDecryptedFile(resolvedFilePathOrError);
+      }
+    });
+  };
+
+  // When a file is selected, check if it's encrypted and set the right state
   useEffect(() => {
-    console.log('Inside useEffect -- fileToWorkWith:', fileToWorkWith);
     setFileIsEncrypted(isDeadboltFile(fileToWorkWith?.path));
-    console.log('File is encrypted!!', fileIsEncrypted);
+    console.log('File is encrypted?', fileIsEncrypted);
   }, [fileToWorkWith]);
 
   let appBody;
@@ -71,21 +119,7 @@ export default function App() {
     appBody = (
       <EncryptOrDecryptForm
         file={fileToWorkWith}
-        onSubmit={(fileName, password) => {
-          encryptFile(fileName, password).then((response) => {
-            if (response.startsWith('ERROR!!')) {
-              console.error('Error from encryptFile:', response);
-              setViewState(ViewState.ERROR);
-              return;
-            }
-
-            if (isDeadboltFile(response)) {
-              console.log('SUCCESS! Response from encryptFile:', response);
-              setPathToEncryptedFile(response);
-              setViewState(ViewState.SUCCESS);
-            }
-          });
-        }}
+        onSubmit={encryptFile}
         onCancel={() => {
           resetToFileUpload();
         }}
@@ -103,13 +137,16 @@ export default function App() {
         isDecryption={fileIsEncrypted}
       />
     );
-  } else if (viewState === ViewState.SUCCESS && pathToEncryptedFile) {
+  } else if (
+    viewState === ViewState.SUCCESS &&
+    pathToEncryptedOrDecryptedFile
+  ) {
     appBody = (
       <SucessOrErrorModal
         onGoHome={() => {
           resetToFileUpload();
         }}
-        encryptedFilePath={pathToEncryptedFile}
+        encryptedFilePath={pathToEncryptedOrDecryptedFile}
         isSuccess={true}
       />
     );
@@ -122,6 +159,7 @@ export default function App() {
         }}
         encryptedFilePath={undefined}
         isSuccess={false}
+        errorMessage={fileDecryptOrEncryptErrorMessage}
       />
     );
   }
