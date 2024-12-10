@@ -16,8 +16,9 @@ const METADATA_LEN = 96;
 // Electron doesn't let you pass custom error messages from IPCMain to the renderer process
 // https://github.com/electron/electron/issues/24427
 // There are some workarounds floating around, like https://m-t-a.medium.com/electron-getting-custom-error-messages-from-ipc-main-617916e85151
-// but we're going to galaxy brain it and just return a string with a prefix to indicate that it's an error.
+// but we're going to galaxy brain it and just return a string to the renderer process with a prefix to indicate that it's an error.
 // ....
+// idk man, I don't get paid enough for this.
 const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
 /***********
@@ -121,7 +122,8 @@ function createDerivedKey(
  *
  * @param  {String}            filePath      Absolute path of unencrypted file.
  * @param  {crypto.BinaryLike} encryptionKey User verified encryption key.
- * @return {String}                          Absolute path of encrypted file, OR an error message which is prefixed with ERROR_MESSAGE_PREFIX. Do not try to return a custom error object here. It will not work.
+ * @return {String}                          Absolute path of encrypted file, OR an error message which is prefixed with ERROR_MESSAGE_PREFIX.
+ *                                           Do not try to throw an error and have it returned to the renderer process. It will not work.
  */
 export async function encryptFile(
   filePath: string,
@@ -197,7 +199,8 @@ export async function encryptFile(
  * Decrypts a file.
  * @param  {String} filePath      Absolute path of encrypted file.
  * @param  {crypto.BinaryLike} decryptionKey Unverified decryption key supplied by user.
- * @return {String}               Absolute path of unencrypted file.
+ * @return {String}               Absolute path of unencrypted file, OR an error message which is prefixed with ERROR_MESSAGE_PREFIX.
+ *                                Do not try throwing an error here and expecting it to be returned to the renderer process
  */
 export async function decryptFile(
   filePath: string,
@@ -227,18 +230,46 @@ export async function decryptFile(
   // Handle decryption errors. This will throw if the password is incorrect.
   decrypt.setAuthTag(authTag);
 
-  const encryptedFileReadStream = fs.createReadStream(filePath, {
-    start: METADATA_LEN,
-  });
-  encryptedFileReadStream
-    .pipe(decrypt)
-    .on('error', () => {
-      fs.unlinkSync(decryptedFilePath); // Delete the (improperly) decrypted file, if it exists
-      throw new Error(
-        "The password is incorrect, the file can't be read, or the destination being written to is inaccessible.",
-      );
-    })
-    .pipe(fs.createWriteStream(decryptedFilePath));
+  let cipherText: Buffer;
+  try {
+    // Read encrypted file, and drop the first METADATA_LEN bytes
+    cipherText = await readFileWithPromise(filePath)
+      .then((data) => {
+        if (data.length < METADATA_LEN) {
+          throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+        }
+        return data.subarray(METADATA_LEN);
+      })
+      .catch((_error) => {
+        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      });
+  } catch (error) {
+    return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${filePath} for decryption.`;
+  }
+
+  let decryptedText: Buffer;
+  try {
+    decryptedText = decrypt.update(cipherText);
+  } catch (error) {
+    return `${ERROR_MESSAGE_PREFIX}: Wrong password!`;
+  }
+
+  try {
+    await writeFileWithPromise(decryptedFilePath, decryptedText).catch(
+      (_error) => {
+        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      },
+    );
+
+    if (fs.existsSync(decryptedFilePath)) {
+      console.log('Successfully decrypted file: ', decryptedFilePath);
+      return decryptedFilePath;
+    } else {
+      return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;
+    }
+  } catch (error) {
+    return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;
+  }
 
   return decryptedFilePath;
 }

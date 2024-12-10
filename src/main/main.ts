@@ -49,13 +49,13 @@ ipcMain.handle('encryptFileRequest', async (_event, [filePath, password]) => {
 
 ipcMain.handle('decryptFileRequest', async (_event, [filePath, password]) => {
   console.log('decryptFileRequest', '{', filePath, '}');
-  try {
-    const decryptedFilePath = decryptFile(filePath, password);
-    console.log('Returning decrypted file path: { ', decryptedFilePath, ' }');
-  } catch (error) {
-    const err = error as Error;
-    return `${ERROR_MESSAGE_PREFIX}: ${err.message}`;
-  }
+  const decryptedFilePathOrErrorMessage = await decryptFile(filePath, password);
+  console.log(
+    'Returning decrypted file path or error message: { ',
+    decryptedFilePathOrErrorMessage,
+    ' }',
+  );
+  return decryptedFilePathOrErrorMessage;
 });
 
 ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
