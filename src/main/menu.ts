@@ -20,6 +20,28 @@ export default class MenuBuilder {
     this.mainWindow = mainWindow;
   }
 
+  private HELP_SUBMENU = [
+    {
+      label: 'File a Bug',
+      click() {
+        shell.openExternal('https://github.com/alichtman/deadbolt/issues/new');
+      },
+    },
+    {
+      label: 'View Project on GitHub',
+      click() {
+        shell.openExternal('https://github.com/alichtman/deadbolt');
+      },
+    },
+
+    {
+      label: 'Search Issues',
+      click() {
+        shell.openExternal('https://github.com/electron/electron/issues');
+      },
+    },
+  ];
+
   buildMenu(): Menu {
     if (
       process.env.NODE_ENV === 'development' ||
@@ -54,12 +76,13 @@ export default class MenuBuilder {
     });
   }
 
+  // TODO: Look at darwin template
   buildDarwinTemplate(): MenuItemConstructorOptions[] {
     const subMenuAbout: DarwinMenuItemConstructorOptions = {
       label: 'Electron',
       submenu: [
         {
-          label: 'About ElectronReact',
+          label: 'About Deadbolt',
           selector: 'orderFrontStandardAboutPanel:',
         },
         { type: 'separator' },
@@ -83,22 +106,6 @@ export default class MenuBuilder {
           click: () => {
             app.quit();
           },
-        },
-      ],
-    };
-    const subMenuEdit: DarwinMenuItemConstructorOptions = {
-      label: 'Edit',
-      submenu: [
-        { label: 'Undo', accelerator: 'Command+Z', selector: 'undo:' },
-        { label: 'Redo', accelerator: 'Shift+Command+Z', selector: 'redo:' },
-        { type: 'separator' },
-        { label: 'Cut', accelerator: 'Command+X', selector: 'cut:' },
-        { label: 'Copy', accelerator: 'Command+C', selector: 'copy:' },
-        { label: 'Paste', accelerator: 'Command+V', selector: 'paste:' },
-        {
-          label: 'Select All',
-          accelerator: 'Command+A',
-          selector: 'selectAll:',
         },
       ],
     };
@@ -155,34 +162,7 @@ export default class MenuBuilder {
     };
     const subMenuHelp: MenuItemConstructorOptions = {
       label: 'Help',
-      submenu: [
-        {
-          label: 'Learn More',
-          click() {
-            shell.openExternal('https://electronjs.org');
-          },
-        },
-        {
-          label: 'Documentation',
-          click() {
-            shell.openExternal(
-              'https://github.com/electron/electron/tree/main/docs#readme',
-            );
-          },
-        },
-        {
-          label: 'Community Discussions',
-          click() {
-            shell.openExternal('https://www.electronjs.org/community');
-          },
-        },
-        {
-          label: 'Search Issues',
-          click() {
-            shell.openExternal('https://github.com/electron/electron/issues');
-          },
-        },
-      ],
+      submenu: this.HELP_SUBMENU,
     };
 
     const subMenuView =
@@ -191,27 +171,20 @@ export default class MenuBuilder {
         ? subMenuViewDev
         : subMenuViewProd;
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
+    return [subMenuAbout, subMenuView, subMenuWindow, subMenuHelp];
   }
 
   buildDefaultTemplate() {
     const templateDefault = [
-      {
-        label: '&File',
-        submenu: [
-          {
-            label: '&Open',
-            accelerator: 'Ctrl+O',
-          },
-          {
-            label: '&Close',
-            accelerator: 'Ctrl+W',
-            click: () => {
-              this.mainWindow.close();
-            },
-          },
-        ],
-      },
+      // {
+      //   label: '&File',
+      //   submenu: [
+      //     {
+      //       label: '&Open',
+      //       accelerator: 'Ctrl+O',
+      //     },
+      //   ],
+      // },
       {
         label: '&View',
         submenu:
@@ -256,34 +229,7 @@ export default class MenuBuilder {
       },
       {
         label: 'Help',
-        submenu: [
-          {
-            label: 'Learn More',
-            click() {
-              shell.openExternal('https://electronjs.org');
-            },
-          },
-          {
-            label: 'Documentation',
-            click() {
-              shell.openExternal(
-                'https://github.com/electron/electron/tree/main/docs#readme',
-              );
-            },
-          },
-          {
-            label: 'Community Discussions',
-            click() {
-              shell.openExternal('https://www.electronjs.org/community');
-            },
-          },
-          {
-            label: 'Search Issues',
-            click() {
-              shell.openExternal('https://github.com/electron/electron/issues');
-            },
-          },
-        ],
+        submenu: this.HELP_SUBMENU,
       },
     ];
 
