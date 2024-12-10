@@ -1,4 +1,4 @@
-import "./PasswordInput.css";
+import './PasswordInput.css';
 
 export default function PasswordInput({
   placeholder,
@@ -6,7 +6,7 @@ export default function PasswordInput({
   onChange,
   inErrorMode,
   onKeyPress,
-  autofocus
+  autofocus,
 }: {
   placeholder?: string;
   value: string;
@@ -17,7 +17,7 @@ export default function PasswordInput({
 }) {
   return (
     <input
-      className={inErrorMode ? "inputBarError" : "inputBar"}
+      className={inErrorMode ? 'inputBarError' : 'inputBar'}
       type="password"
       placeholder={placeholder}
       value={value}
@@ -27,4 +27,3 @@ export default function PasswordInput({
     />
   );
 }
-
