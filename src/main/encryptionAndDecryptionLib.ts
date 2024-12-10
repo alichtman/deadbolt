@@ -2,30 +2,23 @@
  * Constants
  ***********/
 
-import fs from "fs";
+import fs from 'fs';
 import crypto from 'crypto';
 
-export const ENCRYPTED_FILE_EXTENSION = ".dbolt";
-const AES_256_GCM = "aes-256-gcm";
+export const ENCRYPTED_FILE_EXTENSION = '.dbolt';
+const AES_256_GCM = 'aes-256-gcm';
 const METADATA_LEN = 96;
 
 /*************
- * Error Types
+ * Error Prefix
  ************/
 
-export class EncryptionError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "EncryptionError";
-  }
-}
-
-export class DecryptionError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "DecryptionError";
-  }
-}
+// Electron doesn't let you pass custom error messages from IPCMain to the renderer process
+// https://github.com/electron/electron/issues/24427
+// There are some workarounds floating around, like https://m-t-a.medium.com/electron-getting-custom-error-messages-from-ipc-main-617916e85151
+// but we're going to galaxy brain it and just return a string with a prefix to indicate that it's an error.
+// ....
+const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
 /***********
  * Utilities
@@ -37,7 +30,11 @@ export class DecryptionError extends Error {
  * @param {String} search Substring to search for
  * @param {String} replacement Substring to replace with
  */
-function replaceLast(input: string, search: string, replacement: string): string {
+function replaceLast(
+  input: string,
+  search: string,
+  replacement: string,
+): string {
   // Find last occurrence
   const index = input.lastIndexOf(search);
   if (index === -1) {
@@ -52,12 +49,39 @@ function replaceLast(input: string, search: string, replacement: string): string
 }
 
 function createDecryptedFilePath(filePath: string) {
-  let decryptedFilePath = replaceLast(filePath, ENCRYPTED_FILE_EXTENSION, "");
-  let splitPath = decryptedFilePath.split(".");
-  splitPath.splice(splitPath.length - 1, 0, "dbolt");
-  decryptedFilePath = splitPath.join(".");
+  let decryptedFilePath = replaceLast(filePath, ENCRYPTED_FILE_EXTENSION, '');
+  let splitPath = decryptedFilePath.split('.');
+  splitPath.splice(splitPath.length - 1, 0, 'dbolt');
+  decryptedFilePath = splitPath.join('.');
 
   return decryptedFilePath;
+}
+
+/**
+ * These two functions are used to read and write files, and give me an awaitable API.
+ * This allows me to bubble up errors to the renderer process (in string format)
+ *
+ * cc @michaelneu thanks for the advice
+ */
+function writeFileWithPromise(path: string, data: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const stream = fs.createWriteStream(path, { flags: 'w+' });
+    stream.on('error', reject);
+    stream.write(data);
+    resolve(path);
+  });
+}
+
+function readFileWithPromise(path: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, (err, data) => {
+      if (err) {
+        reject('Failed to read');
+      } else {
+        resolve(data);
+      }
+    });
+  });
 }
 
 /********************
@@ -71,13 +95,16 @@ function createDecryptedFilePath(filePath: string) {
  * @param  {string} encryptionKey User's entered encryption key
  * @return {Buffer}               SHA512 hash that will be used as the IV.
  */
-function createDerivedKey(salt: crypto.BinaryLike, encryptionKey: crypto.BinaryLike): Buffer {
+function createDerivedKey(
+  salt: crypto.BinaryLike,
+  encryptionKey: crypto.BinaryLike,
+): Buffer {
   return crypto.pbkdf2Sync(
     encryptionKey,
     salt,
     10000,
     32, // This value is in bytes
-    "sha512",
+    'sha512',
   );
 }
 
@@ -94,12 +121,15 @@ function createDerivedKey(salt: crypto.BinaryLike, encryptionKey: crypto.BinaryL
  *
  * @param  {String}            filePath      Absolute path of unencrypted file.
  * @param  {crypto.BinaryLike} encryptionKey User verified encryption key.
- * @return {String}                          Absolute path of encrypted file.
+ * @return {String}                          Absolute path of encrypted file, OR an error message which is prefixed with ERROR_MESSAGE_PREFIX. Do not try to return a custom error object here. It will not work.
  */
-export function encryptFile(filePath: string, encryptionKey: crypto.BinaryLike): string {
+export async function encryptFile(
+  filePath: string,
+  encryptionKey: crypto.BinaryLike,
+): Promise<string> {
   // Create cipher
   const salt = crypto.randomBytes(64);
-  console.log("Salt and encryption key:", salt, encryptionKey);
+  console.log('Salt and encryption key:', salt, encryptionKey);
   const derivedKey = createDerivedKey(salt, encryptionKey);
   const initializationVector = crypto.randomBytes(16);
   let cipher = crypto.createCipheriv(
@@ -109,36 +139,57 @@ export function encryptFile(filePath: string, encryptionKey: crypto.BinaryLike):
   );
 
   const encryptedFilePath = `${filePath}${ENCRYPTED_FILE_EXTENSION}`;
-  const tempAuthTag = Buffer.alloc(16, 0xff);
-  const writeStream = fs.createWriteStream(encryptedFilePath, { flags: "w+" }).on("error", () => {
-    // TODO: When this error is thrown, it's not caught for some reason, and crashes the app. The one below is caught just fine. idk!
-    throw new EncryptionError(`${encryptedFilePath} failed to be opened for writing. Is the directory writable?`);
-  });
 
-  // Write salt, IV, and temp auth tag to encrypted file.
-  // The temp auth tag will be replaced with a real auth tag later.
-  writeStream.write(salt);
-  writeStream.write(initializationVector);
-  writeStream.write(tempAuthTag);
+  // Read unencrypted file into buffer, or return an error message if we fail to read the file
+  let encryptedFileData: Buffer;
+  try {
+    encryptedFileData = await readFileWithPromise(filePath)
+      .then((data) => {
+        return data;
+      })
+      .catch((_error) => {
+        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      });
+  } catch (error) {
+    return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be opened for reading.`;
+  }
 
-  // Encrypt file and write it to encrypted dest file
-  const readStream = fs.createReadStream(filePath)
-  readStream
-    .pipe(cipher)
-    .pipe(writeStream)
-    .on("finish", () => {
-      const realAuthTag = cipher.getAuthTag();
-      const fd = fs.openSync(encryptedFilePath, "r+");
-      fs.write(fd, realAuthTag, 0, 16, 80, () => { });
-      readStream.close(() => { });
-      writeStream.close(() => { });
-    });
+  // Encrypt the file data, and then disable the cipher
+  const cipherText = cipher.update(encryptedFileData);
+  cipher.final();
+
+  const authTag = cipher.getAuthTag();
+
+  // Write salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
+  const encryptedFileDataWithMetadata = Buffer.concat([
+    salt,
+    initializationVector,
+    authTag,
+    cipherText,
+  ]);
+
+  try {
+    await writeFileWithPromise(encryptedFilePath, encryptedFileDataWithMetadata)
+      .then((path) => {
+        console.log('Successfully encrypted file: ', path);
+        return path;
+      })
+      .catch((_error) => {
+        try {
+          fs.unlinkSync(encryptedFilePath); // Delete the (improperly) encrypted file, if it exists
+        } catch (error) {
+          throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+        }
+      });
+  } catch (error) {
+    return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
+  }
 
   if (fs.existsSync(encryptedFilePath)) {
-    console.log("Encrypted file path exists! ", encryptedFilePath);
+    console.log('Successfully encrypted file: ', encryptedFilePath);
     return encryptedFilePath;
   } else {
-    throw new EncryptionError(`${encryptedFilePath} failed to be written.`);
+    return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
   }
 }
 
@@ -148,10 +199,13 @@ export function encryptFile(filePath: string, encryptionKey: crypto.BinaryLike):
  * @param  {crypto.BinaryLike} decryptionKey Unverified decryption key supplied by user.
  * @return {String}               Absolute path of unencrypted file.
  */
-export function decryptFile(filePath: string, decryptionKey: crypto.BinaryLike): string | Error {
+export async function decryptFile(
+  filePath: string,
+  decryptionKey: crypto.BinaryLike,
+): Promise<string> {
   // Read salt, IV and authTag from beginning of file.
   const decryptedFilePath = createDecryptedFilePath(filePath);
-  const fd = fs.openSync(filePath, "r");
+  const fd = fs.openSync(filePath, 'r');
   const salt = Buffer.alloc(64);
   fs.readSync(fd, salt, 0, 64, 0);
 
@@ -168,7 +222,7 @@ export function decryptFile(filePath: string, decryptionKey: crypto.BinaryLike):
     AES_256_GCM,
     derivedKey,
     initializationVector,
-  )
+  );
 
   // Handle decryption errors. This will throw if the password is incorrect.
   decrypt.setAuthTag(authTag);
@@ -178,15 +232,13 @@ export function decryptFile(filePath: string, decryptionKey: crypto.BinaryLike):
   });
   encryptedFileReadStream
     .pipe(decrypt)
-    .on("error", () => {
+    .on('error', () => {
       fs.unlinkSync(decryptedFilePath); // Delete the (improperly) decrypted file, if it exists
-      throw new
-        DecryptionError("The password is incorrect, the file can't be read, or the destination being written to is inaccessible.");
+      throw new Error(
+        "The password is incorrect, the file can't be read, or the destination being written to is inaccessible.",
+      );
     })
-    .pipe(
-      fs.createWriteStream(decryptedFilePath)
-    );
+    .pipe(fs.createWriteStream(decryptedFilePath));
 
   return decryptedFilePath;
 }
-

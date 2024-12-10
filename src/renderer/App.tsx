@@ -6,7 +6,7 @@ import SucessOrErrorModal from './SuccessOrErrorModal';
 
 export const DEADBOLT_EXTENSION = '.dbolt';
 
-// This is sync'd from src/main/main.ts, but we can't actually import the value here, so we redefine it.
+// This is sync'd from src/main/encryptionAndDecryptionLib.ts, but we can't actually import the value here, so we redefine it.
 // This follows the DRYUYRHT (Don't Repeat Yourself Unless You Really Have To) principle.
 const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 

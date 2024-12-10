@@ -15,16 +15,9 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import { encryptFile, decryptFile, EncryptionError, DecryptionError } from './encryptionAndDecryptionLib';
+import { encryptFile, decryptFile } from './encryptionAndDecryptionLib';
 
-
-// Electron doesn't let you pass custom error messages from IPCMain to the renderer process
-// https://github.com/electron/electron/issues/24427
-// There are some workarounds floating around, like https://m-t-a.medium.com/electron-getting-custom-error-messages-from-ipc-main-617916e85151
-// but we're going to galaxy brain it and just return a string with a prefix to indicate that it's an error.
-// ....
-
-const ERROR_MESSAGE_PREFIX = "ERROR_FROM_ELECTRON_MAIN_THREAD";
+const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
 class AppUpdater {
   constructor() {
@@ -36,33 +29,37 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-ipcMain.handle("encryptFileRequest", (_event, [filePath, password]) => {
-  console.log("encryptFileRequest", "{", filePath, "} with password of length: ", password.length);
+ipcMain.handle('encryptFileRequest', async (_event, [filePath, password]) => {
+  console.log(
+    'encryptFileRequest',
+    '{',
+    filePath,
+    '} with password of length: ',
+    password.length,
+  );
   // You have no idea how much time I killed trying to debug why throwing here and .catch'ing the promise in the renderer process didn't work.
-  try {
-    const encryptedFilePath = encryptFile(filePath, password);
-    console.log("Returning encrypted file path: { ", encryptedFilePath, " }");
-    return encryptedFilePath;
-  } catch (error) {
-    const err = error as Error;
-    // In the renderer process, we can check for the prefix and display the error message. Otherwise, the return value is a filepath
-    return `${ERROR_MESSAGE_PREFIX}: ${err.message}`
-  }
+  const encryptedFilePathOrErrorMessage = await encryptFile(filePath, password);
+  console.log(
+    'Returning encrypted file path or error message: { ',
+    encryptedFilePathOrErrorMessage,
+    ' }',
+  );
+  return encryptedFilePathOrErrorMessage;
 });
 
-ipcMain.handle("decryptFileRequest", (_event, [filePath, password]) => {
-  console.log("decryptFileRequest", "{", filePath, "}");
+ipcMain.handle('decryptFileRequest', async (_event, [filePath, password]) => {
+  console.log('decryptFileRequest', '{', filePath, '}');
   try {
     const decryptedFilePath = decryptFile(filePath, password);
-    console.log("Returning decrypted file path: { ", decryptedFilePath, " }");
+    console.log('Returning decrypted file path: { ', decryptedFilePath, ' }');
   } catch (error) {
     const err = error as Error;
-    return `${ERROR_MESSAGE_PREFIX}: ${err.message}`
+    return `${ERROR_MESSAGE_PREFIX}: ${err.message}`;
   }
 });
 
-ipcMain.handle("prettyPrintFilePath", (_event, [filePath]) => {
-  console.log("prettyPrintFilePath", "{", filePath, "}");
+ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
+  console.log('prettyPrintFilePath', '{', filePath, '}');
   // If poth starts with os.getHomeDir(), replace it with '~'
   if (filePath.startsWith(homedir())) {
     filePath = filePath.replace(homedir(), '~');
@@ -70,7 +67,6 @@ ipcMain.handle("prettyPrintFilePath", (_event, [filePath]) => {
 
   return filePath;
 });
-
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
