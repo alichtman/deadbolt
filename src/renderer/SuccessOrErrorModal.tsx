@@ -7,7 +7,7 @@ import checkmarkAnimationData from './assets/checkmark-animation.json';
 
 import Button from './Button';
 
-// TODO: Add native file drag and drop: https://www.electronjs.org/docs/latest/tutorial/native-file-drag-drop
+// TODO: Add native file drag and drop for created files: https://www.electronjs.org/docs/latest/tutorial/native-file-drag-drop
 
 export default function SuccessOrErrorModal({
   onGoHome,
@@ -42,9 +42,7 @@ export default function SuccessOrErrorModal({
             <Button
               isPrimary={true}
               onClick={() => {
-                // TODO: Expose this as an IPC thing
                 onRevealInFinder();
-                // shell.showItemInFolder(encryptedFilePath);
               }}
             >
               <span className="openFinderText">Reveal in Finder</span>
