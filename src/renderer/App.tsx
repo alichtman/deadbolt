@@ -53,6 +53,12 @@ export default function App() {
     setFileToWorkWith(undefined);
   };
 
+  const revealInFinder = () => {
+    window.electronAPI.revealFileInFinder(
+      pathToEncryptedOrDecryptedFile,
+    ) as Promise<string>;
+  };
+
   const encryptFile = (fileName: string, password: string) => {
     const encryptedFileResult = window.electronAPI.encryptFileRequest(
       fileName,
@@ -146,7 +152,8 @@ export default function App() {
         onGoHome={() => {
           resetToFileUpload();
         }}
-        encryptedFilePath={pathToEncryptedOrDecryptedFile}
+        onRevealInFinder={revealInFinder}
+        encryptedOrDecryptedFilePath={pathToEncryptedOrDecryptedFile}
         isSuccess={true}
       />
     );
@@ -157,7 +164,8 @@ export default function App() {
         onGoHome={() => {
           resetToFileUpload();
         }}
-        encryptedFilePath={undefined}
+        onRevealInFinder={revealInFinder}
+        encryptedOrDecryptedFilePath={undefined}
         isSuccess={false}
         errorMessage={fileDecryptOrEncryptErrorMessage}
       />

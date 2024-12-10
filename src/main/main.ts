@@ -17,8 +17,6 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { encryptFile, decryptFile } from './encryptionAndDecryptionLib';
 
-const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
-
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -66,6 +64,10 @@ ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
   }
 
   return filePath;
+});
+
+ipcMain.handle('revealFileInFinder', (_event, [filePath]) => {
+  shell.showItemInFolder(filePath);
 });
 
 if (process.env.NODE_ENV === 'production') {

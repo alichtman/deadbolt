@@ -18,7 +18,6 @@ const METADATA_LEN = 96;
 // There are some workarounds floating around, like https://m-t-a.medium.com/electron-getting-custom-error-messages-from-ipc-main-617916e85151
 // but we're going to galaxy brain it and just return a string to the renderer process with a prefix to indicate that it's an error.
 // ....
-// idk man, I don't get paid enough for this.
 const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
 /***********
@@ -171,18 +170,16 @@ export async function encryptFile(
   ]);
 
   try {
-    await writeFileWithPromise(encryptedFilePath, encryptedFileDataWithMetadata)
-      .then((path) => {
-        console.log('Successfully encrypted file: ', path);
-        return path;
-      })
-      .catch((_error) => {
-        try {
-          fs.unlinkSync(encryptedFilePath); // Delete the (improperly) encrypted file, if it exists
-        } catch (error) {
-          throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
-        }
-      });
+    await writeFileWithPromise(
+      encryptedFilePath,
+      encryptedFileDataWithMetadata,
+    ).catch((_error) => {
+      try {
+        fs.unlinkSync(encryptedFilePath); // Delete the (improperly) encrypted file, if it exists
+      } catch (error) {
+        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      }
+    });
   } catch (error) {
     return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
   }

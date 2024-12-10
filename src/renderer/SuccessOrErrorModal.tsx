@@ -11,12 +11,13 @@ import Button from './Button';
 
 export default function SuccessOrErrorModal({
   onGoHome,
-  encryptedFilePath,
+  onRevealInFinder,
   isSuccess,
   errorMessage,
 }: {
   onGoHome: () => void;
-  encryptedFilePath?: string;
+  onRevealInFinder: () => void;
+  encryptedOrDecryptedFilePath?: string;
   isSuccess: boolean;
   errorMessage?: string;
 }) {
@@ -42,6 +43,7 @@ export default function SuccessOrErrorModal({
               isPrimary={true}
               onClick={() => {
                 // TODO: Expose this as an IPC thing
+                onRevealInFinder();
                 // shell.showItemInFolder(encryptedFilePath);
               }}
             >
