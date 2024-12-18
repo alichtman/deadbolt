@@ -130,7 +130,6 @@ export async function encryptFile(
 ): Promise<string> {
   // Create cipher
   const salt = crypto.randomBytes(64);
-  console.log('Salt and encryption key:', salt, encryptionKey);
   const derivedKey = createDerivedKey(salt, encryptionKey);
   const initializationVector = crypto.randomBytes(16);
   let cipher = crypto.createCipheriv(
