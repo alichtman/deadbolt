@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import './SuccessOrErrorModal.css';
 
 import Lottie from 'react-lottie';
@@ -33,27 +32,25 @@ export default function SuccessOrErrorModal({
   const mainText = isSuccess ? 'Success!' : 'Something went wrong!';
 
   return (
-    <Fragment>
-      <div className="successBody">
-        <Lottie options={animationOptions} height={100} width={200} />
-        <span className="successText">{mainText}</span>
-        <div className="buttonsWrapper">
-          {isSuccess && (
-            <Button
-              isPrimary={true}
-              onClick={() => {
-                onRevealInFinder();
-              }}
-            >
-              <span className="openFinderText">Reveal in Finder</span>
-            </Button>
-          )}
-          {!isSuccess && <p>{errorMessage}</p>}
-          <Button isPrimary={false} onClick={onGoHome}>
-            <span className="backToQuickLockText">Back to Home</span>
+    <div className="successOrErrorBody">
+      <Lottie options={animationOptions} height={100} width={200} />
+      <span className="successOrErrorText">{mainText}</span>
+      <div className="buttonsWrapper">
+        {isSuccess && (
+          <Button
+            isPrimary={true}
+            onClick={() => {
+              onRevealInFinder();
+            }}
+          >
+            <span className="openFinderText">Reveal in Finder</span>
           </Button>
-        </div>
+        )}
+        {!isSuccess && <p>{errorMessage}</p>}
+        <Button isPrimary={false} onClick={onGoHome}>
+          <span className="backToHomeText">Back to Home</span>
+        </Button>
       </div>
-    </Fragment>
+    </div>
   );
 }

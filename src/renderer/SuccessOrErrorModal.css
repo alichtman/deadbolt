@@ -1,4 +1,4 @@
-.successBody {
+.successOrErrorBody {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -10,7 +10,7 @@
   overflow-inline: visible;
 }
 
-.successText {
+.successOrErrorText {
   color: #ffffff;
   margin-bottom: 50px;
   font-size: 20px;
@@ -29,13 +29,13 @@
   font-weight: 500;
 }
 
-.backToQuickLockText {
+.backToHomeText {
   color: #ffffff;
   opacity: 0.5;
   font-size: 14px;
   font-weight: 500;
 }
 
-.backToQuickLockText:hover {
+.backToHomeText:hover {
   opacity: 1;
 }

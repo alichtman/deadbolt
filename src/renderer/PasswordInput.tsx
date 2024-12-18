@@ -1,3 +1,5 @@
+import { useState } from 'react';
+// import { FaEye } from 'react-icons/fa';
 import './PasswordInput.css';
 
 export default function PasswordInput({
@@ -15,15 +17,31 @@ export default function PasswordInput({
   onKeyPress?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   autofocus?: boolean;
 }) {
+  // TODO: Add password eye icon to show/hide password
+
+  const [isVisible, setIsVisible] = useState(false);
+
+  // const icon = <FaEye />;
+  // const handleToggle = () => {
+  //   if (isVisible) {
+  //     setIsVisible(false);
+  //   } else {
+  //     setIsVisible(true);
+  //   }
+  // };
+
   return (
-    <input
-      className={inErrorMode ? 'inputBarError' : 'inputBar'}
-      type="password"
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      autoFocus={autofocus}
-      onKeyPress={onKeyPress}
-    />
+    <div className="passwordBarWithVisibilityToggle">
+      <input
+        className={inErrorMode ? 'inputBarError' : 'inputBar'}
+        type={!isVisible ? 'password' : 'text'}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        autoFocus={autofocus}
+        onKeyPress={onKeyPress}
+      />
+      {/* <FaEye /> */}
+    </div>
   );
 }
