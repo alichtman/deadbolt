@@ -112,7 +112,7 @@ const createWindow = async () => {
     show: false,
     width: 750,
     minWidth: 700,
-    height: 550,
+    height: 400,
     minHeight: 400,
     resizable: true,
     autoHideMenuBar: true,

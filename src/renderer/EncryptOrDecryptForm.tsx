@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './EncryptOrDecryptForm.css';
 import { FileIcon } from 'react-file-icon';
+// import { getClassWithColor } from 'file-icons-js';
+// import 'file-icons-js/css/style.css';
 import { FaLock } from 'react-icons/fa';
 import PasswordInput from './PasswordInput';
 import Button from './Button';
@@ -118,9 +120,7 @@ function FileHeader({
 }: {
   fileName: string;
 }): React.ReactNode | null {
-  const [prettyFilePath, setPrettyFilePath] = useState<string | undefined>(
-    fileName,
-  );
+  const [prettyFilePath, setPrettyFilePath] = useState<string>(fileName);
   if (!fileName) {
     return null;
   }
@@ -129,11 +129,15 @@ function FileHeader({
 
   // TODO: Pass the window width in here to figure out where to middle truncate to make the path fit.
   //       Currently, we swap out $HOME at the beginning, and then pray that it all fits.
-  const prettyFilePathMemoized = useMemo(() => {
-    return (
-      window.electronAPI.prettyPrintFilePath(fileName) as Promise<string>
-    ).then((result) => setPrettyFilePath(result));
+  useEffect(() => {
+    (window.electronAPI.prettyPrintFilePath(fileName) as Promise<string>).then(
+      (result) => setPrettyFilePath(result),
+    );
   }, [fileName]);
+
+  // const iconClassName = getClassWithColor(fileName);
+
+  const extension: string = fileName.split('.').pop() || '';
 
   return (
     <div className="fileHeader">
@@ -141,7 +145,9 @@ function FileHeader({
         {fileName.endsWith('.dbolt') ? (
           <FaLock />
         ) : (
-          <FileIcon extension={fileName.split('.').pop()} />
+          // TODO: Switch to using the old icon, once you fix the sizing issue (the icons show up really small for some reason, idk)
+          // <span className={iconClassName} id="fileIcon" />
+          <FileIcon extension={extension} type="presentation" />
         )}
       </div>
       <span

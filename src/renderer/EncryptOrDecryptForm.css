@@ -50,32 +50,21 @@
 }
 
 .fileHeader {
-  position: fixed;
-  top: 0;
-  display: flex;
   align-items: center;
-  width: 100%;
-  height: 70px;
   background-color: #2a3149;
+  color: #ffffff;
+  display: flex;
+  font-size: 18px;
+  font-style: monospace;
+  height: 70px;
   padding-bottom: 10px;
   padding-top: 10px;
-}
-
-/* .fileHeader {
-  padding-top: 50;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  height: 100px;
-  padding-bottom: 15px;
-  color: #ffffff;
-  font-size: 18px;
-  letter-spacing: 1px;
-  white-space: nowrap;
+  position: fixed;
   text-overflow: ellipsis;
-  font-style: monospace;
-} */
+  top: 0;
+  white-space: nowrap;
+  width: 100%;
+}
 
 .fileName {
   padding-top: 30px;
@@ -97,8 +86,4 @@
 
 .filePathEncrypted {
   padding-left: 0px;
-}
-
-#fileIcon::before {
-  font-size: 20px;
 }
