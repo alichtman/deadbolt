@@ -1,3 +1,7 @@
+### These docs are outdated.
+
+See: https://electron-react-boilerplate.js.org/docs/packaging
+
 # Release Process
 
 `deadbolt` is distributed in two ways.
