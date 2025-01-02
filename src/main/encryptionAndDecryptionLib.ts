@@ -67,8 +67,13 @@ function writeFileWithPromise(path: string, data: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
     const stream = fs.createWriteStream(path, { flags: 'w+' });
     stream.on('error', reject);
-    stream.write(data);
-    resolve(path);
+    stream.write(data, (err) => {
+      if (err) {
+        reject('Failed to write');
+      } else {
+        resolve(path);
+      }
+    });
   });
 }
 
