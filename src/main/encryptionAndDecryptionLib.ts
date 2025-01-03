@@ -306,7 +306,7 @@ async function getDecryptedFileContents(
     initializationVector,
   );
 
-  // Handle decryption errors. This will throw if the password is incorrect.
+  // Handle decryption errors. This will throw when we call decrypt.final() if the data integrity check fails.
   decrypt.setAuthTag(authTag);
 
   // Read encrypted file, and drop the first METADATA_LEN bytes
@@ -329,6 +329,7 @@ async function getDecryptedFileContents(
 
   try {
     const decryptedText = decrypt.update(cipherText);
+    decrypt.final();
     return decryptedText;
   } catch (error) {
     throw new DecryptionWrongPasswordError();
