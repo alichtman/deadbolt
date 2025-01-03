@@ -13,7 +13,6 @@ import { homedir } from 'os';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { encryptFile, decryptFile } from './encryptionAndDecryptionLib';
 
@@ -62,6 +61,8 @@ ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
   if (filePath.startsWith(homedir())) {
     filePath = filePath.replace(homedir(), '~');
   }
+
+  // TODO: On frontend, if path is too long to display (based on window width), do some middle truncation and offer a one-click copy to clipboard
 
   return filePath;
 });
@@ -116,7 +117,7 @@ const createWindow = async () => {
     minHeight: 400,
     resizable: true,
     autoHideMenuBar: true,
-    icon: getAssetPath('icon.png'),
+    icon: getAssetPath('icon.png'), // TODO: icon isn't being used on Fedora dev builds. Need to check macOS builds. /home/alichtman/Desktop/Development/projects/deadbolt/assets/icon.png is returned, which is correct
     webPreferences: {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
@@ -140,9 +141,6 @@ const createWindow = async () => {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
 
   // Open urls in the user's browser
   mainWindow.webContents.setWindowOpenHandler((edata) => {
