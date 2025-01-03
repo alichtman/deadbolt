@@ -20,6 +20,69 @@ const METADATA_LEN = 96;
 // ....
 const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
+enum EncryptionOrDecryption {
+  ENCRYPTION = 'encryption',
+  DECRYPTION_VERIFICATION_OF_ENCRYPTION = 'verification of encryption (which requires decryption)',
+  DECRYPTION = 'decryption',
+}
+
+class FileWriteError extends Error {
+  public operation: EncryptionOrDecryption;
+  constructor(operation: EncryptionOrDecryption) {
+    super();
+    this.name = 'FileWriteError';
+    this.operation = operation;
+  }
+}
+
+class FileReadError extends Error {
+  public operation: EncryptionOrDecryption;
+
+  constructor(operation: EncryptionOrDecryption) {
+    super();
+    this.name = 'FileReadError';
+    this.operation = operation;
+  }
+}
+
+class EncryptedFileMissingMetadataError extends Error {
+  constructor() {
+    super();
+    this.name = 'EncryptedFileMissingMetadataError';
+  }
+}
+
+class DecryptionWrongPasswordError extends Error {
+  constructor() {
+    super();
+    this.name = 'DecryptionWrongPasswordError';
+  }
+}
+
+function handleEncryptionOrDecryptionError(
+  error: Error,
+  filePath: string,
+): string {
+  // Can't figure out how to make this an exhaustive switch statement AND ALSO use legit error classes the way I am.
+  // sorry future @alichtman
+  if (error instanceof DecryptionWrongPasswordError) {
+    return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be decrypted. Incorrect password.`;
+  } else if (error instanceof EncryptedFileMissingMetadataError) {
+    return `${ERROR_MESSAGE_PREFIX}: ${filePath} is missing metadata. It's likely corrupted.`;
+  } else if (error instanceof FileReadError) {
+    return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${filePath} for ${error.operation}.`;
+  } else if (error instanceof FileWriteError) {
+    return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be written during ${error.operation}.`;
+  }
+  // TODO: Handle generic decryption error?
+  // else {
+  //   return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be decrypted.`;
+  // }
+  else {
+    return `${ERROR_MESSAGE_PREFIX}: Unhandled error. Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible.`;
+  }
+}
+
 /***********
  * Utilities
  ***********/
@@ -124,18 +187,20 @@ function createDerivedKey(
  *
  * A huge thank you to: https://medium.com/@brandonstilson/lets-encrypt-files-with-node-85037bea8c0e
  *
+ * WARNING: DO NOT THROW ANY ERRORS IN THIS FUNCTION. TO "THROW" AN ERROR, RETURN A STRING TO THE RENDERER PROCESS THAT BEGINS WITH ERROR_MESSAGE_PREFIX.
+ *
  * @param  {String}            filePath      Absolute path of unencrypted file.
- * @param  {crypto.BinaryLike} encryptionKey User verified encryption key.
+ * @param  {crypto.BinaryLike} password      Password to encrypt file with.
  * @return {String}                          Absolute path of encrypted file, OR an error message which is prefixed with ERROR_MESSAGE_PREFIX.
  *                                           Do not try to throw an error and have it returned to the renderer process. It will not work.
  */
 export async function encryptFile(
   filePath: string,
-  encryptionKey: crypto.BinaryLike,
+  password: crypto.BinaryLike,
 ): Promise<string> {
   // Create cipher
   const salt = crypto.randomBytes(64);
-  const derivedKey = createDerivedKey(salt, encryptionKey);
+  const derivedKey = createDerivedKey(salt, password);
   const initializationVector = crypto.randomBytes(16);
   let cipher = crypto.createCipheriv(
     AES_256_GCM,
@@ -146,9 +211,9 @@ export async function encryptFile(
   const encryptedFilePath = `${filePath}${ENCRYPTED_FILE_EXTENSION}`;
 
   // Read unencrypted file into buffer, or return an error message if we fail to read the file
-  let encryptedFileData: Buffer;
+  let fileDataToEncrypt: Buffer;
   try {
-    encryptedFileData = await readFileWithPromise(filePath)
+    fileDataToEncrypt = await readFileWithPromise(filePath)
       .then((data) => {
         return data;
       })
@@ -160,16 +225,17 @@ export async function encryptFile(
   }
 
   // Encrypt the file data, and then disable the cipher
-  const cipherText = cipher.update(encryptedFileData);
+  const cipherText = cipher.update(fileDataToEncrypt);
   cipher.final();
 
   const authTag = cipher.getAuthTag();
+  console.log('authTag', authTag);
 
   // Write salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
   const encryptedFileDataWithMetadata = Buffer.concat([
     salt,
     initializationVector,
-    authTag,
+    Buffer.from(authTag),
     cipherText,
   ]);
 
@@ -185,8 +251,17 @@ export async function encryptFile(
       }
     });
   } catch (error) {
+    return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written (error inside writeFileWithPromise()).`;
+  }
+
+  // If the file was not written, return an error message
+  if (!fs.existsSync(encryptedFilePath)) {
     return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
   }
+
+  ).catch((error) => {
+    return handleEncryptionOrDecryptionError(error, encryptedFilePath); // This returns a string error message
+  });
 
   if (fs.existsSync(encryptedFilePath)) {
     console.log('Successfully encrypted file: ', encryptedFilePath);
@@ -194,22 +269,25 @@ export async function encryptFile(
   } else {
     return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
   }
+
+  console.log('Successfully encrypted file: ', encryptedFilePath);
+  return encryptedFilePath;
 }
 
 /**
- * Decrypts a file.
- * @param  {String} filePath      Absolute path of encrypted file.
- * @param  {crypto.BinaryLike} decryptionKey Unverified decryption key supplied by user.
- * @return {String}               Absolute path of unencrypted file, OR an error message which is prefixed with ERROR_MESSAGE_PREFIX.
- *                                Do not try throwing an error here and expecting it to be returned to the renderer process
+ * Decrypts the contents of an encrypted file, and returns it as a buffer. This is so we can re-use this in the actual decryption function,
+ * as well as the encryption function (to take a SHA256 hash of the data after encrypting AND THEN decrypting it. I feel like the auth tag SHOULD do this, so maybe it's unnecessary)
+ * @param encryptedFilePath
+ * @param decryptionKey
+ * @returns Buffer if successful, error throw if failure
  */
-export async function decryptFile(
-  filePath: string,
+async function getDecryptedFileContents(
+  encryptedFilePath: string,
   decryptionKey: crypto.BinaryLike,
-): Promise<string> {
+  isVerification: boolean = false,
+): Promise<Buffer> {
   // Read salt, IV and authTag from beginning of file.
-  const decryptedFilePath = createDecryptedFilePath(filePath);
-  const fd = fs.openSync(filePath, 'r');
+  const fd = fs.openSync(encryptedFilePath, 'r');
   const salt = Buffer.alloc(64);
   fs.readSync(fd, salt, 0, 64, 0);
 
@@ -231,30 +309,53 @@ export async function decryptFile(
   // Handle decryption errors. This will throw if the password is incorrect.
   decrypt.setAuthTag(authTag);
 
-  let cipherText: Buffer;
-  try {
-    // Read encrypted file, and drop the first METADATA_LEN bytes
-    cipherText = await readFileWithPromise(filePath)
-      .then((data) => {
-        if (data.length < METADATA_LEN) {
-          throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
-        }
-        return data.subarray(METADATA_LEN);
-      })
-      .catch((_error) => {
-        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
-      });
-  } catch (error) {
-    return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${filePath} for decryption.`;
-  }
+  // Read encrypted file, and drop the first METADATA_LEN bytes
+  const cipherText = await readFileWithPromise(encryptedFilePath)
+    .then((data) => {
+      if (data.length < METADATA_LEN && data.length > 0) {
+        throw new EncryptedFileMissingMetadataError(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      } else if (data.length === 0) {
+        throw new FileReadError(
+          isVerification
+            ? EncryptionOrDecryption.DECRYPTION_VERIFICATION_OF_ENCRYPTION
+            : EncryptionOrDecryption.DECRYPTION,
+        );
+      }
+      return data.subarray(METADATA_LEN);
+    })
+    .catch((error: Error) => {
+      throw error;
+    });
 
-  let decryptedText: Buffer;
   try {
-    decryptedText = decrypt.update(cipherText);
+    const decryptedText = decrypt.update(cipherText);
+    return decryptedText;
   } catch (error) {
-    return `${ERROR_MESSAGE_PREFIX}: Wrong password!`;
+    throw new DecryptionWrongPasswordError();
   }
+}
 
+/**
+ * Decrypts a file and writes it to disk.
+ *
+ * WARNING: DO NOT THROW ANY ERRORS IN THIS FUNCTION. TO "THROW" AN ERROR, RETURN A STRING TO THE RENDERER PROCESS THAT BEGINS WITH ERROR_MESSAGE_PREFIX.
+ *
+ * @param  {String} filePath      Absolute path of encrypted file.
+ * @param  {crypto.BinaryLike} decryptionKey Unverified decryption key supplied by user.
+ * @return {String}               Absolute path of unencrypted file, OR an error message which is prefixed with ERROR_MESSAGE_PREFIX.
+ */
+export async function decryptFile(
+  filePath: string,
+  decryptionKey: crypto.BinaryLike,
+): Promise<string> {
+  const decryptedFilePath = createDecryptedFilePath(filePath);
+  let decryptedText: Buffer | string;
+  try {
+    decryptedText = await getDecryptedFileContents(filePath, decryptionKey);
+  } catch (error) {
+    const err = error as Error;
+    return handleEncryptionOrDecryptionError(err, filePath);
+  }
   try {
     await writeFileWithPromise(decryptedFilePath, decryptedText).catch(
       (_error) => {
@@ -271,6 +372,4 @@ export async function decryptFile(
   } catch (error) {
     return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;
   }
-
-  return decryptedFilePath;
 }
