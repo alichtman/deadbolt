@@ -59,7 +59,7 @@ class DecryptionWrongPasswordError extends Error {
   }
 }
 
-function handleEncryptionOrDecryptionError(
+function convertErrorToStringForRendererProcess(
   error: Error,
   filePath: string,
 ): string {
@@ -73,13 +73,8 @@ function handleEncryptionOrDecryptionError(
     return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${filePath} for ${error.operation}.`;
   } else if (error instanceof FileWriteError) {
     return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be written during ${error.operation}.`;
-  }
-  // TODO: Handle generic decryption error?
-  // else {
-  //   return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be decrypted.`;
-  // }
-  else {
-    return `${ERROR_MESSAGE_PREFIX}: Unhandled error. Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible.`;
+  } else {
+    return `${ERROR_MESSAGE_PREFIX}: Unhandled error. Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible. ${error}`;
   }
 }
 
@@ -111,15 +106,62 @@ function replaceLast(
   );
 }
 
-function createDecryptedFilePath(filePath: string) {
-  // TODO: Make sure the filepath doesn't exist, and we can safely write to whatever we return.
+/**
+ * Writes the decrypted file to the same directory as the encrypted file. Encrypted files are suffixed with .dbolt, so we remove that suffix.
+ * If the file already exists, we append -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
+ *
+ * Example:
+ * - If the encrypted file is /path/to/file.txt.dbolt, the decrypted file will be /path/to/file.txt
+ * - If the decrypted file already exists, we will try /path/to/file-1.txt, /path/to/file-2.txt, etc.
+ * @param encryptedFilePath
+ * @returns
+ */
+function generateValidDecryptedFilePath(encryptedFilePath: string) {
+  {
+    let baseFilePath = replaceLast(
+      encryptedFilePath,
+      ENCRYPTED_FILE_EXTENSION,
+      '',
+    );
+    let candidateFilePath = baseFilePath;
+    let counter = 1;
 
-  let decryptedFilePath = replaceLast(filePath, ENCRYPTED_FILE_EXTENSION, '');
-  let splitPath = decryptedFilePath.split('.');
-  splitPath.splice(splitPath.length - 1, 0, 'dbolt');
-  decryptedFilePath = splitPath.join('.');
+    while (fs.existsSync(candidateFilePath)) {
+      candidateFilePath = `${baseFilePath}-${counter}`;
+      counter++;
+    }
 
-  return decryptedFilePath;
+    return candidateFilePath;
+  }
+}
+
+/**
+ * Generates a valid encrypted file path by appending the encrypted file extension.
+ * If the file already exists, appends -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
+ *
+ * Example:
+ * - If the original file is /path/to/file.txt, the encrypted file will be /path/to/file.txt.dbolt
+ * - If the encrypted file already exists, it will try /path/to/file-1.txt.dbolt, /path/to/file-2.txt.dbolt, etc.
+ * @param originalFilePath
+ * @returns
+ */
+function generateValidEncryptedFilePath(originalFilePath: string): string {
+  let baseFilePath = `${originalFilePath}${ENCRYPTED_FILE_EXTENSION}`;
+  const lastPeriodIndex = originalFilePath.lastIndexOf('.');
+  const originalFileExtension = originalFilePath.substring(lastPeriodIndex);
+  const baseFilePathWithoutExtension = originalFilePath.substring(
+    0,
+    lastPeriodIndex,
+  );
+  let candidateFilePath = baseFilePath;
+  let counter = 1;
+
+  while (fs.existsSync(candidateFilePath)) {
+    candidateFilePath = `${baseFilePathWithoutExtension}-${counter}${originalFileExtension}${ENCRYPTED_FILE_EXTENSION}`;
+    counter++;
+  }
+
+  return candidateFilePath;
 }
 
 /**
@@ -214,9 +256,7 @@ export async function encryptFile(
     initializationVector,
   );
 
-  // TODO: Make sure the filepath doesn't exist, and we can safely write to whatever we return.
-  // TODO: Create a function for this.
-  const encryptedFilePath = `${filePath}${ENCRYPTED_FILE_EXTENSION}`;
+  const encryptedFilePath = generateValidEncryptedFilePath(filePath);
 
   // Read unencrypted file into buffer, or return an error message if we fail to read the file
   let fileDataToEncrypt: Buffer;
@@ -274,7 +314,7 @@ export async function encryptFile(
     password,
     true, // isVerification
   ).catch((error) => {
-    return handleEncryptionOrDecryptionError(error, encryptedFilePath); // This returns a string error message
+    return convertErrorToStringForRendererProcess(error, encryptedFilePath); // This returns a string error message
   });
 
   // If it's not a Buffer (i.e. it's an error message), return it
@@ -368,13 +408,13 @@ export async function decryptFile(
   filePath: string,
   decryptionKey: crypto.BinaryLike,
 ): Promise<string> {
-  const decryptedFilePath = createDecryptedFilePath(filePath);
+  const decryptedFilePath = generateValidDecryptedFilePath(filePath);
   let decryptedText: Buffer | string;
   try {
     decryptedText = await getDecryptedFileContents(filePath, decryptionKey);
   } catch (error) {
     const err = error as Error;
-    return handleEncryptionOrDecryptionError(err, filePath);
+    return convertErrorToStringForRendererProcess(err, filePath);
   }
   try {
     await writeFileWithPromise(decryptedFilePath, decryptedText).catch(
