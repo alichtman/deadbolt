@@ -63,9 +63,19 @@ ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
     filePath = filePath.replace(homedir(), '~');
   }
 
-  // TODO: On frontend, if path is too long to display (based on window width), do some middle truncation and offer a one-click copy to clipboard
-
-  return filePath;
+  // If path is too long, truncate it. Make sure the first directory is shown, and the last directory is shown, and the middle is truncated.
+  // Min window width is 400px, and 60 characters fits well in it.
+  if (filePath.length > 60) {
+    const firstDir = filePath.startsWith('~/')
+      ? `~${path.sep}${filePath.split(path.sep)[2]}`
+      : filePath.split(path.sep)[1];
+    const lastDir = filePath.split(path.sep).slice(-1)[0];
+    const ellipsis = '...';
+    const truncatedPath = `${firstDir}${path.sep}${ellipsis}${path.sep}${lastDir}`;
+    return truncatedPath;
+  } else {
+    return filePath;
+  }
 });
 
 ipcMain.handle('revealFileInFinder', (_event, [filePath]) => {
