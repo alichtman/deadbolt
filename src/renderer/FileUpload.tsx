@@ -12,8 +12,8 @@ export default function FileUpload({
   onChange: () => void;
 }) {
   const onDropAccepted = (files: File[], _event: DropEvent) => {
+    console.log('File dropped:', files);
     setFileToWorkWith(files[0]);
-    console.log(files[0]);
     onChange();
   };
 
