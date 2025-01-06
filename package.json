@@ -244,7 +244,7 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": ">=14.x",
+      "version": ">=22.x",
       "onFail": "error"
     },
     "packageManager": {
