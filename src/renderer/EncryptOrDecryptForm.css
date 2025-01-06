@@ -2,15 +2,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  justify-content: flex-start;
-}
-
-.modal {
-  position: relative;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  margin-top: -50px; /* Adjust this value to set the distance below fileHeader */
 }
 
 .errorText {
