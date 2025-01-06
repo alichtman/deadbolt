@@ -34,7 +34,8 @@ export default function SuccessOrErrorModal({
   return (
     <div className="successOrErrorBody">
       <Lottie options={animationOptions} height={100} width={200} />
-      <span className="successOrErrorText">{mainText}</span>
+      <span className="successOrErrorHeaderText">{mainText}</span>
+      {!isSuccess && <p className="errorText">{errorMessage}</p>}
       <div className="buttonsWrapper">
         {isSuccess && (
           <Button
@@ -46,7 +47,6 @@ export default function SuccessOrErrorModal({
             <span className="openFinderText">Reveal in Finder</span>
           </Button>
         )}
-        {!isSuccess && <p>{errorMessage}</p>}
         <Button isPrimary={false} onClick={onGoHome}>
           <span className="backToHomeText">Back to Home</span>
         </Button>
