@@ -94,7 +94,7 @@ if (isDebug) {
   require('electron-debug')();
 }
 
-const installExtensions = async () => {
+const debugSetup = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
   const extensions = ['REACT_DEVELOPER_TOOLS'];
@@ -109,7 +109,7 @@ const installExtensions = async () => {
 
 const createWindow = async () => {
   if (isDebug) {
-    await installExtensions();
+    await debugSetup();
   }
 
   const RESOURCES_PATH = app.isPackaged
@@ -124,9 +124,10 @@ const createWindow = async () => {
     show: false,
     width: 750,
     minWidth: 700,
-    height: 400,
+    maxWidth: 700,
     minHeight: 400,
-    resizable: true,
+    maxHeight: 400,
+    resizable: true, // so it's not actually resizable, but setting this to true makes the window the wrong sizes. idk man
     autoHideMenuBar: true,
     icon: getAssetPath('icon.png'), // TODO: icon isn't being used on Fedora dev builds. Need to check macOS builds. /home/alichtman/Desktop/Development/projects/deadbolt/assets/icon.png is returned, which is correct
     webPreferences: {
