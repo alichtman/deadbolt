@@ -1,6 +1,12 @@
-### These docs are outdated.
+# Building and Releasing `deadbolt`
 
-See: https://electron-react-boilerplate.js.org/docs/packaging
+The only successful path is building and releasing on macOS. You can't compile the macOS builds on Linux, and I won't develop on Windows.
+
+```bash
+$ npm run package
+```
+
+## Maybe outdated
 
 # Release Process
 
