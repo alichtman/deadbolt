@@ -226,7 +226,10 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "flatpak",
+        "deb",
+        "rpm"
       ],
       "category": "Development"
     },
