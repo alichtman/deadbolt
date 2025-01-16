@@ -5,7 +5,8 @@
 import fs from 'fs';
 import crypto from 'crypto';
 
-export const ENCRYPTED_FILE_EXTENSION = '.dbolt';
+export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
+export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
 const AES_256_GCM = 'aes-256-gcm';
 const METADATA_LEN = 96;
 
@@ -18,7 +19,7 @@ const METADATA_LEN = 96;
 // There are some workarounds floating around, like https://m-t-a.medium.com/electron-getting-custom-error-messages-from-ipc-main-617916e85151
 // but we're going to galaxy brain it and just return a string to the renderer process with a prefix to indicate that it's an error.
 // ....
-const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
+export const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
 enum EncryptionOrDecryption {
   ENCRYPTION = 'encryption',
@@ -107,6 +108,21 @@ function replaceLast(
 }
 
 /**
+ * Replace last instance of any supported encrypted file extension
+ * @param {String} input Input string
+ * @returns {String} Input with last extension removed
+ */
+function removeEncryptedFileExtension(input: string): string {
+  if (input.endsWith(ENCRYPTED_FILE_EXTENSION)) {
+    return replaceLast(input, ENCRYPTED_FILE_EXTENSION, '');
+  }
+  if (input.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)) {
+    return replaceLast(input, LEGACY_ENCRYPTED_FILE_EXTENSION, '');
+  }
+  return input;
+}
+
+/**
  * Writes the decrypted file to the same directory as the encrypted file. Encrypted files are suffixed with .dbolt, so we remove that suffix.
  * If the file already exists, we append -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
  *
@@ -117,22 +133,23 @@ function replaceLast(
  * @returns
  */
 function generateValidDecryptedFilePath(encryptedFilePath: string) {
-  {
-    let baseFilePath = replaceLast(
-      encryptedFilePath,
-      ENCRYPTED_FILE_EXTENSION,
-      '',
-    );
-    let candidateFilePath = baseFilePath;
-    let counter = 1;
+  const baseFilePathWithOriginalExtension = removeEncryptedFileExtension(encryptedFilePath);
 
-    while (fs.existsSync(candidateFilePath)) {
-      candidateFilePath = `${baseFilePath}-${counter}`;
-      counter++;
-    }
+  // Split the path into name and extension
+  const lastDotIndex = baseFilePathWithOriginalExtension.lastIndexOf('.');
+  // This handles files with no extension
+  const nameWithoutExt = lastDotIndex !== -1 ? baseFilePathWithOriginalExtension.slice(0, lastDotIndex) : baseFilePathWithOriginalExtension;
+  const extension = lastDotIndex !== -1 ? baseFilePathWithOriginalExtension.slice(lastDotIndex) : '';
 
-    return candidateFilePath;
+  let candidateFilePath = baseFilePathWithOriginalExtension;
+  let counter = 1;
+
+  while (fs.existsSync(candidateFilePath)) {
+    candidateFilePath = `${nameWithoutExt}-${counter}${extension}`;
+    counter++;
   }
+
+  return candidateFilePath;
 }
 
 /**
