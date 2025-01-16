@@ -129,9 +129,7 @@ export default function App() {
 
   let appBody;
   if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
-    appBody = (
-      <FileUpload setFileToWorkWith={handleFileSelection} onChange={() => {}} />
-    );
+    appBody = <FileUpload setFileToWorkWith={handleFileSelection} />;
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && !fileIsEncrypted) {
     appBody = (
       <EncryptOrDecryptForm
