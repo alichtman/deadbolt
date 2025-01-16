@@ -75,33 +75,36 @@ export default function App() {
   };
 
   const revealInFinder = () => {
-    window.electronAPI.revealFileInFinder(
-      pathToEncryptedOrDecryptedFile,
-    ) as Promise<string>;
+    window.electronAPI
+      .revealFileInFinder(pathToEncryptedOrDecryptedFile)
+      .then((result) => {
+        console.log('Revealed in finder:', result);
+        return result;
+      })
+      .catch((error) => {
+        console.error('Failed to reveal in finder:', error);
+        return error;
+      });
   };
 
   const encryptFile = (fileName: string, password: string) => {
-    const encryptedFileResult = window.electronAPI.encryptFileRequest(
-      fileName,
-      password,
-    ) as Promise<string>;
-
-    encryptedFileResult.then((resolvedFilePathOrError) => {
-      console.log('Resolved file path:', resolvedFilePathOrError);
-      if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
-        console.error('Error from encryptFile:', resolvedFilePathOrError);
-        setViewState(ViewState.ERROR);
-        setFileDecryptOrEncryptErrorMessage(
-          extractErrorMessageFromErrorString(resolvedFilePathOrError),
-        );
-        // setPathToEncryptedOrDecryptedFile(undefined);
-        return;
-      } else {
+    return window.electronAPI
+      .encryptFileRequest(fileName, password)
+      .then((resolvedFilePathOrError) => {
+        console.log('Resolved file path:', resolvedFilePathOrError);
+        if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
+          console.error('Error from encryptFile:', resolvedFilePathOrError);
+          setViewState(ViewState.ERROR);
+          setFileDecryptOrEncryptErrorMessage(
+            extractErrorMessageFromErrorString(resolvedFilePathOrError),
+          );
+          return resolvedFilePathOrError;
+        }
         setViewState(ViewState.SUCCESS);
         setFileDecryptOrEncryptErrorMessage(undefined);
         setPathToEncryptedOrDecryptedFile(resolvedFilePathOrError);
-      }
-    });
+        return resolvedFilePathOrError;
+      });
   };
 
   const decryptFile = (fileName: string, password: string) => {
@@ -111,28 +114,25 @@ export default function App() {
         'No file path provided for decryption',
       );
       setPathToEncryptedOrDecryptedFile(undefined);
-      return;
+      return Promise.reject(new Error('No file path provided'));
     }
-    const decryptedFileResult = window.electronAPI.decryptFileRequest(
-      fileName,
-      password,
-    ) as Promise<string>;
-
-    decryptedFileResult.then((resolvedFilePathOrError) => {
-      if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
-        console.error('Error from decryptFile:', resolvedFilePathOrError);
-        setViewState(ViewState.ERROR);
-        setFileDecryptOrEncryptErrorMessage(
-          extractErrorMessageFromErrorString(resolvedFilePathOrError),
-        );
-        setPathToEncryptedOrDecryptedFile(undefined);
-        return;
-      } else {
+    return window.electronAPI
+      .decryptFileRequest(fileName, password)
+      .then((resolvedFilePathOrError) => {
+        if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
+          console.error('Error from decryptFile:', resolvedFilePathOrError);
+          setViewState(ViewState.ERROR);
+          setFileDecryptOrEncryptErrorMessage(
+            extractErrorMessageFromErrorString(resolvedFilePathOrError),
+          );
+          setPathToEncryptedOrDecryptedFile(undefined);
+          return resolvedFilePathOrError;
+        }
         setViewState(ViewState.SUCCESS);
         setFileDecryptOrEncryptErrorMessage(undefined);
         setPathToEncryptedOrDecryptedFile(resolvedFilePathOrError);
-      }
-    });
+        return resolvedFilePathOrError;
+      });
   };
 
   const handleFileSelection = (file: File) => {
