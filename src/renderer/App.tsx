@@ -115,20 +115,21 @@ export default function App() {
     });
   };
 
-  // When a file is selected, check if it's encrypted and set the right state
-  useEffect(() => {
-    setFileIsEncrypted(isDeadboltFile(fileToWorkWith?.path));
-    console.log('File is encrypted?', fileIsEncrypted);
-  }, [fileToWorkWith]);
+  const handleFileSelection = (file: File) => {
+    const isEncrypted = isDeadboltFile(file.name);
+    console.log('File is encrypted?', isEncrypted);
+    console.log('File path:', file.name);
+    setFileToWorkWith(file);
+    setFileIsEncrypted(isEncrypted);
+    setViewState(ViewState.ENCRYPT_OR_DECRYPT);
+  };
 
   let appBody;
   if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
     appBody = (
       <FileUpload
-        setFileToWorkWith={setFileToWorkWith}
-        onChange={() => {
-          setViewState(ViewState.ENCRYPT_OR_DECRYPT);
-        }}
+        setFileToWorkWith={handleFileSelection}
+        onChange={() => {}}
       />
     );
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && !fileIsEncrypted) {
