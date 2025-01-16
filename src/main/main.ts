@@ -12,7 +12,7 @@ import path from 'path';
 import { homedir } from 'os';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { resolveHtmlPath } from './util';
-import { encryptFile, decryptFile } from './encryptionAndDecryptionLib';
+import { encryptFile, decryptFile, ERROR_MESSAGE_PREFIX} from './encryptionAndDecryptionLib';
 
 // TODO: Implement auto-updater
 // import { autoUpdater } from 'electron-updater';
@@ -47,6 +47,10 @@ ipcMain.handle('encryptFileRequest', async (_event, [filePath, password]) => {
 
 ipcMain.handle('decryptFileRequest', async (_event, [filePath, password]) => {
   console.log('decryptFileRequest', '{', filePath, '}');
+    if (!filePath) {
+    return `${ERROR_MESSAGE_PREFIX}: No file path provided for decryption`;
+  }
+
   const decryptedFilePathOrErrorMessage = await decryptFile(filePath, password);
   console.log(
     'Returning decrypted file path or error message: { ',
