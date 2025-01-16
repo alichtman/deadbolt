@@ -30,7 +30,7 @@ const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
 function extractErrorMessageFromErrorString(errorString: string): string {
   const removedPrefix = errorString.replace(`${ERROR_MESSAGE_PREFIX}: `, '');
-  return removedPrefix.split('\n')[0];
+  return removedPrefix.trim();
 }
 
 enum ViewState {

@@ -16,9 +16,8 @@ export default function SuccessOrErrorModal({
 }: {
   onGoHome: () => void;
   onRevealInFinder: () => void;
-  encryptedOrDecryptedFilePath?: string;
   isSuccess: boolean;
-  errorMessage?: string;
+  errorMessage: string;
 }) {
   const animationOptions = {
     loop: false,
@@ -39,7 +38,7 @@ export default function SuccessOrErrorModal({
       <div className="buttonsWrapper">
         {isSuccess && (
           <Button
-            isPrimary={true}
+            isPrimary
             onClick={() => {
               onRevealInFinder();
             }}
