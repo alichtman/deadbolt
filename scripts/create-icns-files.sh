@@ -12,7 +12,7 @@ fi
 
 iconset_dir="Icon.iconset"
 
-mkdir "$iconset_dir"
+mkdir -v "$iconset_dir"
 sips -z 16 16     "$1" --out "$iconset_dir"/icon_16x16.png
 sips -z 32 32     "$1" --out "$iconset_dir"/icon_16x16@2x.png
 sips -z 32 32     "$1" --out "$iconset_dir"/icon_32x32.png
@@ -22,6 +22,6 @@ sips -z 256 256   "$1" --out "$iconset_dir"/icon_128x128@2x.png
 sips -z 256 256   "$1" --out "$iconset_dir"/icon_256x256.png
 sips -z 512 512   "$1" --out "$iconset_dir"/icon_256x256@2x.png
 sips -z 512 512   "$1" --out "$iconset_dir"/icon_512x512.png
-cp "$1" "$iconset_dir"/icon_512x512@2x.png
+cp -v "$1" "$iconset_dir"/icon_512x512@2x.png
 iconutil -c icns "$iconset_dir"
-rm -R "$iconset_dir"
+rm -v -R "$iconset_dir"
