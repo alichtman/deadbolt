@@ -17,6 +17,7 @@ declare global {
         filePath: string,
         password: string,
       ) => Promise<string>;
+      prettyPrintFilePath: (filePath: string) => Promise<string>;
     };
   }
 }
@@ -179,7 +180,7 @@ export default function App() {
           resetToFileUpload();
         }}
         onRevealInFinder={revealInFinder}
-        encryptedOrDecryptedFilePath={pathToEncryptedOrDecryptedFile}
+        errorMessage={undefined}
         isSuccess
       />
     );
@@ -191,7 +192,6 @@ export default function App() {
           resetToFileUpload();
         }}
         onRevealInFinder={revealInFinder}
-        encryptedOrDecryptedFilePath={undefined}
         isSuccess={false}
         errorMessage={fileDecryptOrEncryptErrorMessage}
       />

@@ -17,7 +17,7 @@ export default function SuccessOrErrorModal({
   onGoHome: () => void;
   onRevealInFinder: () => void;
   isSuccess: boolean;
-  errorMessage: string;
+  errorMessage: string | undefined;
 }) {
   const animationOptions = {
     loop: false,
@@ -34,7 +34,9 @@ export default function SuccessOrErrorModal({
     <div className="successOrErrorBody">
       <Lottie options={animationOptions} height={100} width={200} />
       <span className="successOrErrorHeaderText">{mainText}</span>
-      {!isSuccess && <p className="errorText">{errorMessage}</p>}
+      {!isSuccess && errorMessage && (
+        <p className="errorText">{errorMessage}</p>
+      )}
       <div className="buttonsWrapper">
         {isSuccess && (
           <Button
