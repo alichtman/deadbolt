@@ -156,15 +156,33 @@ function generateValidDecryptedFilePath(encryptedFilePath: string) {
  * Generates a valid encrypted file path by appending the encrypted file extension.
  * If the file already exists, appends -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
  *
- * Example:
+ * Example for files with extensions:
  * - If the original file is /path/to/file.txt, the encrypted file will be /path/to/file.txt.dbolt
  * - If the encrypted file already exists, it will try /path/to/file-1.txt.dbolt, /path/to/file-2.txt.dbolt, etc.
- * @param originalFilePath
- * @returns
+ *
+ * Example for files without extensions:
+ * - If the original file is /path/to/README, the encrypted file will be /path/to/README.dbolt
+ * - If the encrypted file already exists, it will try /path/to/README-1.dbolt, /path/to/README-2.dbolt, etc.
+ *
+ * @param originalFilePath - The path to the file that will be encrypted
+ * @returns The path where the encrypted file should be written
  */
 function generateValidEncryptedFilePath(originalFilePath: string): string {
   let baseFilePath = `${originalFilePath}${ENCRYPTED_FILE_EXTENSION}`;
   const lastPeriodIndex = originalFilePath.lastIndexOf('.');
+
+  // Handle files with no extension
+  if (lastPeriodIndex === -1) {
+    let candidateFilePath = baseFilePath;
+    let counter = 1;
+
+    while (fs.existsSync(candidateFilePath)) {
+      candidateFilePath = `${originalFilePath}-${counter}${ENCRYPTED_FILE_EXTENSION}`;
+      counter++;
+    }
+    return candidateFilePath;
+  }
+
   const originalFileExtension = originalFilePath.substring(lastPeriodIndex);
   const baseFilePathWithoutExtension = originalFilePath.substring(
     0,
