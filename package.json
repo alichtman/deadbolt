@@ -176,6 +176,9 @@
     "webpack-dev-server": "^4.15.1",
     "webpack-merge": "^5.9.0"
   },
+  "optionalDependencies": {
+    "dmg-license": "^1.0.11"
+  },
   "build": {
     "productName": "Deadbolt",
     "appId": "org.alichtman.deadbolt",
@@ -260,8 +263,5 @@
       ".erb/dll/**"
     ],
     "logLevel": "quiet"
-  },
-  "optionalDependencies": {
-    "dmg-license": "^1.0.11"
   }
 }
