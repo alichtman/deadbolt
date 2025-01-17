@@ -116,6 +116,31 @@ export function generateValidDecryptedFilePath(encryptedFilePath: string) {
 }
 
 /**
+ * Generates a valid zip file path by appending .zip extension.
+ * If the file already exists, appends -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
+ *
+ * Example:
+ * - If the original file is /path/to/folder, the zip will be /path/to/folder.zip
+ * - If that exists, it will try /path/to/folder-1.zip, /path/to/folder-2.zip, etc.
+ *
+ * @param originalPath - The path to the folder/file that will be zipped
+ * @returns The path where the zip file should be written
+ */
+export function generateValidZipFilePath(originalPath: string): string {
+  const baseZipPath = `${originalPath}.zip`;
+  let candidateZipPath = baseZipPath;
+  let counter = 1;
+
+  while (fs.existsSync(candidateZipPath)) {
+    candidateZipPath = `${originalPath}-${counter}.zip`;
+    counter += 1;
+  }
+
+  return candidateZipPath;
+}
+
+
+/**
  * Generates a valid encrypted file path by appending the encrypted file extension.
  * If the file already exists, appends -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
  *

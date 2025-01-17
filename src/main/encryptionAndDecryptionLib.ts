@@ -16,6 +16,7 @@ import FileWriteError from './error-types/FileWriteError';
 import prettyPrintFilePath, {
   generateValidDecryptedFilePath,
   generateValidEncryptedFilePath,
+  generateValidZipFilePath,
 } from './fileUtils';
 
 const AES_256_GCM = 'aes-256-gcm';
@@ -215,9 +216,9 @@ export async function encryptFile(
   const isDirectory = (await promisify(fs.stat)(filePath)).isDirectory();
   if (isDirectory) {
     // Zip the folder before encrypting
-    const zipFilePath = `${filePath}.zip`;
-    await zip(filePath, zipFilePath); // Zip the folder
-    filePathToEncrypt = zipFilePath; // Update filePath to the zipped file
+    const zipFilePath = generateValidZipFilePath(filePath);
+    await zip(filePath, zipFilePath);
+    filePathToEncrypt = zipFilePath;
   }
 
   // Read unencrypted file (or zipped folder) into buffer, or return an error message if we fail to read the file
