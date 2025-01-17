@@ -9,12 +9,12 @@ import EncryptOrDecryptFileHeader from './EncryptOrDecryptFileHeader';
 
 export default function EncryptOrDecryptForm({
   isDecryption,
-  file,
+  filePath,
   onSubmit,
   onCancel,
 }: {
   isDecryption: boolean;
-  file: File;
+  filePath: string;
   onSubmit: (filePath: string, password: string) => void;
   onCancel: () => void;
 }): React.ReactNode | null {
@@ -44,9 +44,9 @@ export default function EncryptOrDecryptForm({
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       if (isDecryption) {
-        onSubmit(file.path, password);
+        onSubmit(filePath, password);
       } else if (validatePassword()) {
-        onSubmit(file.path, password);
+        onSubmit(filePath, password);
       } else {
         // Encryption, passwords don't match
         setDisplayError(true);
@@ -59,7 +59,7 @@ export default function EncryptOrDecryptForm({
 
   return (
     <>
-      <EncryptOrDecryptFileHeader fileName={file.path} />
+      <EncryptOrDecryptFileHeader fileName={filePath} />
 
       <div
         className="formBody"
@@ -105,9 +105,9 @@ export default function EncryptOrDecryptForm({
             buttonType="primary"
             onClick={() => {
               if (!isDecryption && validatePassword()) {
-                onSubmit(file.path, password);
+                onSubmit(filePath, password);
               } else if (isDecryption) {
-                onSubmit(file.path, password);
+                onSubmit(filePath, password);
               }
             }}
           >

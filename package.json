@@ -210,6 +210,16 @@
           "arm64"
         ]
       },
+      "fileAssociations": [
+        {
+          "ext": [
+            "dbolt",
+            "deadbolt"
+          ],
+          "description": "Encrypted files",
+          "role": "Viewer"
+        }
+      ],
       "type": "distribution",
       "hardenedRuntime": true,
       "entitlements": "assets/entitlements.mac.plist",

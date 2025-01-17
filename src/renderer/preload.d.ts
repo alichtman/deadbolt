@@ -11,6 +11,7 @@ declare global {
         password: string,
       ) => Promise<string>;
       prettyPrintFilePath: (filePath: string) => Promise<string>;
+      handleFileOpen: (callback: (filePath: string) => void) => void;
     };
   }
 }
