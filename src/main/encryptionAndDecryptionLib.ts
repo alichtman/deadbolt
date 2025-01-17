@@ -7,6 +7,8 @@
 
 import fs from 'fs';
 import crypto from 'crypto';
+import { promisify } from 'util';
+import { zip } from 'zip-a-folder';
 import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordError';
 import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
 import FileReadError from './error-types/FileReadError';
@@ -194,6 +196,7 @@ async function getDecryptedFileContents(
  *
  * A huge thank you to: https://medium.com/@brandonstilson/lets-encrypt-files-with-node-85037bea8c0e
  *
+ *
  * WARNING: DO NOT THROW ANY ERRORS IN THIS FUNCTION. TO "THROW" AN ERROR, RETURN A STRING TO THE RENDERER PROCESS THAT BEGINS WITH ERROR_MESSAGE_PREFIX.
  *
  * @param  {String}            filePath      Absolute path of unencrypted file.
@@ -205,7 +208,38 @@ export async function encryptFile(
   filePath: string,
   password: crypto.BinaryLike,
 ): Promise<string> {
-  // Create cipher
+  let fileDataToEncrypt: Buffer;
+  let filePathToEncrypt: string = filePath;
+
+  // Check if the path is a directory
+  const isDirectory = (await promisify(fs.stat)(filePath)).isDirectory();
+  if (isDirectory) {
+    // Zip the folder before encrypting
+    const zipFilePath = `${filePath}.zip`;
+    await zip(filePath, zipFilePath); // Zip the folder
+    filePathToEncrypt = zipFilePath; // Update filePath to the zipped file
+  }
+
+  // Read unencrypted file (or zipped folder) into buffer, or return an error message if we fail to read the file
+  try {
+    fileDataToEncrypt = await readFileWithPromise(filePathToEncrypt)
+      .then((data) => {
+        return data;
+      })
+      .catch((error) => {
+        if (isDirectory && filePathToEncrypt.endsWith('.zip')) {
+          // if isDirectory, filePathToEncrypt should always be a zip, but double checking just in case
+          fs.unlinkSync(filePathToEncrypt);
+        }
+        throw error; // This will be caught by the next catch block, which can return an error message from outside the callback
+      });
+  } catch (error) {
+    if (isDirectory) {
+      return `${ERROR_MESSAGE_PREFIX}: Failed to encrypt ${filePath}. Something went wrong while zipping the folder.`;
+    }
+    return `${ERROR_MESSAGE_PREFIX}: ${filePathToEncrypt} failed to be opened for reading.`;
+  }
+
   const salt = crypto.randomBytes(64);
   const derivedKey = createDerivedKey(salt, password);
   const initializationVector = crypto.randomBytes(16);
@@ -215,21 +249,7 @@ export async function encryptFile(
     initializationVector,
   );
 
-  const encryptedFilePath = generateValidEncryptedFilePath(filePath);
-
-  // Read unencrypted file into buffer, or return an error message if we fail to read the file
-  let fileDataToEncrypt: Buffer;
-  try {
-    fileDataToEncrypt = await readFileWithPromise(filePath)
-      .then((data) => {
-        return data;
-      })
-      .catch((error) => {
-        throw error; // This will be caught by the next catch block, which can return an error message from outside the callback
-      });
-  } catch (error) {
-    return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be opened for reading.`;
-  }
+  const encryptedFilePath = generateValidEncryptedFilePath(filePathToEncrypt);
 
   const unencryptedFileDataSHA256 = sha256Hash(fileDataToEncrypt);
 

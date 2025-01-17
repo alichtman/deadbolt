@@ -1,7 +1,8 @@
+/* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 import './FileUpload.css';
 import { DropEvent, useDropzone } from 'react-dropzone';
-import { FaGithub } from 'react-icons/fa';
+import { FaGithub, FaInfoCircle } from 'react-icons/fa';
 
 import packageInfo from '../../package.json';
 import dropFileIcon from './assets/dropFileIcon.svg';
@@ -69,7 +70,19 @@ export default function FileUpload({
         />
 
         <span className="fileUploadText">
-          Drag-and-drop a file here, <br /> or click to select
+          Drag-and-drop a file or folder here, <br /> or click to select
+          <br />
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginTop: '8px',
+              fontSize: '12px',
+            }}
+          >
+            <FaInfoCircle style={{ marginRight: '4px' }} />
+            Folder encryption is only supported with drag-and-drop
+          </span>
         </span>
       </div>
       <DeadboltVersionTagAndGithubLink />
