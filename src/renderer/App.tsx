@@ -31,8 +31,10 @@ enum ViewState {
  * @returns `true` if the file path ends with the Deadbolt file extension, otherwise `false`.
  */
 export function isDeadboltFile(filePath: string | undefined): boolean {
-  if (!filePath) return false;
-  if (filePath.startsWith(ERROR_MESSAGE_PREFIX)) return false;
+  if (!filePath || filePath.startsWith(ERROR_MESSAGE_PREFIX)) {
+    return false;
+  }
+
   return (
     filePath.endsWith(ENCRYPTED_FILE_EXTENSION) ||
     filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)
