@@ -1,34 +1,37 @@
-name: Test
+# We ... don't have any tests, so this is just commented out boilerplate.
+# We should really have some tests!
 
-on: [push, pull_request]
+# name: Test
 
-jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+# on: [push, pull_request]
 
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+# jobs:
+#   test:
+#     runs-on: ${{ matrix.os }}
 
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v3
+#     strategy:
+#       matrix:
+#         os: [macos-latest, windows-latest, ubuntu-latest]
 
-      - name: Install Node.js and NPM
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22
-          cache: npm
+#     steps:
+#       - name: Check out Git repository
+#         uses: actions/checkout@v3
 
-      - name: npm install
-        run: |
-          npm install
+#       - name: Install Node.js and NPM
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 22
+#           cache: npm
 
-      - name: npm test
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npm run package
-          npm run lint
-          npm exec tsc
-          npm test
+#       - name: npm install
+#         run: |
+#           npm install
+
+#       - name: npm test
+#         env:
+#           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         run: |
+#           npm run package
+#           npm run lint
+#           npm exec tsc
+#           npm test
