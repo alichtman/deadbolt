@@ -4,6 +4,8 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import which from 'which';
+import glob from 'glob';
+import { quote } from 'shlex';
 
 function logFatalError(error: string): void {
   console.log(chalk.red.bold(error));
@@ -102,31 +104,47 @@ async function release(): Promise<void> {
     process.exit();
   }
 
-  // Push new releases to GitHub
-  execSync(
-    `gh release create ${vVersion} --title "deadbolt ${vVersion}" --target main --generate-notes --draft`,
-  );
-
-  console.log(
-    chalk.green(
-      'A draft release has been created. You will need to publish it from the GitHub UI. Make sure to update the Homebrew tap, and any other package managers with the new release.\n',
-    ),
-  );
-
   // Build electron app for Linux, Windows and macOS, and then publish to github as part of the npm script
-  try {
-    execSync('npm run package', { stdio: 'inherit' });
-  } catch (error) {
-    logFatalError('`$ npm run package` failed!');
-    console.error(chalk.red('Error during build process:'), error);
-    logFatalError('Release stopped.');
-  }
+  // TODO UNCOMMENT
+  // try {
+  //   execSync('npm run package', { stdio: 'inherit' });
+  // } catch (error) {
+  //   logFatalError('`$ npm run package` failed!');
+  //   console.error(chalk.red('Error during build process:'), error);
+  //   logFatalError('Release stopped.');
+  // }
+
+  // Push new releases to GitHub
+  return new Promise((resolve, reject) => {
+    glob('release/build/Deadbolt*', (err, files) => {
+      if (err) {
+        console.error('Error finding files:', err);
+        reject(err);
+        return;
+      }
+      console.log('Found files:', files);
+      const escapedFiles = files.map((file) => quote(file)).join(' ');
+      try {
+        const command = `gh release create ${vVersion} --title "deadbolt ${vVersion}" --target main --generate-notes --draft ${escapedFiles}`;
+        console.log(chalk.green.bold(`Executing command: $ ${command}`));
+        execSync(command, { stdio: 'inherit' });
+        console.log(
+          chalk.green.bold(
+            'A draft release has been created. You will need to publish it from the GitHub UI. Make sure to update the Homebrew tap, and any other package managers with the new release.\n',
+          ),
+        );
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
 }
 
 // Run the release process
 release()
   .then(() => {
-    console.log(chalk.green('Draft release completed successfully!'));
+    console.log(chalk.green.bold('Draft release completed successfully!'));
     process.exit(0);
   })
   .catch((err) => {
