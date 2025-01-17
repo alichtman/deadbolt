@@ -20,6 +20,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 10
+
       - name: npm install
         run: |
           npm install
