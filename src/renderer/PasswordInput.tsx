@@ -22,7 +22,7 @@ export default function PasswordInput({
   const [isVisible, setIsVisible] = useState(false);
 
   const type = isVisible ? 'text' : 'password';
-  const Icon = isVisible ? Visibility : VisibilityOff;
+  const EyeIcon = isVisible ? Visibility : VisibilityOff;
 
   return (
     <TextField
@@ -37,7 +37,7 @@ export default function PasswordInput({
       sx={{ margin: '4px' }}
       slotProps={{
         input: {
-          endAdornment: <Icon onClick={() => setIsVisible(!isVisible)} />,
+          endAdornment: <EyeIcon onClick={() => setIsVisible(!isVisible)} />,
         },
       }}
     />
