@@ -197,7 +197,7 @@
       "sign": ".erb/scripts/notarize.js",
       "notarize": false,
       "target": {
-        "target": "default",
+        "target": "dmg",
         "arch": [
           "arm64"
         ]
@@ -230,7 +230,10 @@
       "target": [
         "AppImage",
         "deb",
-        "rpm"
+        "rpm",
+        "snap",
+        "flatpak",
+        "tar.gz"
       ],
       "category": "Utility"
     },
