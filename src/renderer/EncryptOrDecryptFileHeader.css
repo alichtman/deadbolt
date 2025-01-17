@@ -4,10 +4,9 @@
   color: #ffffff;
   display: flex;
   font-size: 18px;
-  font-style: monospace;
   height: 70px;
-  padding-bottom: 10px;
-  padding-top: 10px;
+  padding-bottom: 2px;
+  padding-top: 2px;
   position: fixed;
   top: 0;
   white-space: nowrap;
@@ -23,15 +22,10 @@
   width: 80%;
 }
 
-.fileHeaderImage {
-  width: 50px;
-  height: 50px;
-}
-
-.filePath {
-  padding-left: 8px;
-}
-
-.filePathEncrypted {
-  padding-left: 0px;
+.fileHeaderIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 40px;
 }

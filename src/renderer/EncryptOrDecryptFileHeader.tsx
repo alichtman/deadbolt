@@ -1,7 +1,30 @@
-import React, { useState, useEffect } from 'react';
 import { FaLock } from 'react-icons/fa';
-import { FileIcon } from 'react-file-icon';
+
+/* eslint-disable no-alert */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+import React, { useState, useEffect } from 'react';
 import './EncryptOrDecryptFileHeader.css';
+import { getIcon } from 'material-file-icons';
+import { isDeadboltFile } from './App';
+// import deadboltIcon from '../../assets/icon.png';
+
+function FileIcon({
+  filename,
+  style,
+}: {
+  filename: string;
+  style: React.CSSProperties;
+}): React.ReactNode {
+  return (
+    <div
+      style={style}
+      // Theoretically exposes XSS risk, however, getIcon always returns an icon type, so this shouldn't be an issue. (Famous last words)
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{ __html: getIcon(filename).svg }}
+    />
+  );
+}
 
 /**
  * Renders a file header component.
@@ -30,23 +53,31 @@ export default function EncryptOrDecryptFileHeader({
     return null;
   }
 
-  const extension: string = fileName.split('.').pop() || '';
-
   return (
     <div className="fileHeader">
-      <div className="fileHeaderImage">
-        {fileName.endsWith('.dbolt') ? (
+      <div className="fileHeaderIcon">
+        {isDeadboltFile(fileName) ? (
           <FaLock />
         ) : (
-          // TODO: Switch to using the old icon, once you fix the sizing issue (the icons show up really small for some reason, idk)
-          // <span className={iconClassName} id="fileIcon" />
-          <FileIcon extension={extension} type="presentation" />
+          // <img
+          //   src={deadboltIcon}
+          //   alt="Deadbolt Icon"
+          //   style={{
+          //     width: '30px',
+          //     height: '30px',
+          //     marginTop: '5px',
+          //     marginRight: '8px',
+          //   }}
+          // />
+          <FileIcon
+            filename={fileName}
+            style={{
+              transform: 'scale(1.5)',
+            }}
+          />
         )}
       </div>
       <span
-        className={
-          fileName.endsWith('.dbolt') ? 'filePathEncrypted' : 'filePath'
-        }
         title={fileName} // Show full filepath on hover
       >
         {prettyFilePath}
