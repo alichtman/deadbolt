@@ -1,8 +1,25 @@
+/* eslint-disable no-console */
 import { useState } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
 import EncryptOrDecryptForm from './EncryptOrDecryptForm';
 import SucessOrErrorModal from './SuccessOrErrorModal';
+
+declare global {
+  interface Window {
+    electronAPI: {
+      revealFileInFinder: (filePath: string | undefined) => Promise<string>;
+      encryptFileRequest: (
+        filePath: string,
+        password: string,
+      ) => Promise<string>;
+      decryptFileRequest: (
+        filePath: string,
+        password: string,
+      ) => Promise<string>;
+    };
+  }
+}
 
 export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
 export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
