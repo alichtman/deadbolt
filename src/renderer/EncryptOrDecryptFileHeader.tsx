@@ -4,7 +4,6 @@ import { FaLock } from 'react-icons/fa';
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useState, useEffect } from 'react';
-import './EncryptOrDecryptFileHeader.css';
 import { getIcon } from 'material-file-icons';
 import { isDeadboltFile } from './App';
 // import deadboltIcon from '../../assets/icon.png';
@@ -54,21 +53,33 @@ export default function EncryptOrDecryptFileHeader({
   }
 
   return (
-    <div className="fileHeader">
-      <div className="fileHeaderIcon">
+    <div
+      style={{
+        alignItems: 'center',
+        backgroundColor: '#2a3149',
+        color: '#ffffff',
+        display: 'flex',
+        fontSize: '18px',
+        height: '70px',
+        paddingBottom: '2px',
+        paddingTop: '2px',
+        position: 'fixed',
+        top: 0,
+        whiteSpace: 'nowrap',
+        width: '100%',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: '20px',
+          height: '40px',
+        }}
+      >
         {isDeadboltFile(fileName) ? (
           <FaLock />
         ) : (
-          // <img
-          //   src={deadboltIcon}
-          //   alt="Deadbolt Icon"
-          //   style={{
-          //     width: '30px',
-          //     height: '30px',
-          //     marginTop: '5px',
-          //     marginRight: '8px',
-          //   }}
-          // />
           <FileIcon
             filename={fileName}
             style={{
