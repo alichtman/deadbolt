@@ -227,7 +227,6 @@
     "linux": {
       "target": [
         "AppImage",
-        "flatpak",
         "deb",
         "rpm"
       ],
