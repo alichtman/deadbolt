@@ -1,10 +1,12 @@
+@import './colors.css';
+
 .primaryButton {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 35px;
   width: 100%;
-  background-color: #11b5e4;
+  background-color: var(--primary-color);
   opacity: 0.8;
   border-radius: 5px;
   cursor: pointer;
@@ -14,23 +16,6 @@
   opacity: 1;
 }
 
-.secondaryButton {
-  height: 30px;
-  display: flex;
-  width: 100%;
-  cursor: pointer;
-  padding-top: 4px;
-  margin-top: 10px;
-  opacity: 0.8;
-  border-radius: 5px;
-}
-
-.secondaryButton:hover {
-  opacity: 1;
-  background-color: #db3830;
-  border-radius: 5px;
-}
-
 .cancelButton {
   height: 30px;
   display: flex;
@@ -38,7 +23,7 @@
   cursor: pointer;
   padding-top: 4px;
   margin-top: 10px;
-  background-color: #db3830;
+  background-color: var(--error-or-destructive-color);
   color: white;
   border-radius: 5px;
   opacity: 0.8;
@@ -55,7 +40,7 @@
   cursor: pointer;
   padding-top: 4px;
   margin-top: 10px;
-  background-color: #2ecc71;
+  background-color: var(--success-color);
   color: white;
   border-radius: 5px;
   opacity: 0.8;

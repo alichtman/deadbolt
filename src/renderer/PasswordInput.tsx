@@ -37,7 +37,12 @@ export default function PasswordInput({
       sx={{ margin: '4px' }}
       slotProps={{
         input: {
-          endAdornment: <EyeIcon onClick={() => setIsVisible(!isVisible)} />,
+          endAdornment: (
+            <EyeIcon
+              onClick={() => setIsVisible(!isVisible)}
+              style={{ color: 'var(--text-color-secondary)' }}
+            />
+          ),
         },
       }}
     />

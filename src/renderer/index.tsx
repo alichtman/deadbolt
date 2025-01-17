@@ -1,23 +1,19 @@
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import App from './App';
+import './colors.css';
 
 const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1d7be0',
-      contrastText: '#FFF',
-      dark: '#aa3517',
-    },
-  },
-
   components: {
     MuiTextField: {
       styleOverrides: {
         root: {
+          '& .MuiInputBase-input': {
+            color: 'var(--text-color-secondary)',
+          },
           '& .MuiInputBase-input::placeholder': {
-            color: '#FFFFFF',
-            opacity: 0.65,
+            color: 'var(--text-color-secondary)',
+            opacity: 0.8,
           },
         },
       },

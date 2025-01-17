@@ -1,0 +1,13 @@
+:root {
+  --primary-color: #11b5e4;
+  --error-or-destructive-color: #db3830;
+  --success-color: #2ecc71;
+  --text-color: white;
+  --text-color-secondary: #a0bab3;
+  --button-opacity: 0.8;
+  --background-gradient: linear-gradient(
+    45deg,
+    rgba(40, 47, 68, 1) 0%,
+    rgba(81, 92, 121, 1) 100%
+  );
+}
