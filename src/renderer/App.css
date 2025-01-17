@@ -37,6 +37,28 @@ button {
   opacity: 0.9;
 }
 
+@keyframes shimmer {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.workingText {
+  font-size: 26px;
+  letter-spacing: 1px;
+  margin-top: 10px;
+  margin-left: 10px;
+  animation:
+    fadeIn 0.5s ease-in,
+    shimmer 2s ease-in-out infinite;
+}
+
 button:hover {
   transform: scale(1.05);
   opacity: 1;

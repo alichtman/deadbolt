@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 import { useState } from 'react';
 import './App.css';
+import CircularProgress from '@mui/material/CircularProgress';
 import FileUpload from './FileUpload';
 import EncryptOrDecryptForm from './EncryptOrDecryptForm';
 import SucessOrErrorModal from './SuccessOrErrorModal';
@@ -55,6 +56,7 @@ export default function App() {
     fileDecryptOrEncryptErrorMessage,
     setFileDecryptOrEncryptErrorMessage,
   ] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
 
   const resetToFileUpload = () => {
     setViewState(ViewState.FILE_UPLOAD);
@@ -75,9 +77,11 @@ export default function App() {
   };
 
   const encryptFile = (fileName: string, password: string) => {
+    setLoading(true);
     return window.electronAPI
       .encryptFileRequest(fileName, password)
       .then((resolvedFilePathOrError) => {
+        setLoading(false);
         console.log('Resolved file path:', resolvedFilePathOrError);
         if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
           console.error('Error from encryptFile:', resolvedFilePathOrError);
@@ -103,9 +107,11 @@ export default function App() {
       setPathToEncryptedOrDecryptedFile(undefined);
       return Promise.reject(new Error('No file path provided'));
     }
+    setLoading(true);
     return window.electronAPI
       .decryptFileRequest(fileName, password)
       .then((resolvedFilePathOrError) => {
+        setLoading(false);
         if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
           console.error('Error from decryptFile:', resolvedFilePathOrError);
           setViewState(ViewState.ERROR);
@@ -130,6 +136,22 @@ export default function App() {
     setFileIsEncrypted(isEncrypted);
     setViewState(ViewState.ENCRYPT_OR_DECRYPT);
   };
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px',
+        }}
+      >
+        <CircularProgress />
+        <span className="workingText">Working...</span>
+      </div>
+    );
+  }
 
   if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
     return <FileUpload setFileToWorkWith={handleFileSelection} />;
