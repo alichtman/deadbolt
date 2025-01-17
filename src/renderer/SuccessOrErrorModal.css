@@ -36,16 +36,18 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 500;
+  transition: opacity 0.2s ease;
 }
 
 .backToHomeText {
   color: #ffffff;
-  opacity: 0.5;
+  opacity: 0.8;
   font-size: 14px;
   font-weight: 500;
+  transition: opacity 0.2s ease;
 }
 
-.backToHomeText:hover {
+Button:hover .backToHomeText {
   opacity: 1;
 }
 

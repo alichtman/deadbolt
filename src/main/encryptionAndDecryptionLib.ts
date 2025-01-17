@@ -1,7 +1,9 @@
-/** ***********
- * Constants
- *********** */
+/* eslint-disable spaced-comment */
 /* eslint-disable no-console */
+
+/**************
+ * Constants
+ *************/
 
 import fs from 'fs';
 import crypto from 'crypto';
@@ -17,9 +19,9 @@ import prettyPrintFilePath, {
 const AES_256_GCM = 'aes-256-gcm';
 const METADATA_LEN = 96;
 
-/** **********
+/*************
  * Error Prefix
- ********** */
+ ************/
 
 // Electron doesn't let you pass custom error messages from IPCMain to the renderer process
 // https://github.com/electron/electron/issues/24427
@@ -94,9 +96,9 @@ function sha256Hash(data: Buffer): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
-/** *****************
- * AES-256 Encryption
- ****************** */
+/*********************************
+ * AES-256 Encryption + Decryption
+ *********************************/
 
 /**
  * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64 byte salt with 10,000 iterations of PBKDF2
