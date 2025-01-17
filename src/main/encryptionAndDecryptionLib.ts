@@ -112,6 +112,8 @@ function replaceLast(
 }
 
 function createDecryptedFilePath(filePath: string) {
+  // TODO: Make sure the filepath doesn't exist, and we can safely write to whatever we return.
+
   let decryptedFilePath = replaceLast(filePath, ENCRYPTED_FILE_EXTENSION, '');
   let splitPath = decryptedFilePath.split('.');
   splitPath.splice(splitPath.length - 1, 0, 'dbolt');
@@ -212,6 +214,8 @@ export async function encryptFile(
     initializationVector,
   );
 
+  // TODO: Make sure the filepath doesn't exist, and we can safely write to whatever we return.
+  // TODO: Create a function for this.
   const encryptedFilePath = `${filePath}${ENCRYPTED_FILE_EXTENSION}`;
 
   // Read unencrypted file into buffer, or return an error message if we fail to read the file
@@ -235,7 +239,6 @@ export async function encryptFile(
   cipher.final();
 
   const authTag = cipher.getAuthTag();
-  console.log('authTag', authTag);
 
   // Write salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
   const encryptedFileDataWithMetadata = Buffer.concat([
