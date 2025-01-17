@@ -39,6 +39,9 @@ ipcMain.handle('encryptFileRequest', async (_event, [filePath, password]) => {
     '} with password of length: ',
     password.length,
   );
+  if (!filePath) {
+    return `${ERROR_MESSAGE_PREFIX}: No file provided for encryption`;
+  }
   // You have no idea how much time I killed trying to debug why throwing here and .catch'ing the promise in the renderer process didn't work.
   const encryptedFilePathOrErrorMessage = await encryptFile(filePath, password);
   console.log(
