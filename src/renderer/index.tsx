@@ -9,10 +9,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiInputBase-input': {
-            color: 'var(--text-color-secondary)',
+            color: 'var(--text-color)',
           },
           '& .MuiInputBase-input::placeholder': {
-            color: 'var(--text-color-secondary)',
+            color: 'var(--text-color-input-placeholder)',
             opacity: 0.8,
           },
         },

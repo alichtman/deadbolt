@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { TextField } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
@@ -41,7 +41,7 @@ export default function PasswordInput({
           endAdornment: (
             <EyeIcon
               onClick={toggleVisibility}
-              style={{ color: 'var(--text-color-secondary)' }}
+              style={{ color: 'var(--text-color-input-placeholder)' }}
             />
           ),
         },

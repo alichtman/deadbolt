@@ -1,4 +1,5 @@
 import { FaLock } from 'react-icons/fa';
+import './colors.css';
 
 /* eslint-disable no-alert */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
@@ -56,13 +57,13 @@ export default function EncryptOrDecryptFileHeader({
     <div
       style={{
         alignItems: 'center',
-        backgroundColor: '#2a3149',
-        color: '#ffffff',
+        backgroundColor: 'var(--file-header-background-color)',
+        color: 'var(--text-color)',
         display: 'flex',
         fontSize: '18px',
         height: '70px',
-        paddingBottom: '2px',
-        paddingTop: '2px',
+        paddingBottom: '0px',
+        paddingTop: '0px',
         position: 'fixed',
         top: 0,
         whiteSpace: 'nowrap',
@@ -92,7 +93,7 @@ export default function EncryptOrDecryptFileHeader({
         title={fileName} // Show full filepath on hover
         style={{
           cursor: 'pointer',
-          marginLeft: '8px',
+          marginLeft: '10px',
           fontFamily: 'monospace',
         }}
         onClick={() => {

@@ -31,9 +31,9 @@
 
 .versionTag {
   position: absolute;
-  bottom: 2px;
+  bottom: -8px;
   margin-bottom: 0px;
-  margin-right: 8px;
+  margin-right: 12px;
   right: 0px;
   font-size: 12px;
   color: var(--text-color);
