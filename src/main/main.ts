@@ -156,6 +156,14 @@ const createWindow = async () => {
  * Add event listeners...
  */
 
+app.on('open-file', (event, fileOpenedWithDeadbolt) => {
+  event.preventDefault();
+  console.log('open-file', fileOpenedWithDeadbolt);
+  if (mainWindow) {
+    mainWindow.webContents.send('file-opened', fileOpenedWithDeadbolt);
+  }
+});
+
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed

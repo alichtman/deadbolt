@@ -22,8 +22,10 @@ $ npm run package
 
 ## TL;DR
 
-```
+```bash
+# on macOS
 $ npm run release
+# a draft github release will be created
 ```
 
 // TODO: Then, some more work needs to be done -- upload to Flathub, snap, dnf copr, aur, and homebrew. Update the URLs in the [Homebrew taps repo](https://www.github.com/alichtman/homebrew-taps).

@@ -1,7 +1,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-else-return */
 /* eslint-disable no-console */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import CircularProgress from '@mui/material/CircularProgress';
 import FileUpload from './FileUpload';
@@ -45,10 +45,10 @@ export function isDeadboltFile(filePath: string | undefined): boolean {
 }
 
 export default function App() {
-  // This is just a handle on the file for the path -- you can't actually read or write to it in the renderer process.
-  const [fileToWorkWith, setFileToWorkWith] = useState<File | undefined>(
-    undefined,
-  );
+  // This is just a handle on the file path
+  const [filePathToWorkWith, setFilePathToWorkWith] = useState<
+    string | undefined
+  >(undefined);
   const [pathToEncryptedOrDecryptedFile, setPathToEncryptedOrDecryptedFile] =
     useState<string | undefined>(undefined);
   const [viewState, setViewState] = useState<ViewState>(ViewState.FILE_UPLOAD);
@@ -61,7 +61,7 @@ export default function App() {
 
   const resetToFileUpload = () => {
     setViewState(ViewState.FILE_UPLOAD);
-    setFileToWorkWith(undefined);
+    setFilePathToWorkWith(undefined);
   };
 
   const revealInFinder = () => {
@@ -129,14 +129,21 @@ export default function App() {
       });
   };
 
-  const handleFileSelection = (file: File) => {
-    const isEncrypted = isDeadboltFile(file.name);
+  const handleFileSelection = (filePath: string) => {
+    const isEncrypted = isDeadboltFile(filePath);
     console.log('File is encrypted?', isEncrypted);
-    console.log('File path:', file.name);
-    setFileToWorkWith(file);
+    console.log('File path:', filePath);
+    setFilePathToWorkWith(filePath);
     setFileIsEncrypted(isEncrypted);
     setViewState(ViewState.ENCRYPT_OR_DECRYPT);
   };
+
+  useEffect(() => {
+    window.electronAPI.handleFileOpen((filePath) => {
+      console.log('handleFileOpen', filePath);
+      handleFileSelection(filePath);
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -154,12 +161,12 @@ export default function App() {
     );
   }
 
-  if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
-    return <FileUpload setFileToWorkWith={handleFileSelection} />;
+  if (viewState === ViewState.FILE_UPLOAD || !filePathToWorkWith) {
+    return <FileUpload setFilePathToWorkWith={handleFileSelection} />;
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && !fileIsEncrypted) {
     return (
       <EncryptOrDecryptForm
-        file={fileToWorkWith}
+        filePath={filePathToWorkWith}
         onSubmit={encryptFile}
         onCancel={() => {
           resetToFileUpload();
@@ -170,7 +177,7 @@ export default function App() {
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && fileIsEncrypted) {
     return (
       <EncryptOrDecryptForm
-        file={fileToWorkWith}
+        filePath={filePathToWorkWith}
         onSubmit={decryptFile}
         onCancel={() => {
           resetToFileUpload();

@@ -28,14 +28,14 @@ function DeadboltVersionTagAndGithubLink() {
 }
 
 export default function FileUpload({
-  setFileToWorkWith,
+  setFilePathToWorkWith,
 }: {
-  setFileToWorkWith: (file: File) => void;
+  setFilePathToWorkWith: (filepath: string) => void;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onSelectFromFileBrowser = (files: File[], _event: DropEvent) => {
     console.log('File dropped:', files);
-    setFileToWorkWith(files[0]);
+    setFilePathToWorkWith(files[0].path);
   };
 
   // Drag-and-drop doesn't give us the file path, so we need to use this super hacky workaround: https://github.com/react-dropzone/file-selector/issues/10#issuecomment-2482649010
@@ -44,7 +44,7 @@ export default function FileUpload({
     event.preventDefault();
     const file = event.dataTransfer?.files[0];
     if (file != null) {
-      setFileToWorkWith(file);
+      setFilePathToWorkWith(file.path);
     }
   };
 

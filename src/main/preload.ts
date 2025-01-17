@@ -11,4 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('prettyPrintFilePath', [filePath]),
   revealFileInFinder: (filePath: string) =>
     ipcRenderer.invoke('revealFileInFinder', [filePath]),
+  handleFileOpen: (callback: (filePath: string) => void) => {
+    ipcRenderer.on('file-opened', (_event, filePath) => callback(filePath));
+  },
 });
