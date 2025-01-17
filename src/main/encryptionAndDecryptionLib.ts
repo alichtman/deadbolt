@@ -372,7 +372,7 @@ async function getDecryptedFileContents(
   const cipherText = await readFileWithPromise(encryptedFilePath)
     .then((data) => {
       if (data.length < METADATA_LEN && data.length > 0) {
-        throw new EncryptedFileMissingMetadataError(); // This will be caught by the next catch block, which can return an error message from outside the callback
+        throw new EncryptedFileMissingMetadataError();
       } else if (data.length === 0) {
         throw new FileReadError(
           isVerification
@@ -383,6 +383,7 @@ async function getDecryptedFileContents(
       return data.subarray(METADATA_LEN);
     })
     .catch((error: Error) => {
+      // Unclear if we need to catch and rethrow, or if the exception would bubble up. Leaving in for now
       throw error;
     });
 
