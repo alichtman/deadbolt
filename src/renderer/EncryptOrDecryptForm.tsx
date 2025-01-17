@@ -22,6 +22,7 @@ export default function EncryptOrDecryptForm({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayError, setDisplayError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   // Must match the confirmation, and longer than 8 characters
   const validatePassword = () => {
@@ -54,6 +55,8 @@ export default function EncryptOrDecryptForm({
     }
   };
 
+  const passwordVisibilityType = isPasswordVisible ? 'text' : 'password';
+
   return (
     <>
       <EncryptOrDecryptFileHeader fileName={file.path} />
@@ -68,6 +71,8 @@ export default function EncryptOrDecryptForm({
           onChange={(event) => setPassword(event.target.value)}
           inErrorMode={displayError}
           onKeyDown={onKeyDown}
+          type={passwordVisibilityType}
+          toggleVisibility={() => setIsPasswordVisible(!isPasswordVisible)}
           autoFocus
         />
         {!isDecryption ? (
@@ -78,6 +83,8 @@ export default function EncryptOrDecryptForm({
             onKeyDown={onKeyDown}
             inErrorMode={displayError}
             autoFocus={false}
+            type={passwordVisibilityType}
+            toggleVisibility={() => setIsPasswordVisible(!isPasswordVisible)}
           />
         ) : null}
         {/* Avoid layout shifting when error message is shown by toggling opacity and using a non-breaking space */}

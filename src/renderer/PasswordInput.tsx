@@ -9,6 +9,8 @@ interface PasswordInputProps {
   onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   placeholder: string;
   autoFocus: boolean;
+  type: 'text' | 'password';
+  toggleVisibility: () => void;
 }
 
 export default function PasswordInput({
@@ -18,11 +20,10 @@ export default function PasswordInput({
   onKeyDown,
   placeholder,
   autoFocus,
+  type,
+  toggleVisibility,
 }: PasswordInputProps) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  const type = isVisible ? 'text' : 'password';
-  const EyeIcon = isVisible ? Visibility : VisibilityOff;
+  const EyeIcon = type === 'text' ? Visibility : VisibilityOff;
 
   return (
     <TextField
@@ -39,7 +40,7 @@ export default function PasswordInput({
         input: {
           endAdornment: (
             <EyeIcon
-              onClick={() => setIsVisible(!isVisible)}
+              onClick={toggleVisibility}
               style={{ color: 'var(--text-color-secondary)' }}
             />
           ),
