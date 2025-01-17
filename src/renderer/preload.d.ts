@@ -1,9 +1,17 @@
-import { ElectronHandler } from '../main/preload';
-
 declare global {
-  // eslint-disable-next-line no-unused-vars
   interface Window {
-    electron: ElectronHandler;
+    electronAPI: {
+      revealFileInFinder: (filePath: string | undefined) => Promise<string>;
+      encryptFileRequest: (
+        filePath: string,
+        password: string,
+      ) => Promise<string>;
+      decryptFileRequest: (
+        filePath: string,
+        password: string,
+      ) => Promise<string>;
+      prettyPrintFilePath: (filePath: string) => Promise<string>;
+    };
   }
 }
 
