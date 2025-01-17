@@ -1,12 +1,19 @@
 /* eslint-disable no-console */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-const mainPackagePath = path.join(__dirname, '../package.json');
-const appPackagePath = path.join(__dirname, '../release/app/package.json');
+const mainPackagePath: string = path.join(__dirname, '../package.json');
+const appPackagePath: string = path.join(
+  __dirname,
+  '../release/app/package.json',
+);
 
-const mainPackage = JSON.parse(fs.readFileSync(mainPackagePath, 'utf8'));
-const appPackage = JSON.parse(fs.readFileSync(appPackagePath, 'utf8'));
+const mainPackage: { version: string } = JSON.parse(
+  fs.readFileSync(mainPackagePath, 'utf8'),
+);
+const appPackage: { version: string } = JSON.parse(
+  fs.readFileSync(appPackagePath, 'utf8'),
+);
 
 console.log(
   `Copying version (${mainPackage.version}) from ${mainPackagePath} to ${appPackagePath}`,

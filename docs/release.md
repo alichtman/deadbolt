@@ -2,6 +2,8 @@
 
 The only successful path is building and releasing on macOS. You can't compile the macOS builds on Linux, and I won't develop on Windows.
 
+## Building Executables
+
 ```bash
 $ npm run package
 ```
@@ -20,7 +22,9 @@ $ npm run package
 
 ## TL;DR
 
-Run `$ ./scripts/release.sh` to build everything, create a new release on GitHub, and kick off the `publish.yml` action to publish the release artifacts.
+```
+$ npm run release
+```
 
 // TODO: Then, some more work needs to be done -- upload to Flathub, snap, dnf copr, aur, and homebrew. Update the URLs in the [Homebrew taps repo](https://www.github.com/alichtman/homebrew-taps).
 

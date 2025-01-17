@@ -46,7 +46,8 @@
     "start:preload": "npm run update-versions && cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
     "start:renderer": "npm run update-versions && cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
     "test": "jest",
-    "update-versions": "node scripts/copy-version-from-main-to-app.js"
+    "update-versions": "ts-node scripts/copy-version-from-main-to-app.ts",
+    "release": "ts-node scripts/release.ts"
   },
   "browserslist": [
     "extends browserslist-config-erb"
@@ -130,6 +131,7 @@
     "@types/react-lottie": "^1.2.10",
     "@types/react-test-renderer": "^19.0.0",
     "@types/webpack-bundle-analyzer": "^4.7.0",
+    "@types/which": "^3.0.4",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
     "browserslist-config-erb": "^0.0.3",
@@ -202,7 +204,8 @@
       "target": {
         "target": "dmg",
         "arch": [
-          "universal"
+          "x64",
+          "arm64"
         ]
       },
       "type": "distribution",
