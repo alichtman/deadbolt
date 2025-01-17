@@ -56,6 +56,7 @@ export default function EncryptOrDecryptForm({
   return (
     <>
       <EncryptOrDecryptFileHeader fileName={file.path} />
+
       <div
         className="formBody"
         style={{ marginTop: isDecryption ? '0px' : '-20px' }}
