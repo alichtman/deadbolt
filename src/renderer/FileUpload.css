@@ -30,14 +30,23 @@
 
 .versionTag {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  font-size: 12px;
+  bottom: 8px;
+  right: 0px;
+  font-size: 14px;
   color: #ffffff;
+  font-family: monospace;
+  display: flex;
+  align-items: center;
 }
 
 .drag-drop {
   background: #fff;
   border: 1px solid var(--border-color);
   border-radius: 8px;
+}
+
+.githubIcon {
+  margin-right: 8px;
+  margin-bottom: 2px;
+  font-size: 18px;
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import './FileUpload.css';
 import { DropEvent, useDropzone } from 'react-dropzone';
+import { FaGithub } from 'react-icons/fa';
 
 import packageInfo from '../../package.json';
 import dropFileIcon from './assets/dropFileIcon.svg';
@@ -56,6 +57,7 @@ export default function FileUpload({
         target="_blank"
         rel="noopener noreferrer"
       >
+        <FaGithub className="githubIcon" />
         {`deadbolt v${packageInfo.version}`}
       </a>
     </>
