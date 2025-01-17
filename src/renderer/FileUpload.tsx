@@ -19,6 +19,7 @@ export default function FileUpload({
 
   // Drag-and-drop doesn't give us the file path, so we need to use this super hacky workaround: https://github.com/react-dropzone/file-selector/issues/10#issuecomment-2482649010
   const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    console.log('detected file drop event', event);
     event.preventDefault();
     const file = event.dataTransfer?.files[0];
     if (file != null) {

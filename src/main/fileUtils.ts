@@ -6,7 +6,13 @@ import path from 'path';
 export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
 export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
 
-export default function prettyPrintFilePath(filePath: string): string {
+export default function prettyPrintFilePath(
+  filePath: string | undefined,
+): string {
+  if (filePath == null) {
+    console.log('filePath is null. something is fucked');
+    return '';
+  }
   console.log('prettyPrintFilePath', '{', filePath, '}');
   // Create a local variable instead of modifying the parameter
   let prettyPath = filePath;
