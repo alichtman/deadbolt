@@ -57,7 +57,7 @@ export default function EncryptOrDecryptForm({
   };
 
   return (
-    <div className="modal">
+    <>
       <FileHeader fileName={file.path} />
       <div className="formBody">
         <PasswordInput
@@ -105,7 +105,7 @@ export default function EncryptOrDecryptForm({
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
