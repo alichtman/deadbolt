@@ -139,7 +139,7 @@ const createWindow = async () => {
     maxHeight: 400,
     resizable: true, // so it's not actually resizable, but setting this to true makes the window the wrong sizes. idk man
     autoHideMenuBar: true,
-    icon: getAssetPath('icon.png'), // TODO: icon isn't being used on Fedora dev builds. Need to check macOS builds. /home/alichtman/Desktop/Development/projects/deadbolt/assets/icon.png is returned, which is correct
+    icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
