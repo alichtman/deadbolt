@@ -1,47 +1,45 @@
-import { useState } from 'react';
-// import { FaEye } from 'react-icons/fa';
-import './PasswordInput.css';
+import React, { useState } from 'react';
+import { TextField } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-export default function PasswordInput({
-  placeholder,
-  value,
-  onChange,
-  inErrorMode,
-  onKeyPress,
-  autofocus,
-}: {
-  placeholder?: string;
+interface PasswordInputProps {
+  inErrorMode: boolean;
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  inErrorMode: boolean;
-  onKeyPress?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
-  autofocus?: boolean;
-}) {
-  // TODO: Add password eye icon to show/hide password
+  onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  placeholder: string;
+  autoFocus: boolean;
+}
 
+export default function PasswordInput({
+  inErrorMode = false,
+  value,
+  onChange,
+  onKeyDown,
+  placeholder,
+  autoFocus,
+}: PasswordInputProps) {
   const [isVisible, setIsVisible] = useState(false);
 
-  // const icon = <FaEye />;
-  // const handleToggle = () => {
-  //   if (isVisible) {
-  //     setIsVisible(false);
-  //   } else {
-  //     setIsVisible(true);
-  //   }
-  // };
+  const type = isVisible ? 'text' : 'password';
+  const Icon = isVisible ? Visibility : VisibilityOff;
 
   return (
-    <div className="passwordBarWithVisibilityToggle">
-      <input
-        className={inErrorMode ? 'inputBarError' : 'inputBar'}
-        type={!isVisible ? 'password' : 'text'}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        autoFocus={autofocus}
-        onKeyPress={onKeyPress}
-      />
-      {/* <FaEye /> */}
-    </div>
+    <TextField
+      value={value}
+      onChange={onChange}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+      size="small"
+      type={type}
+      error={inErrorMode}
+      sx={{ margin: '4px' }}
+      slotProps={{
+        input: {
+          endAdornment: <Icon onClick={() => setIsVisible(!isVisible)} />,
+        },
+      }}
+    />
   );
 }

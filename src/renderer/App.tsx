@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
-import { useEffect, useState } from 'react';
 import EncryptOrDecryptForm from './EncryptOrDecryptForm';
 import SucessOrErrorModal from './SuccessOrErrorModal';
 
@@ -32,8 +32,10 @@ enum ViewState {
 export function isDeadboltFile(filePath: string | undefined): boolean {
   if (!filePath) return false;
   if (filePath.startsWith(ERROR_MESSAGE_PREFIX)) return false;
-  return filePath.endsWith(ENCRYPTED_FILE_EXTENSION) ||
-         filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION);
+  return (
+    filePath.endsWith(ENCRYPTED_FILE_EXTENSION) ||
+    filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)
+  );
 }
 
 export default function App() {
@@ -84,11 +86,12 @@ export default function App() {
       }
     });
   };
+
   const decryptFile = (fileName: string, password: string) => {
     if (!fileName) {
       setViewState(ViewState.ERROR);
       setFileDecryptOrEncryptErrorMessage(
-        `${ERROR_MESSAGE_PREFIX}: No file path provided for decryption`,
+        'No file path provided for decryption',
       );
       setPathToEncryptedOrDecryptedFile(undefined);
       return;
@@ -127,10 +130,7 @@ export default function App() {
   let appBody;
   if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
     appBody = (
-      <FileUpload
-        setFileToWorkWith={handleFileSelection}
-        onChange={() => {}}
-      />
+      <FileUpload setFileToWorkWith={handleFileSelection} onChange={() => {}} />
     );
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && !fileIsEncrypted) {
     appBody = (
@@ -165,7 +165,7 @@ export default function App() {
         }}
         onRevealInFinder={revealInFinder}
         encryptedOrDecryptedFilePath={pathToEncryptedOrDecryptedFile}
-        isSuccess={true}
+        isSuccess
       />
     );
   } else if (viewState === ViewState.ERROR) {
