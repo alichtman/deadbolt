@@ -22,11 +22,11 @@ export default function EncryptOrDecryptForm({
   const [displayError, setDisplayError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Must match the confirmation, and be more than 3 characters
+  // Must match the confirmation, and longer than 8 characters
   const validatePassword = () => {
-    if (password.length < 4) {
+    if (password.length < 8) {
       setDisplayError(true);
-      setErrorMessage('Password must be at least 4 characters');
+      setErrorMessage('Password must be at least 8 characters');
       return false;
     }
     if (password === confirmPassword) {
