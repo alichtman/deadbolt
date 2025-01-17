@@ -9,14 +9,14 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { homedir } from 'os';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import { resolveHtmlPath } from './util';
+import { resolveHtmlPath } from './resolveHTMLPathUtil';
 import {
   encryptFile,
   decryptFile,
   ERROR_MESSAGE_PREFIX,
 } from './encryptionAndDecryptionLib';
+import prettyPrintFilePath from './fileUtils';
 
 // TODO: Implement auto-updater
 // import { autoUpdater } from 'electron-updater';
@@ -68,26 +68,7 @@ ipcMain.handle('decryptFileRequest', async (_event, [filePath, password]) => {
 });
 
 ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
-  console.log('prettyPrintFilePath', '{', filePath, '}');
-  // Create a local variable instead of modifying the parameter
-  let prettyPath = filePath;
-
-  if (prettyPath.startsWith(homedir())) {
-    prettyPath = prettyPath.replace(homedir(), '~');
-  }
-
-  // If path is too long, truncate it. Make sure the first directory is shown, and the last directory is shown, and the middle is truncated.
-  // Min window width is 400px, and 60 characters fits well in it.
-  if (prettyPath.length > 60) {
-    const firstDir = prettyPath.startsWith('~/')
-      ? `~${path.sep}${prettyPath.split(path.sep)[2]}`
-      : prettyPath.split(path.sep)[1];
-    const lastDir = prettyPath.split(path.sep).slice(-1)[0];
-    const ellipsis = '...';
-    const truncatedPath = `${firstDir}${path.sep}${ellipsis}${path.sep}${lastDir}`;
-    return truncatedPath;
-  }
-  return prettyPath;
+  return prettyPrintFilePath(filePath);
 });
 
 ipcMain.handle('revealFileInFinder', (_event, [filePath]) => {

@@ -6,15 +6,12 @@ import dropFileIcon from './assets/dropFileIcon.svg';
 
 export default function FileUpload({
   setFileToWorkWith,
-  onChange,
 }: {
   setFileToWorkWith: (file: File) => void;
-  onChange: () => void;
 }) {
   const onDropAccepted = (files: File[], _event: DropEvent) => {
     console.log('File dropped:', files);
     setFileToWorkWith(files[0]);
-    onChange();
   };
 
   const { getRootProps, getInputProps } = useDropzone({

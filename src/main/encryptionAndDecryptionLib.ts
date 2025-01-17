@@ -1,6 +1,7 @@
 /** ***********
  * Constants
  *********** */
+/* eslint-disable no-console */
 
 import fs from 'fs';
 import crypto from 'crypto';
@@ -8,9 +9,11 @@ import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordE
 import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
 import FileReadError from './error-types/FileReadError';
 import FileWriteError from './error-types/FileWriteError';
+import prettyPrintFilePath, {
+  generateValidDecryptedFilePath,
+  generateValidEncryptedFilePath,
+} from './fileUtils';
 
-export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
-export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
 const AES_256_GCM = 'aes-256-gcm';
 const METADATA_LEN = 96;
 
@@ -36,15 +39,16 @@ function convertErrorToStringForRendererProcess(
   filePath: string,
 ): string {
   // Does this look super fucked? Yeah. But it does work.
+  const prettyFilePath = prettyPrintFilePath(filePath);
   switch (true) {
     case error instanceof DecryptionWrongPasswordError:
-      return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be decrypted. Incorrect password.`;
+      return `${ERROR_MESSAGE_PREFIX}: Failed to decrypt ${prettyFilePath}. Is your password correct?`;
 
     case error instanceof EncryptedFileMissingMetadataError:
-      return `${ERROR_MESSAGE_PREFIX}: ${filePath} is missing metadata. It's likely corrupted.`;
+      return `${ERROR_MESSAGE_PREFIX}: ${prettyFilePath} is missing metadata. It's likely corrupted.`;
 
     case error instanceof FileReadError:
-      return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${filePath} for ${(error as FileReadError).operation}.`;
+      return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${prettyFilePath} for ${(error as FileReadError).operation}.`;
 
     case error instanceof FileWriteError:
       return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be written during ${(error as FileWriteError).operation}.`;
@@ -52,133 +56,6 @@ function convertErrorToStringForRendererProcess(
     default:
       return `${ERROR_MESSAGE_PREFIX}: Unhandled error. Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible. ${error}`;
   }
-}
-
-/** ********
- * Utilities
- ********** */
-
-/**
- * Replace last instance of search in input with replacement
- * @param {String} input Input string
- * @param {String} search Substring to search for
- * @param {String} replacement Substring to replace with
- */
-function replaceLast(
-  input: string,
-  search: string,
-  replacement: string,
-): string {
-  // Find last occurrence
-  const index = input.lastIndexOf(search);
-  if (index === -1) {
-    return input;
-  }
-  // Replace occurrence
-  return (
-    input.substring(0, index) +
-    replacement +
-    input.substring(index + search.length)
-  );
-}
-
-/**
- * Replace last instance of any supported encrypted file extension
- * @param {String} input Input string
- * @returns {String} Input with last extension removed
- */
-function removeEncryptedFileExtension(input: string): string {
-  if (input.endsWith(ENCRYPTED_FILE_EXTENSION)) {
-    return replaceLast(input, ENCRYPTED_FILE_EXTENSION, '');
-  }
-  if (input.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)) {
-    return replaceLast(input, LEGACY_ENCRYPTED_FILE_EXTENSION, '');
-  }
-  return input;
-}
-
-/**
- * Writes the decrypted file to the same directory as the encrypted file. Encrypted files are suffixed with .dbolt, so we remove that suffix.
- * If the file already exists, we append -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
- *
- * Example:
- * - If the encrypted file is /path/to/file.txt.dbolt, the decrypted file will be /path/to/file.txt
- * - If the decrypted file already exists, we will try /path/to/file-1.txt, /path/to/file-2.txt, etc.
- * @param encryptedFilePath
- * @returns
- */
-function generateValidDecryptedFilePath(encryptedFilePath: string) {
-  const baseFilePathWithOriginalExtension =
-    removeEncryptedFileExtension(encryptedFilePath);
-
-  // Split the path into name and extension
-  const lastDotIndex = baseFilePathWithOriginalExtension.lastIndexOf('.');
-  // This handles files with no extension
-  const nameWithoutExt =
-    lastDotIndex !== -1
-      ? baseFilePathWithOriginalExtension.slice(0, lastDotIndex)
-      : baseFilePathWithOriginalExtension;
-  const extension =
-    lastDotIndex !== -1
-      ? baseFilePathWithOriginalExtension.slice(lastDotIndex)
-      : '';
-
-  let candidateFilePath = baseFilePathWithOriginalExtension;
-  let counter = 1;
-
-  while (fs.existsSync(candidateFilePath)) {
-    candidateFilePath = `${nameWithoutExt}-${counter}${extension}`;
-    counter += 1;
-  }
-
-  return candidateFilePath;
-}
-
-/**
- * Generates a valid encrypted file path by appending the encrypted file extension.
- * If the file already exists, appends -NUMBER to the end of the filename, where NUMBER is the lowest number that doesn't conflict with an existing file.
- *
- * Example for files with extensions:
- * - If the original file is /path/to/file.txt, the encrypted file will be /path/to/file.txt.dbolt
- * - If the encrypted file already exists, it will try /path/to/file-1.txt.dbolt, /path/to/file-2.txt.dbolt, etc.
- *
- * Example for files without extensions:
- * - If the original file is /path/to/README, the encrypted file will be /path/to/README.dbolt
- * - If the encrypted file already exists, it will try /path/to/README-1.dbolt, /path/to/README-2.dbolt, etc.
- *
- * @param originalFilePath - The path to the file that will be encrypted
- * @returns The path where the encrypted file should be written
- */
-function generateValidEncryptedFilePath(originalFilePath: string): string {
-  const baseFilePath = `${originalFilePath}${ENCRYPTED_FILE_EXTENSION}`;
-  const lastPeriodIndex = originalFilePath.lastIndexOf('.');
-
-  // Handle files with no extension
-  if (lastPeriodIndex === -1) {
-    let candidateFilePath = baseFilePath;
-    let counter = 1;
-
-    while (fs.existsSync(candidateFilePath)) {
-      candidateFilePath = `${originalFilePath}-${counter}${ENCRYPTED_FILE_EXTENSION}`;
-      counter += 1;
-    }
-    return candidateFilePath;
-  }
-
-  const originalFileExtension = originalFilePath.substring(lastPeriodIndex);
-  const baseFilePathWithoutExtension = originalFilePath.substring(
-    0,
-    lastPeriodIndex,
-  );
-  let candidateFilePath = baseFilePath;
-  let counter = 1;
-
-  while (fs.existsSync(candidateFilePath)) {
-    candidateFilePath = `${baseFilePathWithoutExtension}-${counter}${originalFileExtension}${ENCRYPTED_FILE_EXTENSION}`;
-    counter += 1;
-  }
-
-  return candidateFilePath;
 }
 
 /**
@@ -239,6 +116,69 @@ function createDerivedKey(
     32, // This value is in bytes
     'sha512',
   );
+}
+
+/**
+ * Decrypts the contents of an encrypted file, and returns it as a buffer. This is so we can re-use this in the actual decryption function,
+ * as well as the encryption function (to take a SHA256 hash of the data after encrypting AND THEN decrypting it. I feel like the auth tag SHOULD do this, so maybe it's unnecessary)
+ * @param encryptedFilePath
+ * @param decryptionKey
+ * @returns Buffer if successful, error throw if failure
+ */
+async function getDecryptedFileContents(
+  encryptedFilePath: string,
+  decryptionKey: crypto.BinaryLike,
+  isVerification: boolean = false,
+): Promise<Buffer> {
+  // Read salt, IV and authTag from beginning of file.
+  const fd = fs.openSync(encryptedFilePath, 'r');
+  const salt = Buffer.alloc(64);
+  fs.readSync(fd, salt, 0, 64, 0);
+
+  const initializationVector = Buffer.alloc(16);
+  fs.readSync(fd, initializationVector, 0, 16, 64);
+
+  const authTag = Buffer.alloc(16);
+  fs.readSync(fd, authTag, 0, 16, 80);
+  fs.closeSync(fd);
+
+  // Decrypt the cipher text
+  const derivedKey = createDerivedKey(salt, decryptionKey);
+  const decrypt = crypto.createDecipheriv(
+    AES_256_GCM,
+    derivedKey,
+    initializationVector,
+  );
+
+  // Detect decryption/corruption errors. This will throw when we call decrypt.final() if data has been corrupted / tampered with
+  decrypt.setAuthTag(authTag);
+
+  // Read encrypted file, and drop the first METADATA_LEN bytes
+  const cipherText = await readFileWithPromise(encryptedFilePath)
+    .then((data) => {
+      if (data.length < METADATA_LEN && data.length > 0) {
+        throw new EncryptedFileMissingMetadataError();
+      } else if (data.length === 0) {
+        throw new FileReadError(
+          isVerification
+            ? EncryptionOrDecryption.DECRYPTION_VERIFICATION_OF_ENCRYPTION
+            : EncryptionOrDecryption.DECRYPTION,
+        );
+      }
+      return data.subarray(METADATA_LEN);
+    })
+    .catch((error: Error) => {
+      // Unclear if we need to catch and rethrow, or if the exception would bubble up. Leaving in for now
+      throw error;
+    });
+
+  try {
+    const decryptedText = decrypt.update(cipherText);
+    decrypt.final();
+    return decryptedText;
+  } catch (error) {
+    throw new DecryptionWrongPasswordError();
+  }
 }
 
 /**
@@ -351,69 +291,6 @@ export async function encryptFile(
 }
 
 /**
- * Decrypts the contents of an encrypted file, and returns it as a buffer. This is so we can re-use this in the actual decryption function,
- * as well as the encryption function (to take a SHA256 hash of the data after encrypting AND THEN decrypting it. I feel like the auth tag SHOULD do this, so maybe it's unnecessary)
- * @param encryptedFilePath
- * @param decryptionKey
- * @returns Buffer if successful, error throw if failure
- */
-async function getDecryptedFileContents(
-  encryptedFilePath: string,
-  decryptionKey: crypto.BinaryLike,
-  isVerification: boolean = false,
-): Promise<Buffer> {
-  // Read salt, IV and authTag from beginning of file.
-  const fd = fs.openSync(encryptedFilePath, 'r');
-  const salt = Buffer.alloc(64);
-  fs.readSync(fd, salt, 0, 64, 0);
-
-  const initializationVector = Buffer.alloc(16);
-  fs.readSync(fd, initializationVector, 0, 16, 64);
-
-  const authTag = Buffer.alloc(16);
-  fs.readSync(fd, authTag, 0, 16, 80);
-  fs.closeSync(fd);
-
-  // Decrypt the cipher text
-  const derivedKey = createDerivedKey(salt, decryptionKey);
-  const decrypt = crypto.createDecipheriv(
-    AES_256_GCM,
-    derivedKey,
-    initializationVector,
-  );
-
-  // Handle decryption errors. This will throw when we call decrypt.final() if the data integrity check fails.
-  decrypt.setAuthTag(authTag);
-
-  // Read encrypted file, and drop the first METADATA_LEN bytes
-  const cipherText = await readFileWithPromise(encryptedFilePath)
-    .then((data) => {
-      if (data.length < METADATA_LEN && data.length > 0) {
-        throw new EncryptedFileMissingMetadataError();
-      } else if (data.length === 0) {
-        throw new FileReadError(
-          isVerification
-            ? EncryptionOrDecryption.DECRYPTION_VERIFICATION_OF_ENCRYPTION
-            : EncryptionOrDecryption.DECRYPTION,
-        );
-      }
-      return data.subarray(METADATA_LEN);
-    })
-    .catch((error: Error) => {
-      // Unclear if we need to catch and rethrow, or if the exception would bubble up. Leaving in for now
-      throw error;
-    });
-
-  try {
-    const decryptedText = decrypt.update(cipherText);
-    decrypt.final();
-    return decryptedText;
-  } catch (error) {
-    throw new DecryptionWrongPasswordError();
-  }
-}
-
-/**
  * Decrypts a file and writes it to disk.
  *
  * WARNING: DO NOT THROW ANY ERRORS IN THIS FUNCTION. TO "THROW" AN ERROR, RETURN A STRING TO THE RENDERER PROCESS THAT BEGINS WITH ERROR_MESSAGE_PREFIX.
@@ -436,8 +313,8 @@ export async function decryptFile(
   }
   try {
     await writeFileWithPromise(decryptedFilePath, decryptedText).catch(
-      (_error) => {
-        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      (error) => {
+        throw error; // This will be caught by the next catch block, which can return an error message from outside the callback
       },
     );
 

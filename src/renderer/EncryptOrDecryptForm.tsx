@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import './EncryptOrDecryptForm.css';
-// import { FileIcon } from 'react-file-icon';
-// import { getClassWithColor } from 'file-icons-js';
-// import 'file-icons-js/css/style.css';
-// import { FaLock } from 'react-icons/fa';
 import PasswordInput from './PasswordInput';
 import Button from './Button';
 import DecryptIcon from './assets/decryptIcon.svg';
