@@ -79,6 +79,15 @@ export default function EncryptOrDecryptFileHeader({
       </div>
       <span
         title={fileName} // Show full filepath on hover
+        style={{
+          cursor: 'pointer',
+          marginLeft: '8px',
+          fontFamily: 'monospace',
+        }}
+        onClick={() => {
+          navigator.clipboard.writeText(fileName);
+          alert(`Copied full path to clipboard!`);
+        }}
       >
         {prettyFilePath}
       </span>
