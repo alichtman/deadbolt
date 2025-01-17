@@ -1,18 +1,22 @@
-/***********
+/** ***********
  * Constants
- ***********/
+ *********** */
 
 import fs from 'fs';
 import crypto from 'crypto';
+import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordError';
+import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
+import FileReadError from './error-types/FileReadError';
+import FileWriteError from './error-types/FileWriteError';
 
 export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
 export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
 const AES_256_GCM = 'aes-256-gcm';
 const METADATA_LEN = 96;
 
-/*************
+/** **********
  * Error Prefix
- ************/
+ ********** */
 
 // Electron doesn't let you pass custom error messages from IPCMain to the renderer process
 // https://github.com/electron/electron/issues/24427
@@ -21,67 +25,38 @@ const METADATA_LEN = 96;
 // ....
 export const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
 
-enum EncryptionOrDecryption {
+export enum EncryptionOrDecryption {
   ENCRYPTION = 'encryption',
   DECRYPTION_VERIFICATION_OF_ENCRYPTION = 'verification of encryption (which requires decryption)',
   DECRYPTION = 'decryption',
-}
-
-class FileWriteError extends Error {
-  public operation: EncryptionOrDecryption;
-  constructor(operation: EncryptionOrDecryption) {
-    super();
-    this.name = 'FileWriteError';
-    this.operation = operation;
-  }
-}
-
-class FileReadError extends Error {
-  public operation: EncryptionOrDecryption;
-
-  constructor(operation: EncryptionOrDecryption) {
-    super();
-    this.name = 'FileReadError';
-    this.operation = operation;
-  }
-}
-
-class EncryptedFileMissingMetadataError extends Error {
-  constructor() {
-    super();
-    this.name = 'EncryptedFileMissingMetadataError';
-  }
-}
-
-class DecryptionWrongPasswordError extends Error {
-  constructor() {
-    super();
-    this.name = 'DecryptionWrongPasswordError';
-  }
 }
 
 function convertErrorToStringForRendererProcess(
   error: Error,
   filePath: string,
 ): string {
-  // Can't figure out how to make this an exhaustive switch statement AND ALSO use legit error classes the way I am.
-  // sorry future @alichtman
-  if (error instanceof DecryptionWrongPasswordError) {
-    return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be decrypted. Incorrect password.`;
-  } else if (error instanceof EncryptedFileMissingMetadataError) {
-    return `${ERROR_MESSAGE_PREFIX}: ${filePath} is missing metadata. It's likely corrupted.`;
-  } else if (error instanceof FileReadError) {
-    return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${filePath} for ${error.operation}.`;
-  } else if (error instanceof FileWriteError) {
-    return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be written during ${error.operation}.`;
-  } else {
-    return `${ERROR_MESSAGE_PREFIX}: Unhandled error. Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible. ${error}`;
+  // Does this look super fucked? Yeah. But it does work.
+  switch (true) {
+    case error instanceof DecryptionWrongPasswordError:
+      return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be decrypted. Incorrect password.`;
+
+    case error instanceof EncryptedFileMissingMetadataError:
+      return `${ERROR_MESSAGE_PREFIX}: ${filePath} is missing metadata. It's likely corrupted.`;
+
+    case error instanceof FileReadError:
+      return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${filePath} for ${(error as FileReadError).operation}.`;
+
+    case error instanceof FileWriteError:
+      return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be written during ${(error as FileWriteError).operation}.`;
+
+    default:
+      return `${ERROR_MESSAGE_PREFIX}: Unhandled error. Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible. ${error}`;
   }
 }
 
-/***********
+/** ********
  * Utilities
- ***********/
+ ********** */
 
 /**
  * Replace last instance of search in input with replacement
@@ -133,20 +108,27 @@ function removeEncryptedFileExtension(input: string): string {
  * @returns
  */
 function generateValidDecryptedFilePath(encryptedFilePath: string) {
-  const baseFilePathWithOriginalExtension = removeEncryptedFileExtension(encryptedFilePath);
+  const baseFilePathWithOriginalExtension =
+    removeEncryptedFileExtension(encryptedFilePath);
 
   // Split the path into name and extension
   const lastDotIndex = baseFilePathWithOriginalExtension.lastIndexOf('.');
   // This handles files with no extension
-  const nameWithoutExt = lastDotIndex !== -1 ? baseFilePathWithOriginalExtension.slice(0, lastDotIndex) : baseFilePathWithOriginalExtension;
-  const extension = lastDotIndex !== -1 ? baseFilePathWithOriginalExtension.slice(lastDotIndex) : '';
+  const nameWithoutExt =
+    lastDotIndex !== -1
+      ? baseFilePathWithOriginalExtension.slice(0, lastDotIndex)
+      : baseFilePathWithOriginalExtension;
+  const extension =
+    lastDotIndex !== -1
+      ? baseFilePathWithOriginalExtension.slice(lastDotIndex)
+      : '';
 
   let candidateFilePath = baseFilePathWithOriginalExtension;
   let counter = 1;
 
   while (fs.existsSync(candidateFilePath)) {
     candidateFilePath = `${nameWithoutExt}-${counter}${extension}`;
-    counter++;
+    counter += 1;
   }
 
   return candidateFilePath;
@@ -168,7 +150,7 @@ function generateValidDecryptedFilePath(encryptedFilePath: string) {
  * @returns The path where the encrypted file should be written
  */
 function generateValidEncryptedFilePath(originalFilePath: string): string {
-  let baseFilePath = `${originalFilePath}${ENCRYPTED_FILE_EXTENSION}`;
+  const baseFilePath = `${originalFilePath}${ENCRYPTED_FILE_EXTENSION}`;
   const lastPeriodIndex = originalFilePath.lastIndexOf('.');
 
   // Handle files with no extension
@@ -178,7 +160,7 @@ function generateValidEncryptedFilePath(originalFilePath: string): string {
 
     while (fs.existsSync(candidateFilePath)) {
       candidateFilePath = `${originalFilePath}-${counter}${ENCRYPTED_FILE_EXTENSION}`;
-      counter++;
+      counter += 1;
     }
     return candidateFilePath;
   }
@@ -193,7 +175,7 @@ function generateValidEncryptedFilePath(originalFilePath: string): string {
 
   while (fs.existsSync(candidateFilePath)) {
     candidateFilePath = `${baseFilePathWithoutExtension}-${counter}${originalFileExtension}${ENCRYPTED_FILE_EXTENSION}`;
-    counter++;
+    counter += 1;
   }
 
   return candidateFilePath;
@@ -211,7 +193,7 @@ function writeFileWithPromise(path: string, data: Buffer): Promise<string> {
     stream.on('error', reject);
     stream.write(data, (err) => {
       if (err) {
-        reject('Failed to write');
+        reject(err); // Reject with the actual error object instead of a string
       } else {
         resolve(path);
       }
@@ -223,7 +205,7 @@ function readFileWithPromise(path: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     fs.readFile(path, (err, data) => {
       if (err) {
-        reject('Failed to read');
+        reject(err); // Reject with the actual error object instead of a string
       } else {
         resolve(data);
       }
@@ -235,9 +217,9 @@ function sha256Hash(data: Buffer): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
-/********************
+/** *****************
  * AES-256 Encryption
- ********************/
+ ****************** */
 
 /**
  * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64 byte salt with 10,000 iterations of PBKDF2
@@ -285,7 +267,7 @@ export async function encryptFile(
   const salt = crypto.randomBytes(64);
   const derivedKey = createDerivedKey(salt, password);
   const initializationVector = crypto.randomBytes(16);
-  let cipher = crypto.createCipheriv(
+  const cipher = crypto.createCipheriv(
     AES_256_GCM,
     derivedKey,
     initializationVector,
@@ -300,8 +282,8 @@ export async function encryptFile(
       .then((data) => {
         return data;
       })
-      .catch((_error) => {
-        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      .catch((error) => {
+        throw error; // This will be caught by the next catch block, which can return an error message from outside the callback
       });
   } catch (error) {
     return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be opened for reading.`;
@@ -327,11 +309,11 @@ export async function encryptFile(
     await writeFileWithPromise(
       encryptedFilePath,
       encryptedFileDataWithMetadata,
-    ).catch((_error) => {
+    ).catch((error) => {
       try {
         fs.unlinkSync(encryptedFilePath); // Delete the (improperly) encrypted file, if it exists
-      } catch (error) {
-        throw new Error(); // This will be caught by the next catch block, which can return an error message from outside the callback
+      } catch (err) {
+        throw error; // This will be caught by the next catch block, which can return an error message from outside the callback
       }
     });
   } catch (error) {
@@ -462,9 +444,8 @@ export async function decryptFile(
     if (fs.existsSync(decryptedFilePath)) {
       console.log('Successfully decrypted file: ', decryptedFilePath);
       return decryptedFilePath;
-    } else {
-      return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;
     }
+    return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;
   } catch (error) {
     return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;
   }
