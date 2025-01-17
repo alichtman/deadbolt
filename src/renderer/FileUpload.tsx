@@ -6,6 +6,26 @@ import { FaGithub } from 'react-icons/fa';
 import packageInfo from '../../package.json';
 import dropFileIcon from './assets/dropFileIcon.svg';
 
+function DeadboltVersionTagAndGithubLink() {
+  return (
+    <a
+      className="versionTag"
+      href="https://github.com/alichtman/deadbolt"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <FaGithub
+        style={{
+          marginRight: '8px',
+          marginBottom: '2px',
+          fontSize: '18px',
+        }}
+      />
+      {`deadbolt v${packageInfo.version}`}
+    </a>
+  );
+}
+
 export default function FileUpload({
   setFileToWorkWith,
 }: {
@@ -52,15 +72,7 @@ export default function FileUpload({
           Drag-and-drop a file here, <br /> or click to select
         </span>
       </div>
-      <a
-        className="versionTag"
-        href="https://github.com/alichtman/deadbolt"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <FaGithub className="githubIcon" />
-        {`deadbolt v${packageInfo.version}`}
-      </a>
+      <DeadboltVersionTagAndGithubLink />
     </>
   );
 }
