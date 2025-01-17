@@ -42,10 +42,10 @@ function convertErrorToStringForRendererProcess(
   const prettyFilePath = prettyPrintFilePath(filePath);
   switch (true) {
     case error instanceof DecryptionWrongPasswordError:
-      return `${ERROR_MESSAGE_PREFIX}: Failed to decrypt ${prettyFilePath}. Is your password correct?`;
+      return `${ERROR_MESSAGE_PREFIX}: Failed to decrypt ${prettyFilePath}\nIs the password correct?`;
 
     case error instanceof EncryptedFileMissingMetadataError:
-      return `${ERROR_MESSAGE_PREFIX}: ${prettyFilePath} is missing metadata. It's likely corrupted.`;
+      return `${ERROR_MESSAGE_PREFIX}: ${prettyFilePath} is missing metadata.\nIt's likely corrupted.`;
 
     case error instanceof FileReadError:
       return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of ${prettyFilePath} for ${(error as FileReadError).operation}.`;
@@ -54,7 +54,7 @@ function convertErrorToStringForRendererProcess(
       return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be written during ${(error as FileWriteError).operation}.`;
 
     default:
-      return `${ERROR_MESSAGE_PREFIX}: Unhandled error. Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible. ${error}`;
+      return `${ERROR_MESSAGE_PREFIX}: Unhandled error!!! Please report this to https://github.com/alichtman/deadbolt/issues/new with as much detail about what you were doing as possible. ${error}`;
   }
 }
 

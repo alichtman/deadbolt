@@ -12,7 +12,7 @@
 
 .successOrErrorHeaderText {
   color: #ffffff;
-  margin-bottom: 50px;
+  margin-bottom: 30px;
   font-size: 20px;
 }
 
@@ -20,8 +20,9 @@
   color: #ff0000;
   font-size: 15px;
   width: 80%;
-  white-space: normal;
+  white-space: pre-line;
   word-wrap: break-word;
+  line-height: 150%;
 }
 
 .buttonsWrapper {
