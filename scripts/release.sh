@@ -10,54 +10,31 @@ function ctrl_c() {
         exit;
 }
 
-echo "Version increment?"
-echo "  1) Major"
-echo "  2) Minor"
-echo "  3) Patch"
-echo "  4) None! Version bumped already."
-
-bump=""
-
-read -r n
-case $n in
-  1) bump="major";;
-  2) bump="minor";;
-  3) bump="patch";;
-  4) bump="NONE";;
-  *) echo "Invalid option"; exit;;
-esac
-
 curr_version=$(node -p "require('./package.json').version")
-echo "Current version: ${curr_version}"
+echo ""
 
-if [ "$bump" == "NONE" ]; then
-  echo "Skipping version bump."
-else
-  echo "Bumping version..."
-  npm version "$bump"
-fi
-
-new_version=$(node -p "require('./package.json').version")
-echo "Publishing version: ${new_version}"
-
-read -r -p "Continue (y/N)?" choice
+read -r -p "Publish a release for deadbolt v${curr_version}? (y/N)" choice
 case "$choice" in
   y|Y ) echo "yes";;
-  n|N|* ) echo "Revert last commit!" && exit;;
+  n|N|* ) echo "Aborting!" && exit;;
 esac
 
-if [ "$bump" != "NONE" ]; then
-  git commit --amend -m "Version bump to v$new_version"
-  git push
+# Check for unpushed changes
+if [[ $(git status --porcelain) ]]; then
+  echo "Error: You have uncommitted changes. Please commit or stash them before releasing."
+  exit 1
 fi
 
-# Build electron app for Linux, Windows and macOS
+if [[ $(git log @{u}.. 2> /dev/null) ]]; then
+  echo "Error: You have unpushed commits. Please push them before releasing."
+  exit 1
+fi
 
-npm run preelectron-pack && npm run dist
+# Build electron app for Linux, Windows and macOS.
+# Just to make sure everything builds. We will redo the building in CI when a new tag starting with `v` is pushed.
+npm run package || echo "Build failed!" && exit 1
 
 # Push new releases to GitHub
-hub release create -a "dist/Deadbolt-${new_version}-mac.zip" -a "dist/Deadbolt ${new_version}.exe" -a "dist/deadbolt_${new_version}_amd64.deb" -m "deadbolt v${new_version}" "${new_version}"
-
-# Homebrew
+gh release create "v${curr_version}" --target main --generate-notes
 
 echo -e "Make sure to update the Homebrew tap with the new release.\n"

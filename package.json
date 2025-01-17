@@ -199,7 +199,9 @@
       "target": {
         "target": "dmg",
         "arch": [
-          "arm64"
+          "x64",
+          "arm64",
+          "universal"
         ]
       },
       "type": "distribution",
@@ -224,7 +226,10 @@
       ]
     },
     "nsis": {
-      "differentialPackage": false
+      "differentialPackage": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "oneClick": false
     },
     "linux": {
       "target": [
@@ -232,21 +237,25 @@
         "deb",
         "rpm",
         "snap",
-        "flatpak",
         "tar.gz"
       ],
-      "category": "Utility"
+      "category": "Utility",
+      "icon": "assets/icons/icon.png",
+      "desktop": {
+        "Name": "Deadbolt",
+        "Comment": "Dead-simple file encryption for any OS",
+        "Categories": "Utility;Security;",
+        "Keywords": "encryption;security;privacy",
+        "StartupNotify": "false",
+        "Encoding": "UTF-8",
+        "MimeType": "x-scheme-handler/deeplink"
+      },
+      "artifactName": "${productName}_${version}_${arch}.${ext}"
     },
     "rpm": {
-      "artifactName": "${productName}_${version}_${arch}.${ext}",
-      "icon": "assets/icons/icon.png",
-      "maintainer": "Aaron Lichtman <aaronlichtman@gmail.com>",
       "packageName": "deadbolt"
     },
     "deb": {
-      "artifactName": "${productName}_${version}_${arch}.${ext}",
-      "icon": "assets/icons/icon.png",
-      "maintainer": "Aaron Lichtman <aaronlichtman@gmail.com>",
       "packageName": "deadbolt"
     },
     "directories": {
