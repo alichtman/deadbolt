@@ -1,16 +1,5 @@
 @import './colors.css';
 
-.fileUploadIcon {
-  opacity: 0.8;
-  align-items: center;
-  justify-content: center;
-  grid: flex;
-}
-
-.fileUploadIcon:hover {
-  opacity: 1;
-}
-
 .fileUploadText {
   padding-top: 15px;
   text-align: center;
@@ -31,7 +20,7 @@
 
 .versionTag {
   position: absolute;
-  bottom: -8px;
+  bottom: 8px;
   margin-bottom: 0px;
   margin-right: 12px;
   right: 0px;
