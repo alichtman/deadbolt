@@ -152,6 +152,10 @@ function readFileWithPromise(path: string): Promise<Buffer> {
   });
 }
 
+function sha256Hash(data: Buffer): string {
+  return crypto.createHash('sha256').update(data).digest('hex');
+}
+
 /********************
  * AES-256 Encryption
  ********************/
@@ -224,6 +228,8 @@ export async function encryptFile(
     return `${ERROR_MESSAGE_PREFIX}: ${filePath} failed to be opened for reading.`;
   }
 
+  const unencryptedFileDataSHA256 = sha256Hash(fileDataToEncrypt);
+
   // Encrypt the file data, and then disable the cipher
   const cipherText = cipher.update(fileDataToEncrypt);
   cipher.final();
@@ -259,15 +265,25 @@ export async function encryptFile(
     return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
   }
 
+  // If it was written, let's validate that decrypting it will give us the same SHA256 hash as the encrypted data
+  const decryptedFileBufferOrError = await getDecryptedFileContents(
+    encryptedFilePath,
+    password,
+    true, // isVerification
   ).catch((error) => {
     return handleEncryptionOrDecryptionError(error, encryptedFilePath); // This returns a string error message
   });
 
-  if (fs.existsSync(encryptedFilePath)) {
-    console.log('Successfully encrypted file: ', encryptedFilePath);
-    return encryptedFilePath;
-  } else {
-    return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
+  // If it's not a Buffer (i.e. it's an error message), return it
+  if (typeof decryptedFileBufferOrError === 'string') {
+    return decryptedFileBufferOrError;
+  }
+
+  // Validate the SHA256 hash of the decrypted file
+  const decryptedFileSHA256 = sha256Hash(decryptedFileBufferOrError);
+  if (unencryptedFileDataSHA256 !== decryptedFileSHA256) {
+    fs.unlinkSync(encryptedFilePath);
+    return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be verified after encryption. It's likely corrupted. The hash of the data before encryption was ${unencryptedFileDataSHA256}, and the hash of the data after decryption was ${decryptedFileSHA256}.`;
   }
 
   console.log('Successfully encrypted file: ', encryptedFilePath);
