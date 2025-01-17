@@ -3,17 +3,41 @@ import './Button.css';
 
 export default function Button({
   onClick,
-  isPrimary,
+  buttonType,
   children,
 }: {
   onClick: () => void;
-  isPrimary: boolean;
+  buttonType: 'primary' | 'cancel' | 'goHome';
   children: React.ReactNode;
 }) {
+  let buttonClass: string;
+
+  switch (buttonType) {
+    case 'primary':
+      buttonClass = 'primaryButton';
+      break;
+    case 'cancel':
+      buttonClass = 'cancelButton';
+      break;
+    case 'goHome':
+      buttonClass = 'goHomeButton';
+      break;
+    default:
+      buttonClass = 'primaryButton';
+  }
+
   return (
     <div
-      className={isPrimary ? 'primaryButton' : 'secondaryButton'}
+      className={buttonClass}
       onClick={onClick}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick();
+        }
+      }}
+      role="button"
+      aria-pressed={buttonType === 'primary'}
     >
       {children}
     </div>

@@ -36,7 +36,7 @@
 }
 
 .primaryButtonText {
-  padding-left: 6px;
+  padding-left: 4px;
   color: #ffffff;
   font-size: 14px;
   font-weight: 500;
@@ -48,11 +48,10 @@
   font-size: 14px;
   font-weight: 500;
   padding-bottom: 4px;
+  padding-right: 6px;
 }
 
 .cancelButtonText:hover {
   opacity: 1;
-  color: #ffffff
+  color: #ffffff;
 }
-
-

@@ -46,16 +46,16 @@ export default function SuccessOrErrorModal({
       <div className="buttonsWrapper">
         {isSuccess && (
           <Button
-            isPrimary
+            buttonType="primary"
             onClick={() => {
               onRevealInFinder();
             }}
           >
-            <span className="openFinderText">Reveal in Finder</span>
+            <span className="openFinderText">Reveal in file browser</span>
           </Button>
         )}
-        <Button isPrimary={false} onClick={onGoHome}>
-          <span className="backToHomeText">Back to Home</span>
+        <Button buttonType="goHome" onClick={onGoHome}>
+          <span className="backToHomeText">Return home</span>
         </Button>
       </div>
     </div>

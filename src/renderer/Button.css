@@ -30,3 +30,37 @@
   background-color: #db3830;
   border-radius: 5px;
 }
+
+.cancelButton {
+  height: 30px;
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  padding-top: 4px;
+  margin-top: 10px;
+  background-color: #db3830;
+  color: white;
+  border-radius: 5px;
+  opacity: 0.8;
+}
+
+.cancelButton:hover {
+  opacity: 1;
+}
+
+.goHomeButton {
+  height: 30px;
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  padding-top: 4px;
+  margin-top: 10px;
+  background-color: #2ecc71;
+  color: white;
+  border-radius: 5px;
+  opacity: 0.8;
+}
+
+.goHomeButton:hover {
+  opacity: 1;
+}

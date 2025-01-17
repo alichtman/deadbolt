@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './EncryptOrDecryptForm.css';
+import CancelIcon from '@mui/icons-material/Cancel';
 import PasswordInput from './PasswordInput';
 import Button from './Button';
 import DecryptIcon from './assets/decryptIcon.svg';
@@ -83,6 +84,7 @@ export default function EncryptOrDecryptForm({
         <span
           className="errorText"
           style={{
+            width: '100%',
             visibility: displayError ? 'visible' : 'hidden',
             opacity: displayError ? 1 : 0,
             height: '14px',
@@ -93,7 +95,7 @@ export default function EncryptOrDecryptForm({
         </span>
         <div className="buttonsWrapper">
           <Button
-            isPrimary
+            buttonType="primary"
             onClick={() => {
               if (!isDecryption && validatePassword()) {
                 onSubmit(file.path, password);
@@ -111,7 +113,14 @@ export default function EncryptOrDecryptForm({
               {isDecryption ? 'Decrypt' : 'Encrypt'}
             </span>
           </Button>
-          <Button isPrimary={false} onClick={() => onCancel()}>
+          <Button buttonType="cancel" onClick={() => onCancel()}>
+            <CancelIcon
+              style={{
+                fontSize: '16px',
+                marginRight: '4px',
+                marginBottom: '4px',
+              }}
+            />
             <span className="cancelButtonText">Cancel</span>
           </Button>
         </div>
