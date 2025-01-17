@@ -18,6 +18,8 @@ import {
 } from './encryptionAndDecryptionLib';
 import prettyPrintFilePath from './fileUtils';
 
+const IS_DEBUG_MODE = process.env.DEADBOLT_DEBUG === '1';
+
 // TODO: Implement auto-updater
 // import { autoUpdater } from 'electron-updater';
 // import log from 'electron-log';
@@ -80,14 +82,8 @@ if (process.env.NODE_ENV === 'production') {
   sourceMapSupport.install();
 }
 
-const isDebug =
-  process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
-
-if (isDebug) {
-  require('electron-debug')();
-}
-
 const debugSetup = async () => {
+  require('electron-debug')();
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
   const extensions = ['REACT_DEVELOPER_TOOLS'];
@@ -101,7 +97,7 @@ const debugSetup = async () => {
 };
 
 const createWindow = async () => {
-  if (isDebug) {
+  if (IS_DEBUG_MODE) {
     await debugSetup();
   }
 
@@ -116,12 +112,10 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 750,
-    minWidth: 700,
-    maxWidth: 700,
-    minHeight: 400,
-    maxHeight: 400,
-    resizable: true, // so it's not actually resizable, but setting this to true makes the window the wrong sizes. idk man
+    // When debugging, you can make the window larger to see the UI better
+    width: IS_DEBUG_MODE ? 1000 : 750,
+    height: IS_DEBUG_MODE ? 800 : 400,
+    resizable: IS_DEBUG_MODE,
     autoHideMenuBar: true,
     icon: getAssetPath('icon.png'),
     webPreferences: {
