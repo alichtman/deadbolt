@@ -109,13 +109,13 @@ async function release(): Promise<void> {
 
   console.log(
     chalk.green(
-      'A draft release has been created. You will need to publish it from the GitHub UI. Make sure to update the Homebrew tap, and any other package managers with the new release.\nA GitHub Action will be triggered to update the .',
+      'A draft release has been created. You will need to publish it from the GitHub UI. Make sure to update the Homebrew tap, and any other package managers with the new release.\n',
     ),
   );
 
   // Build electron app for Linux, Windows and macOS, and then publish to github as part of the npm script
   try {
-    execSync('npm run package');
+    execSync('npm run package', { stdio: 'inherit' });
   } catch (error) {
     logFatalError('`$ npm run package` failed!');
     console.error(chalk.red('Error during build process:'), error);
