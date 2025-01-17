@@ -33,7 +33,8 @@ jobs:
 
       - name: Publish releases
         env:
-          # This is used for uploading release assets to github
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # This token is used for uploading release assets to github.
+          # It has very strict permissions.
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           npm exec electron-builder -- --publish always --win --mac --linux
