@@ -1,3 +1,4 @@
+/* eslint-disable no-else-return */
 /* eslint-disable no-console */
 import { useState } from 'react';
 import './App.css';
@@ -130,11 +131,10 @@ export default function App() {
     setViewState(ViewState.ENCRYPT_OR_DECRYPT);
   };
 
-  let appBody;
   if (viewState === ViewState.FILE_UPLOAD || !fileToWorkWith) {
-    appBody = <FileUpload setFileToWorkWith={handleFileSelection} />;
+    return <FileUpload setFileToWorkWith={handleFileSelection} />;
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && !fileIsEncrypted) {
-    appBody = (
+    return (
       <EncryptOrDecryptForm
         file={fileToWorkWith}
         onSubmit={encryptFile}
@@ -145,7 +145,7 @@ export default function App() {
       />
     );
   } else if (viewState === ViewState.ENCRYPT_OR_DECRYPT && fileIsEncrypted) {
-    appBody = (
+    return (
       <EncryptOrDecryptForm
         file={fileToWorkWith}
         onSubmit={decryptFile}
@@ -159,7 +159,7 @@ export default function App() {
     viewState === ViewState.SUCCESS &&
     pathToEncryptedOrDecryptedFile
   ) {
-    appBody = (
+    return (
       <SucessOrErrorModal
         onGoHome={() => {
           resetToFileUpload();
@@ -171,7 +171,7 @@ export default function App() {
     );
   } else if (viewState === ViewState.ERROR) {
     // Some error
-    appBody = (
+    return (
       <SucessOrErrorModal
         onGoHome={() => {
           resetToFileUpload();
@@ -181,7 +181,7 @@ export default function App() {
         errorMessage={fileDecryptOrEncryptErrorMessage}
       />
     );
+  } else {
+    return null;
   }
-
-  return <div className="app">{appBody}</div>;
 }
