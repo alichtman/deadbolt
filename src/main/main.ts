@@ -11,18 +11,19 @@
 import path from 'path';
 import { homedir } from 'os';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import { autoUpdater } from 'electron-updater';
-import log from 'electron-log';
 import { resolveHtmlPath } from './util';
 import { encryptFile, decryptFile } from './encryptionAndDecryptionLib';
 
-class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-}
+// TODO: Implement auto-updater
+// import { autoUpdater } from 'electron-updater';
+// import log from 'electron-log';
+// class AppUpdater {
+//   constructor() {
+//     log.transports.file.level = 'info';
+//     autoUpdater.logger = log;
+//     autoUpdater.checkForUpdatesAndNotify();
+//   }
+// }
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -148,9 +149,8 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
-  new AppUpdater();
+  // TODO: Implement auto-updater
+  // new AppUpdater();
 };
 
 /**

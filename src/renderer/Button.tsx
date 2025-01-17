@@ -1,13 +1,15 @@
 import React from 'react';
 import './Button.css';
 
-interface ButtonProps {
+export default function Button({
+  onClick,
+  isPrimary,
+  children,
+}: {
   onClick: () => void;
   isPrimary: boolean;
   children: React.ReactNode;
-}
-
-export default function Button({ onClick, isPrimary, children }: ButtonProps) {
+}) {
   return (
     <div
       className={isPrimary ? 'primaryButton' : 'secondaryButton'}
