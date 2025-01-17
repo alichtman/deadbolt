@@ -73,9 +73,8 @@ ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
     const ellipsis = '...';
     const truncatedPath = `${firstDir}${path.sep}${ellipsis}${path.sep}${lastDir}`;
     return truncatedPath;
-  } else {
-    return filePath;
   }
+  return filePath;
 });
 
 ipcMain.handle('revealFileInFinder', (_event, [filePath]) => {
@@ -117,7 +116,8 @@ const createWindow = async () => {
     : path.join(__dirname, '../../assets');
 
   const getAssetPath = (...paths: string[]): string => {
-    return path.join(RESOURCES_PATH, ...paths);
+    const assetPath = path.join(RESOURCES_PATH, ...paths);
+    return assetPath;
   };
 
   mainWindow = new BrowserWindow({

@@ -195,8 +195,7 @@
       "target": {
         "target": "default",
         "arch": [
-          "arm64",
-          "x64"
+          "arm64"
         ]
       },
       "type": "distribution",
@@ -206,6 +205,7 @@
       "gatekeeperAssess": false
     },
     "dmg": {
+      "writeUpdateInfo": false,
       "contents": [
         {
           "x": 130,
@@ -219,10 +219,8 @@
         }
       ]
     },
-    "win": {
-      "target": [
-        "nsis"
-      ]
+    "nsis": {
+      "differentialPackage": false
     },
     "linux": {
       "target": [
@@ -230,7 +228,19 @@
         "deb",
         "rpm"
       ],
-      "category": "Development"
+      "category": "Utility"
+    },
+    "rpm": {
+      "artifactName": "${productName}_${version}_${arch}.${ext}",
+      "icon": "assets/icons/icon.png",
+      "maintainer": "Aaron Lichtman <aaronlichtman@gmail.com>",
+      "packageName": "deadbolt"
+    },
+    "deb": {
+      "artifactName": "${productName}_${version}_${arch}.${ext}",
+      "icon": "assets/icons/icon.png",
+      "maintainer": "Aaron Lichtman <aaronlichtman@gmail.com>",
+      "packageName": "deadbolt"
     },
     "directories": {
       "app": "release/app",
