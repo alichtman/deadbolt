@@ -10,6 +10,7 @@ export default function FileUpload({
 }: {
   setFileToWorkWith: (file: File) => void;
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onSelectFromFileBrowser = (files: File[], _event: DropEvent) => {
     console.log('File dropped:', files);
     setFileToWorkWith(files[0]);
