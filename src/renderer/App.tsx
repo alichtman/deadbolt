@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 /* eslint-disable no-else-return */
 /* eslint-disable no-console */
 import { useState } from 'react';
@@ -184,7 +185,19 @@ export default function App() {
     return (
       <SucessOrErrorModal
         onGoHome={() => {
-          resetToFileUpload();
+          if (!pathToEncryptedOrDecryptedFile) {
+            resetToFileUpload();
+          } else {
+            navigator.clipboard
+              .writeText(pathToEncryptedOrDecryptedFile)
+              .then(() => {
+                return alert('File path copied to clipboard!');
+              })
+              .catch((err) => {
+                console.error('Failed to copy: ', err);
+              });
+            resetToFileUpload();
+          }
         }}
         onRevealInFinder={revealInFinder}
         errorMessage={undefined}

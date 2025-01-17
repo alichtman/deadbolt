@@ -30,33 +30,43 @@ export default function SuccessOrErrorModal({
 
   const mainText = isSuccess ? 'Success!' : 'Something went wrong!';
 
+  const revealInFinderButton = isSuccess && (
+    <Button
+      buttonType="primary"
+      onClick={() => {
+        onRevealInFinder();
+      }}
+    >
+      <span className="openFinderText">Reveal in file browser</span>
+    </Button>
+  );
+  const goHomeWithOptionalCopyToClipboard = isSuccess ? (
+    <Button buttonType="goHome" onClick={onGoHome}>
+      <span className="backToHomeText">
+        Copy encrypted file path to clipboard and go home
+      </span>
+    </Button>
+  ) : (
+    <Button buttonType="goHome" onClick={onGoHome}>
+      <span className="backToHomeText">Return home</span>
+    </Button>
+  );
+
   return (
     <div className="successOrErrorBody">
       <Lottie options={animationOptions} height={100} width={200} />
       <span className="successOrErrorHeaderText">{mainText}</span>
       {!isSuccess && errorMessage && (
         <p className="errorText">
-          {errorMessage
-            .split('`')
-            .map((part, index) =>
-              index % 2 === 0 ? part : <code className="filePath">{part}</code>,
-            )}
+          {errorMessage.split('`').map(
+            (part, index) =>
+              index % 2 === 0 ? part : <code className="filePath">{part}</code>, // Split on backticks and render the text as code
+          )}
         </p>
       )}
       <div className="buttonsWrapper">
-        {isSuccess && (
-          <Button
-            buttonType="primary"
-            onClick={() => {
-              onRevealInFinder();
-            }}
-          >
-            <span className="openFinderText">Reveal in file browser</span>
-          </Button>
-        )}
-        <Button buttonType="goHome" onClick={onGoHome}>
-          <span className="backToHomeText">Return home</span>
-        </Button>
+        {revealInFinderButton}
+        {goHomeWithOptionalCopyToClipboard}
       </div>
     </div>
   );
