@@ -35,7 +35,13 @@ export default function SuccessOrErrorModal({
       <Lottie options={animationOptions} height={100} width={200} />
       <span className="successOrErrorHeaderText">{mainText}</span>
       {!isSuccess && errorMessage && (
-        <p className="errorText">{errorMessage}</p>
+        <p className="errorText">
+          {errorMessage
+            .split('`')
+            .map((part, index) =>
+              index % 2 === 0 ? part : <code className="filePath">{part}</code>,
+            )}
+        </p>
       )}
       <div className="buttonsWrapper">
         {isSuccess && (

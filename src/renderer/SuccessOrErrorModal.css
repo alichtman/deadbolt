@@ -48,3 +48,10 @@
 .backToHomeText:hover {
   opacity: 1;
 }
+
+.filePath {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+}
