@@ -1,0 +1,19 @@
+{
+  "name": "deadbolt",
+  "version": "2.0.0-alpha",
+  "description": "Dead-simple file encryption for any OS.",
+  "license": "MIT",
+  "author": {
+    "name": "Aaron Lichtman",
+    "email": "aaronlichtman@gmail.com",
+    "url": "https://github.com/alichtman"
+  },
+  "homepage": "https://github.com/alichtman/deadbolt",
+  "main": "./dist/main/main.js",
+  "scripts": {
+    "rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,57 @@
+.formBody {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  justify-content: flex-end;
+  margin-top: -50px; /* Adjust this value to set the distance below fileHeader */
+}
+
+.errorText {
+  padding-top: 8px;
+  color: #ff6978;
+  font-size: 12px;
+  width: 80%;
+  text-align: center;
+  margin: 0 auto;
+  display: block;
+  /* Add a subtle animation */
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.buttonsWrapper {
+  flex-direction: column;
+  width: 80%;
+  margin-top: 0;
+}
+
+.primaryButtonText {
+  padding-left: 4px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cancelButtonText {
+  color: #ffffff;
+  /* opacity: 0.5; */
+  font-size: 14px;
+  font-weight: 500;
+  padding-bottom: 4px;
+  padding-right: 6px;
+}
+
+.cancelButtonText:hover {
+  opacity: 1;
+  color: #ffffff;
+}

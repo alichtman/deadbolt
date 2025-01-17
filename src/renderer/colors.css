@@ -1,0 +1,15 @@
+:root {
+  --primary-color: #11b5e4;
+  --error-or-destructive-color: #db3830;
+  --success-color: #2ecc71;
+  --text-color: #f0f0f0;
+  --text-color-input-placeholder: #6e90a9;
+  --input-text-color: #f0f0f0;
+  --file-header-background-color: #2a3149;
+  --button-opacity: 0.8;
+  --background-gradient: linear-gradient(
+    45deg,
+    rgba(40, 47, 68, 1) 0%,
+    rgba(81, 92, 121, 1) 100%
+  );
+}

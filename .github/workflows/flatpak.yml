@@ -1,0 +1,82 @@
+# name: Flatpak Build
+
+# on:
+#   push:
+#     tags:
+#       - 'v*'
+#   workflow_dispatch:
+
+# jobs:
+#   flatpak:
+#     runs-on: ubuntu-latest
+#     container:
+#       image: bilelmoussaoui/flatpak-github-actions:kde-6.5
+#       options: --privileged
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '22.x'
+#           cache: 'npm'
+
+#       - name: Install dependencies
+#         run: |
+#           npm ci
+
+#       - name: Setup Flatpak
+#         run: |
+#           flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+#           flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08 org.electronjs.Electron2.BaseApp//23.08
+
+#       - name: Add Flatpak manifest
+#         run: |
+#           cat > org.alichtman.deadbolt.yml << 'EOF'
+#           app-id: org.alichtman.deadbolt
+#           runtime: org.freedesktop.Platform
+#           runtime-version: '23.08'
+#           sdk: org.freedesktop.Sdk
+#           base: org.electronjs.Electron2.BaseApp
+#           base-version: '23.08'
+#           command: deadbolt
+#           finish-args:
+#             - --share=ipc
+#             - --socket=x11
+#             - --socket=pulseaudio
+#             - --share=network
+#             - --device=dri
+#             - --filesystem=home
+#           modules:
+#             - name: deadbolt
+#               buildsystem: simple
+#               build-commands:
+#                 - cp -r * /app/deadbolt/
+#                 - mkdir -p /app/bin
+#                 - ln -s /app/deadbolt/deadbolt /app/bin/deadbolt
+#               sources:
+#                 - type: dir
+#                   path: .
+#           EOF
+
+#       - name: Build Flatpak package
+#         run: |
+#           flatpak-builder --repo=repo --force-clean build-dir org.alichtman.deadbolt.yml
+#           flatpak build-bundle repo deadbolt.flatpak org.alichtman.deadbolt
+
+#       - name: Upload Flatpak bundle
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: flatpak-bundle
+#           path: deadbolt.flatpak
+
+#       - name: Release
+#         uses: softprops/action-gh-release@v1
+#         if: startsWith(github.ref, 'refs/tags/')
+#         with:
+#           files: deadbolt.flatpak
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

@@ -1,27 +1,32 @@
-# Release Process
+# Building and Releasing `deadbolt`
 
-`deadbolt` is distributed in two ways.
+The only successful path is building and releasing on macOS. You can't compile the macOS builds on Linux, and I won't develop on Windows.
+
+## Building Executables
+
+```bash
+$ npm run package
+```
+
+## Release Process
+
+`deadbolt` is built for macOS, Linux, and Windows, and a bunch of different architectures. It's distributed in a few ways.
 
 1. GitHub Releases
 2. Homebrew
+3. Flatpak
+4. Snap
+5. AppImage
+6. RPM
+7. DEB
 
 ## TL;DR
 
-`$ ./scripts/release.sh` and then update the URLs in the [Homebrew taps repo](https://www.github.com/alichtman/homebrew-taps).
-
-## Create macOS App
-
-```bash
-$ npm run preelectron-pack && npm run dist
+```
+$ npm run release
 ```
 
-The macOS installer can be found at `dist/deadbolt-x.y.z-mac.zip`.
-
-## Release on GitHub
-
-1. Bump the version number in `package.json`.
-2. Commit and push.
-3. `$ ./scripts/github-release.sh`
+// TODO: Then, some more work needs to be done -- upload to Flathub, snap, dnf copr, aur, and homebrew. Update the URLs in the [Homebrew taps repo](https://www.github.com/alichtman/homebrew-taps).
 
 ## Release on Homebrew
 

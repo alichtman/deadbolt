@@ -1,0 +1,51 @@
+@import './colors.css';
+
+.primaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 35px;
+  width: 100%;
+  background-color: var(--primary-color);
+  opacity: 0.8;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  opacity: 1;
+}
+
+.cancelButton {
+  height: 30px;
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  padding-top: 4px;
+  margin-top: 10px;
+  background-color: var(--error-or-destructive-color);
+  color: white;
+  border-radius: 5px;
+  opacity: 0.8;
+}
+
+.cancelButton:hover {
+  opacity: 1;
+}
+
+.goHomeButton {
+  height: 30px;
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  padding-top: 4px;
+  margin-top: 10px;
+  background-color: var(--success-color);
+  color: white;
+  border-radius: 5px;
+  opacity: 0.8;
+}
+
+.goHomeButton:hover {
+  opacity: 1;
+}
