@@ -54,7 +54,7 @@ $ yay -S deadbolt-bin
 
 ## Security Review
 
-The cryptography components of `deadbolt` were written by an ex-Facebook Security Engineer ([@alichtman](https://github.com/alichtman) -- me). And the security components of `deadbolt` have been briefly reviewed by [Vlad Ionescu](https://github.com/vladionescu), an ex-Facebook tech lead from the Offensive Security Group. Their review is:
+The cryptography components of `deadbolt` were written by an ex-Facebook Security Engineer ([@alichtman](https://github.com/alichtman) -- me), and have been briefly reviewed by [Vlad Ionescu](https://github.com/vladionescu), an ex-Facebook tech lead from the Red Team / Offensive Security Group. Their review is:
 
 > "yeah fuck it, it's fine. You're using very boring methods for everything -- that's the way to do it"
 
