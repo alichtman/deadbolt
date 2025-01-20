@@ -104,9 +104,9 @@ function sha256Hash(data: Buffer): string {
  *********************************/
 
 /**
- * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64 byte salt with 10,000 iterations of PBKDF2
+ * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64B salt with 10,000 iterations of PBKDF2
  * Follows the NIST standards described here: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
- * @param  {Buffer} salt          16 byte random salt
+ * @param  {Buffer} salt          64 byte random salt
  * @param  {string} encryptionKey User's entered encryption key
  * @return {Buffer}               SHA512 hash that will be used as the IV.
  */
