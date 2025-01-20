@@ -2,7 +2,7 @@
 
 <img src="img/deadbolt-header.png" />
 
-`deadbolt` simplifies encrypting and decrypting files. All you need is a password. 
+`deadbolt` simplifies encrypting and decrypting files. All you need is a password.
 
 Select a file to encrypt, enter a password, and … that’s it. Decryption is just as easy.
 
@@ -24,12 +24,11 @@ If you're running **Windows** or **Linux**, download the latest release [here.](
 
 First try:
 
-
 ```bash
 $ sudo apt install deadbolt_1.0.0_amd64.deb
 ```
 
-but if `apt` suggests removing `ubuntu-desktop`, etc, use: 
+but if `apt` suggests removing `ubuntu-desktop`, etc, use:
 
 ```bash
 $ sudo apt install deadbolt_1.0.0_amd64.deb --no-install-recommends
