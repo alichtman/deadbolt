@@ -110,12 +110,17 @@ const createWindow = async () => {
     return assetPath;
   };
 
+  const minWidth = IS_DEBUG_MODE ? 1000 : 750;
+  const minHeight = IS_DEBUG_MODE ? 800 : 500;
+
   mainWindow = new BrowserWindow({
     show: false,
     // When debugging, you can make the window larger to see the UI better
-    width: IS_DEBUG_MODE ? 1000 : 750,
-    height: IS_DEBUG_MODE ? 800 : 400,
-    resizable: IS_DEBUG_MODE,
+    width: minWidth,
+    height: minHeight,
+    minWidth,
+    minHeight,
+    resizable: true,
     autoHideMenuBar: true,
     icon: getAssetPath('icon.png'),
     webPreferences: {
