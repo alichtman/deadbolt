@@ -1,0 +1,135 @@
+productName: Deadbolt
+appId: org.alichtman.deadbolt
+asar: true
+asarUnpack: "**\\*.{node,dll}"
+files:
+  - dist
+  - node_modules
+  - package.json
+
+mac:
+  sign: .erb/scripts/notarize.js
+  notarize: false
+  target:
+    target: dmg
+    arch:
+      - x64
+      - arm64
+  type: distribution
+  hardenedRuntime: true
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.plist
+  gatekeeperAssess: false
+
+dmg:
+  writeUpdateInfo: false
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+nsis:
+  differentialPackage: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  oneClick: false
+
+linux:
+  target:
+
+    - target: flatpak
+      arch:
+        - x64
+
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+        - armv7l
+
+    # - target: deb
+    #   packageName: deadbolt
+    #   arch:
+    #     - x64
+    #     - arm64
+    #     - armv7l
+
+    # TODO: Can't build pacman or rpm stuff on Fedora41, I think due to https://github.com/electron-userland/electron-installer-redhat/pull/344
+    # - target: pacman
+    #   arch:
+    #     - x64
+    #     - arm64
+    #     - armv7l
+
+    # - target: rpm
+    #   arch:
+    #     - x64
+    #     - arm64
+    #     - armv7l
+
+  category: Utility
+  icon: assets/icon.png
+  desktop:
+    Name: Deadbolt
+    Comment: Dead-simple file encryption for any OS
+    Categories: Utility;Security;
+    Keywords: encryption;security;privacy
+    StartupNotify: "false"
+    Encoding: UTF-8
+    Type: Application
+  artifactName: ${productName}-${version}.${arch}.${ext}
+
+# rpm:
+#   packageName: deadbolt
+#   fpm:
+#     - --after-install
+#     - installer/linux/after-install.tpl
+#     # - --rpm-os
+#     # - linux
+#     # - --rpm-rpmbuild-define
+#     # - _build_id_links none
+#     # - --rpm-rpmbuild-define
+#     # - _binary_payload w2.xzdio
+#   depends:
+#     - mesa-libGL
+#     - mesa-libgbm
+#     - libglvnd
+#     - xorg-x11-server-Xvfb
+#     - gtk3
+#     - libwayland-client
+#     - libwayland-cursor
+#     - libwayland-egl
+#     - libEGL
+#   compression: xz
+
+
+directories:
+  app: release/app
+  buildResources: assets
+  output: release/build
+
+extraResources:
+  - ./assets/**
+
+publish:
+  provider: github
+  owner: alichtman
+  repo: deadbolt
+
+flatpak:
+  runtimeVersion: "23.08"
+  runtime: org.freedesktop.Platform
+  sdk: org.freedesktop.Sdk
+  base: org.electronjs.Electron2.BaseApp
+  baseVersion: "23.08"
+  finishArgs:
+    - "--share=ipc"
+    - "--socket=x11"
+    - "--socket=wayland"
+    - "--device=dri"
+    - "--filesystem=home"
+    - "--env=GDK_BACKEND=wayland,x11"
+    - "--env=ELECTRON_OZONE_PLATFORM_HINT=auto"
