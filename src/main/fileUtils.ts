@@ -21,13 +21,14 @@ export default function prettyPrintFilePath(
     prettyPath = prettyPath.replace(homedir(), '~');
   }
 
-  // If path is too long, truncate it. Make sure the first directory is shown, and the last directory is shown, and the middle is truncated.
+  // If path is too long, truncate it. Make sure homedir is collapsed to ~, the first and last directories are shown, and the middle is truncated.
   // Min window width is 400px, and 60 characters fits well in it.
   if (prettyPath.length > 60) {
+    const pathParts = prettyPath.split(path.sep);
     const firstDir = prettyPath.startsWith('~/')
-      ? `~${path.sep}${prettyPath.split(path.sep)[2]}`
-      : prettyPath.split(path.sep)[1];
-    const lastDir = prettyPath.split(path.sep).slice(-1)[0];
+      ? `~${path.sep}${pathParts[1]}`
+      : pathParts[1];
+    const lastDir = pathParts[pathParts.length - 1];
     const ellipsis = '...';
     const truncatedPath = `${firstDir}${path.sep}${ellipsis}${path.sep}${lastDir}`;
     return truncatedPath;
