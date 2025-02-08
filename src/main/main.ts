@@ -111,7 +111,7 @@ const createWindow = async () => {
   };
 
   const minWidth = IS_DEBUG_MODE ? 1000 : 750;
-  const minHeight = IS_DEBUG_MODE ? 800 : 500;
+  const minHeight = IS_DEBUG_MODE ? 800 : 400;
 
   mainWindow = new BrowserWindow({
     show: false,
