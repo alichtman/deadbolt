@@ -64,6 +64,7 @@ jobs:
             - name: deadbolt
               buildsystem: simple
               build-commands:
+                - mkdir -p /app/deadbolt
                 - cp -r * /app/deadbolt/
                 - mkdir -p /app/bin
                 - ln -s /app/deadbolt/deadbolt /app/bin/deadbolt
