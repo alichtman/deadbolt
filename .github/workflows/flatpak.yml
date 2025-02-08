@@ -81,7 +81,7 @@ jobs:
           flatpak build-bundle repo deadbolt.flatpak org.alichtman.deadbolt
 
       - name: Upload Flatpak bundle
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: flatpak-bundle
           path: deadbolt.flatpak
