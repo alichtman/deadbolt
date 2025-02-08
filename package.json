@@ -42,6 +42,7 @@
     "package:mac": "npm run update-versions && ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build -m --publish never && npm run build:dll",
     "package:windows": "npm run update-versions && ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build -w --publish never && npm run build:dll",
     "package:linux": "npm run update-versions && ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build -l --publish never && npm run build:dll",
+    "package:linux-appimage": "npm run update-versions && ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build -l AppImage --publish never && npm run build:dll",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
     "prestart": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.dev.ts",
     "start": "npm run update-versions && ts-node ./.erb/scripts/check-port-in-use.js && npm run prestart && npm run start:renderer",

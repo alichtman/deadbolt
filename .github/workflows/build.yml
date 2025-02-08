@@ -1,14 +1,11 @@
-name: Flatpak Build
-
-## TODO: delete once build.yml is working
+name: Build
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -17,8 +14,71 @@ on:
         required: false
         default: false
 
+env:
+  NODE_VERSION: '22.x'
+
 jobs:
-  flatpak:
+  build-mac-and-windows:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build macOS
+        run: npm run package:mac
+
+      - name: Build Windows
+        run: npm run package:windows
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-artifacts
+          path: release/build/*.dmg
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            release/build/*.exe
+            release/build/*.msi
+
+  build-linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libgbm-dev libasound2-dev
+          npm ci
+
+      - name: Build AppImage
+        run: npm run package:linux-appimage
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: release/build/*.AppImage
+
+  build-linux-flatpak:
     runs-on: ubuntu-latest
     container:
       image: bilelmoussaoui/flatpak-github-actions:kde-7.5
@@ -32,7 +92,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '21.x'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -86,10 +146,22 @@ jobs:
           name: flatpak-bundle
           path: deadbolt.flatpak
 
-      - name: Release
+  create-release:
+    needs: [build-mac-and-windows, build-linux-appimage, build-linux-flatpak]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2.2.1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: deadbolt.flatpak
+          files: |
+            mac-artifacts/*
+            windows-artifacts/*
+            linux-artifacts/*
+            flatpak-bundle
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
