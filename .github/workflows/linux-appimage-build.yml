@@ -1,15 +1,7 @@
 
-name: AppImage Build
+name: AppImage Build (Testing)
 
-## TODO: delete once build.yml is working
-
-on:
-  push:
-    tags:
-      - 'v*'
-  pull_request:
-    branches: [ main ]
-    types: [opened, synchronize, reopened]
+on: 
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -24,9 +16,6 @@ env:
 jobs:
   build-linux-appimage:
     runs-on: ubuntu-latest
-    # container:
-    #   image: bilelmoussaoui/flatpak-github-actions:kde-6.5
-    #   options: --privileged
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +28,6 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          #sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libgbm-dev
           npm ci
 
       - name: Build AppImage

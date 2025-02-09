@@ -1,14 +1,6 @@
-name: Flatpak Build
-
-## TODO: delete once build.yml is working
+name: Flatpak Build (Testing)
 
 on:
-  push:
-    tags:
-      - 'v*'
-  # pull_request:
-  #   branches: [ main ]
-  #   types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       debug_enabled:
