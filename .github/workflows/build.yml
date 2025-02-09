@@ -138,16 +138,14 @@ jobs:
           EOF
 
       - name: Build Flatpak package
-        run: |
-          flatpak-builder --repo=repo --force-clean build-dir org.alichtman.deadbolt.yml
-          flatpak build-bundle repo deadbolt.flatpak org.alichtman.deadbolt
+        run: npm run package:linux-flatpak
 
       - name: Upload Flatpak bundle
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: linux-flatpak-artifact
-          path: deadbolt.flatpak
+          path: release/build/Deadbolt*.flatpak
 
   create-release:
     needs: [build-mac-and-windows, build-linux-appimage, build-linux-flatpak]
