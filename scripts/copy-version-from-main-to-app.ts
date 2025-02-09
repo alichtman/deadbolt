@@ -30,5 +30,7 @@ export default function copyVersionFromMainToApp() {
   );
 }
 
-// Execute the function
-copyVersionFromMainToApp();
+// Only execute if this file is being run directly
+if (require.main === module) {
+  copyVersionFromMainToApp();
+}
