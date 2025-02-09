@@ -8,7 +8,7 @@ files:
   - package.json
 
 mac:
-  sign: .erb/scripts/notarize.js
+  sign: .erb/scripts/notarize.js  # TODO: https://github.com/alichtman/deadbolt/issues/68
   notarize: false
   target:
     target: dmg
@@ -31,6 +31,17 @@ dmg:
       type: link
       path: /Applications
 
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+    - target: portable
+      arch:
+        - x64
+        - arm64
+
 nsis:
   differentialPackage: false
   createDesktopShortcut: true
@@ -39,7 +50,6 @@ nsis:
 
 linux:
   target:
-
     - target: flatpak
       arch:
         - x64

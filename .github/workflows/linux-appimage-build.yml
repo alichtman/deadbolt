@@ -1,0 +1,40 @@
+
+name: AppImage Build (Testing)
+
+on: 
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run the build with debug logging'
+        type: boolean
+        required: false
+        default: false
+
+env:
+  NODE_VERSION: '22.x'
+
+jobs:
+  build-linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          npm ci
+
+      - name: Build AppImage
+        run: npm run package:linux-appimage
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: release/build/*.AppImage
