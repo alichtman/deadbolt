@@ -6,6 +6,9 @@
 # Install dependencies
 $ npm install --save
 
+# Install git hooks
+$ npm run prepare
+
 # Run in debug mode
 $ DEADBOLT_DEBUG=1 npm run start
 
