@@ -4,11 +4,9 @@
 
 `deadbolt` simplifies encrypting and decrypting files. All you need is a password.
 
-Select a file to encrypt, enter a password, and … that’s it. Decryption is just as easy.
+Select a file (or folder) to encrypt, enter a password, and … that’s it. Decryption is just as easy.
 
-You can download `deadbolt` for **Mac OS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
-
-> Note: `deadbolt` can not encrypt directories. To encrypt a directory, compress it into a `.zip` (or any archive format) file before using `deadbolt`.
+You can download `deadbolt` for **macOS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
 
 ## Building / Installing
 
@@ -16,13 +14,15 @@ Check out the [releases tab](https://github.com/alichtman/deadbolt/releases) for
 
 ### `macOS`
 
-If you're running `macOS`, install `deadbolt` with Homebrew:
+If you're running `macOS`, install `deadbolt` from [GitHub Releases](https://github.com/alichtman/deadbolt/releases).
+
+If you have an Mac with an M-series chip, the `arm64` version is recommended. If you're not sure, the `x86_64` version will work on all Macs, but be extremely slow.
+
+You can also install `deadbolt` using `brew`, however, [the recipe](https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb) may not be up-to-date.
 
 ```bash
 $ brew install --cask deadbolt
 ```
-
-You can also download a `.dmg` file from [GitHub Releases](https://github.com/alichtman/deadbolt/releases).
 
 ### Windows
 
@@ -30,7 +30,9 @@ Download an `.exe` file, or installer, from [GitHub Releases](https://github.com
 
 ### Linux
 
-I suggest using the `flatpak` package for `deadbolt` on Linux, available on [Flathub](https://flathub.org/apps/details/org.alichtman.deadbolt) and [GitHub Releases](https://github.com/alichtman/deadbolt/releases).
+`AppImage` and `flatpak` packages are available for Linux. `AppImages` can run on all major Linux desktop distributions, and `flatpak` packages are provided as another option. Auto-updates are not supported for Linux currently.
+
+<!-- TODO: Add reference to flathub once I get that published [Flathub](https://flathub.org/apps/details/org.alichtman.deadbolt)-->
 
 #### Building `flatpak` package from source
 
@@ -63,7 +65,7 @@ deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 7s
 
 #### Arch
 
-`deadbolt` is [packaged as `deadbolt-bin` on aur](https://aur.archlinux.org/packages/deadbolt-bin). I do not maintain this package, so use it at your own risk.
+`deadbolt` is [packaged as `deadbolt-bin` on `aur`](https://aur.archlinux.org/packages/deadbolt-bin). I do not maintain this package, so use at your own risk.
 
 ```bash
 $ yay -S deadbolt-bin
@@ -77,7 +79,7 @@ $ yay -S deadbolt-bin
 
 ### Technical Version
 
-`deadbolt` is built on Electron and uses `crypto.js` from the `node.js` standard library. The encryption protocol used is `AES-256-GCM`. This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents. A 256-bit derived key for the cipher is created using 11,000 iterations of `pbkdf2` with the `SHA-512` HMAC digest algorithm, a 64-byte randomly generated salt, and a user generated password. The authenticity of the data is verified with the authentication tag provided by using GCM. These parameters were chosen by following the [NIST Guidelines for pbkdf2](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf).
+`deadbolt` is built on Electron and uses `crypto.js` from the `node.js` standard library. The encryption protocol used is `AES-256-GCM`. This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents. A 256-bit derived key for the cipher is created using 11,000 iterations of `pbkdf2` with the `SHA-512 HMAC` digest algorithm, a 64-byte randomly generated salt, and a user generated password. The authenticity of the data is verified with the authentication tag provided by using GCM. These parameters were chosen by following the [NIST Guidelines for `pbkdf2`](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf).
 
 ## Security Review
 
