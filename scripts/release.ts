@@ -85,21 +85,30 @@ function ensureReleaseIsSafe(): void {
     );
   }
 
-  // Check if the current version is already a tag
+  // Check if the current version is already a tag (locally or remotely)
   try {
-    // will throw if the tag doesn't exist, which is what we want
-    const output = execSync(`git rev-parse ${CURRENT_VERSION}`, {
-      stdio: 'ignore',
-    });
-    // if output is a hash, then the tag exists, and we need to log a fatal error
-    if (output.toString().trim()) {
+    // Fetch all tags from remote to ensure we have the latest
+    execSync('git fetch --tags', { stdio: 'ignore' });
+
+    // Check both local and remote tags
+    const output = execSync(`git tag -l ${CURRENT_VERSION}`, {
+      stdio: 'pipe',
+    })
+      .toString()
+      .trim();
+
+    if (output) {
       logFatalError(
-        `Error: Version ${CURRENT_VERSION} is already tagged. Please bump the version in package.json.`,
+        `Error: Version ${CURRENT_VERSION} is already tagged locally or remotely. Please bump the version in package.json.`,
       );
     }
   } catch {
-    // Tag doesn't exist, which is what we want
-    console.log(chalk.yellow(`Tag ${CURRENT_VERSION} does not exist.`));
+    // Tag doesn't exist anywhere, which is what we want
+    console.log(
+      chalk.yellow(
+        `Tag ${CURRENT_VERSION} does not exist locally or remotely.`,
+      ),
+    );
   }
 }
 
