@@ -167,6 +167,6 @@ jobs:
             mac-artifacts/*
             windows-artifacts/*
             linux-appimage-artifacts/*
-            linux-flatpak-artifact
+            linux-flatpak-artifact/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
