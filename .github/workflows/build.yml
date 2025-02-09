@@ -42,7 +42,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mac-artifacts
-          path: release/build/*.dmg
+          path: |
+            release/build/Deadbolt*.dmg
+            release/build/**/*.dmg
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -110,7 +112,7 @@ jobs:
           runtime: org.freedesktop.Platform
           runtime-version: '23.08'
           sdk: org.freedesktop.Sdk
-          base: org.electronjs.Electron1.BaseApp
+          base: org.electronjs.Electron2.BaseApp
           base-version: '23.08'
           command: deadbolt
           finish-args:
