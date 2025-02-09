@@ -45,9 +45,7 @@ jobs:
           sdk: org.freedesktop.Sdk
           base: org.electronjs.Electron2.BaseApp
           base-version: '23.08'
-          command: electron-launcher
-          args:
-            - /app/deadbolt
+          command: deadbolt
           finish-args:
             - --share=ipc
             - --socket=x11
@@ -63,17 +61,14 @@ jobs:
                 - mkdir -p /app/deadbolt
                 - cp -r * /app/deadbolt/
                 - mkdir -p /app/bin
-                - install -Dm755 /app/deadbolt/node_modules/.bin/electron /app/bin/electron-launcher
-                - install -Dm755 /app/deadbolt/node_modules/.bin/electron /app/bin/deadbolt
+                - ln -s /app/deadbolt/deadbolt /app/bin/deadbolt
               sources:
                 - type: dir
                   path: .
           EOF
 
       - name: Build Flatpak package
-        run: |
-          flatpak-builder --repo=repo --force-clean build-dir org.alichtman.deadbolt.yml
-          flatpak build-bundle repo deadbolt.flatpak org.alichtman.deadbolt
+        run: npm run package:linux-flatpak
 
       - name: Upload Flatpak bundle
         uses: actions/upload-artifact@v4
