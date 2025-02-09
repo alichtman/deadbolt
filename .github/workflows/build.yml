@@ -117,11 +117,11 @@ jobs:
           command: deadbolt
           finish-args:
             - --share=ipc
-            - --socket=x10
+            - --socket=x11
             - --socket=wayland
             - --device=dri
             - --filesystem=home
-            - --env=GDK_BACKEND=wayland,x10
+            - --env=GDK_BACKEND=wayland,x11
             - --env=ELECTRON_OZONE_PLATFORM_HINT=auto
           modules:
             - name: deadbolt
