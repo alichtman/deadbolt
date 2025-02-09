@@ -34,19 +34,24 @@ Download an `.exe` file, or installer, from [GitHub Releases](https://github.com
 
 <!-- TODO: Add reference to flathub once I get that published [Flathub](https://flathub.org/apps/details/org.alichtman.deadbolt)-->
 
-#### Building `flatpak` package from source
+#### Building and installing `flatpak` package from source
 
 ```bash
+$ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
+
+deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 0s
+$ npm install
+
 deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 0s
 $ npm run package:linux-flatpak
 
 deadbolt on main is 📦 v2.0.0-beta via node v22.11.0
-09:47:52 PM ➜ ll release/build/
+$ ls -la release/build/
 ...
 .rw-r--r--. alichtman alichtman  75 MB Sat Feb  8 21:42:00 2025 Deadbolt-2.0.0-beta.x86_64.flatpak
 
 deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 0s
-09:48:23 PM ➜ flatpak install --user release/build/Deadbolt-2.0.0-beta.x86_64.flatpak
+$ flatpak install --user release/build/Deadbolt-2.0.0-beta.x86_64.flatpak
 
 org.alichtman.deadbolt permissions:
     ipc   wayland   x11   dri   file access [1]
@@ -60,7 +65,7 @@ org.alichtman.deadbolt permissions:
 Installation complete.
 
 deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 7s
-09:48:42 PM ➜ flatpak run org.alichtman.deadbolt
+$ flatpak run org.alichtman.deadbolt
 ```
 
 #### Arch
