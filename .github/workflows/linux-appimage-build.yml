@@ -7,9 +7,9 @@ on:
   push:
     tags:
       - 'v*'
-  # pull_request:
-  #   branches: [ main ]
-  #   types: [opened, synchronize, reopened]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       debug_enabled:
