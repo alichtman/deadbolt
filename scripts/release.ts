@@ -16,6 +16,8 @@ function getCurrentVersion(): string {
   return packageJson.version;
 }
 
+const CURRENT_VERSION = `v${getCurrentVersion()}`;
+
 // Function to prompt user for confirmation
 function promptUser(question: string): Promise<string> {
   const rl = readline.createInterface({
@@ -81,6 +83,23 @@ function ensureReleaseIsSafe(): void {
       'Error: You are not on the main branch. Please switch to the main branch before releasing.',
     );
   }
+
+  // Check if the current version is already a tag
+  try {
+    // will throw if the tag doesn't exist, which is what we want
+    const output = execSync(`git rev-parse ${CURRENT_VERSION}`, {
+      stdio: 'ignore',
+    });
+    // if output is a hash, then the tag exists, and we need to log a fatal error
+    if (output.toString().trim()) {
+      logFatalError(
+        `Error: Version ${CURRENT_VERSION} is already tagged. Please bump the version in package.json.`,
+      );
+    }
+  } catch {
+    // Tag doesn't exist, which is what we want
+    console.log(chalk.yellow(`Tag ${CURRENT_VERSION} does not exist.`));
+  }
 }
 
 // Main function to run the release process
@@ -89,10 +108,8 @@ async function release(): Promise<void> {
   ensureGHCLIInstalled();
   printCurrentGHReleases();
 
-  const currVersion = getCurrentVersion();
-  const vVersion = `v${currVersion}`;
-  const prettyVersion = `deadbolt ${vVersion}`;
-  const prettyVersionWithColors = `${chalk.green.bold('deadbolt')} ${chalk.yellow.bold(vVersion)}`;
+  const prettyVersion = `deadbolt ${CURRENT_VERSION}`;
+  const prettyVersionWithColors = `${chalk.green.bold('deadbolt')} ${chalk.yellow.bold(CURRENT_VERSION)}`;
 
   const proceedWithReleasePrompt = await promptUser(
     `\nPublish a new (pre-release or real) release for ${prettyVersionWithColors}? (y/N) `,
@@ -105,8 +122,10 @@ async function release(): Promise<void> {
   // Auto-detect if this is a pre-release based on version string
   let isAutodetectedPrerelease = false;
   let isPrerelease = false;
-  if (currVersion.endsWith('-beta') || currVersion.endsWith('-alpha')) {
-    console.log(chalk.yellow(`Version ${currVersion} detected as pre-release`));
+  if (CURRENT_VERSION.endsWith('-beta') || CURRENT_VERSION.endsWith('-alpha')) {
+    console.log(
+      chalk.yellow(`Version ${CURRENT_VERSION} detected as pre-release`),
+    );
     isAutodetectedPrerelease = true;
   }
 
@@ -139,7 +158,7 @@ async function release(): Promise<void> {
   // Create a new tag and a new github release (all done inside the gh release create cmd)
   return new Promise((resolve, reject) => {
     try {
-      const command = `gh release create ${vVersion} --title "${prettyVersion}" --target main --generate-notes ${
+      const command = `gh release create ${CURRENT_VERSION} --title "${prettyVersion}" --target main --generate-notes ${
         isAutodetectedPrerelease || isPrerelease ? '--prerelease' : ''
       }`;
       console.log(chalk.green.bold(`Executing command: $ ${command}`));
