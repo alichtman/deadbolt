@@ -177,7 +177,7 @@ async function release(): Promise<void> {
       execSync(command, { stdio: 'inherit' });
       console.log(
         chalk.green.bold(
-          'A release has been created. You will need to publish it from the GitHub UI. CI will populate the build artifacts. Make sure to update the Homebrew tap, and any other package managers with the new release.\n',
+          'A release has been created. You will need to publish it from the GitHub UI. CI will populate the build artifacts. Make sure to update the Homebrew recipe (https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb), and any other package managers with the new release.\n',
         ),
       );
       resolve();
