@@ -10,9 +10,11 @@ You can download `deadbolt` for **Mac OS**, **Windows**, or **Linux**. Any encry
 
 > Note: `deadbolt` can not encrypt directories. To encrypt a directory, compress it into a `.zip` (or any archive format) file before using `deadbolt`.
 
-## Installation
+## Building / Installing
 
-### Mac OS
+Check out the [releases tab](https://github.com/alichtman/deadbolt/releases) for pre-built binaries for Mac, Windows, and Linux.
+
+### `macOS`
 
 If you're running `macOS`, install `deadbolt` with Homebrew:
 
@@ -24,11 +26,40 @@ You can also download a `.dmg` file from [GitHub Releases](https://github.com/al
 
 ### Windows
 
-Download an `exe` file from [GitHub Releases](https://github.com/alichtman/deadbolt/releases).
+Download an `.exe` file, or installer, from [GitHub Releases](https://github.com/alichtman/deadbolt/releases).
 
 ### Linux
 
 I suggest using the `flatpak` package for `deadbolt` on Linux, available on [Flathub](https://flathub.org/apps/details/org.alichtman.deadbolt) and [GitHub Releases](https://github.com/alichtman/deadbolt/releases).
+
+#### Building `flatpak` package from source
+
+```bash
+deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 0s
+$ npm run package:linux-flatpak
+
+deadbolt on main is 📦 v2.0.0-beta via node v22.11.0
+09:47:52 PM ➜ ll release/build/
+...
+.rw-r--r--. alichtman alichtman  75 MB Sat Feb  8 21:42:00 2025 Deadbolt-2.0.0-beta.x86_64.flatpak
+
+deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 0s
+09:48:23 PM ➜ flatpak install --user release/build/Deadbolt-2.0.0-beta.x86_64.flatpak
+
+org.alichtman.deadbolt permissions:
+    ipc   wayland   x11   dri   file access [1]
+
+    [1] home
+
+
+        ID                               Branch           Op           Remote                   Download
+ 1. [✓] org.alichtman.deadbolt           master           i            deadbolt-origin          0 bytes
+
+Installation complete.
+
+deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 7s
+09:48:42 PM ➜ flatpak run org.alichtman.deadbolt
+```
 
 #### Arch
 
