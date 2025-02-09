@@ -1,7 +1,7 @@
 
 name: AppImage Build (Testing)
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       debug_enabled:
