@@ -43,16 +43,16 @@ jobs:
           runtime: org.freedesktop.Platform
           runtime-version: '23.08'
           sdk: org.freedesktop.Sdk
-          base: org.electronjs.Electron1.BaseApp
+          base: org.electronjs.Electron2.BaseApp
           base-version: '23.08'
           command: deadbolt
           finish-args:
             - --share=ipc
-            - --socket=x10
+            - --socket=x11
             - --socket=wayland
             - --device=dri
             - --filesystem=home
-            - --env=GDK_BACKEND=wayland,x10
+            - --env=GDK_BACKEND=wayland,x11
             - --env=ELECTRON_OZONE_PLATFORM_HINT=auto
           modules:
             - name: deadbolt
