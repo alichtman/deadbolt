@@ -56,10 +56,9 @@ function ensureGHCLIInstalled(): void {
  * This whole section depends on execSync throwing if a process times out or has a non-zero exit code
  */
 function ensureReleaseIsSafe(): void {
-  // Check for unpushed changes
-  try {
-    execSync('git status --porcelain', { stdio: 'ignore' });
-  } catch (error) {
+  // Check for uncommitted changes
+  const uncommittedChanges = execSync('git status --porcelain').toString();
+  if (uncommittedChanges) {
     logFatalError(
       'Error: You have uncommitted changes. Please commit or stash them before releasing.',
     );
@@ -86,31 +85,68 @@ function ensureReleaseIsSafe(): void {
 
 // Main function to run the release process
 async function release(): Promise<void> {
+  ensureReleaseIsSafe();
   ensureGHCLIInstalled();
   printCurrentGHReleases();
 
   const currVersion = getCurrentVersion();
   const vVersion = `v${currVersion}`;
-
-  ensureReleaseIsSafe();
+  const prettyVersion = `deadbolt ${vVersion}`;
+  const prettyVersionWithColors = `${chalk.green.bold('deadbolt')} ${chalk.yellow.bold(vVersion)}`;
 
   const proceedWithReleasePrompt = await promptUser(
-    `Publish a new release for deadbolt ${vVersion}?\nA new gh release will be drafted if it does not already exist. (y/N) `,
+    `\nPublish a new (pre-release or real) release for ${prettyVersionWithColors}? (y/N) `,
   );
   if (!['y', 'Y'].includes(proceedWithReleasePrompt)) {
     console.log(chalk.yellow('Aborting!'));
     process.exit();
   }
 
+  // Auto-detect if this is a pre-release based on version string
+  let isAutodetectedPrerelease = false;
+  let isPrerelease = false;
+  if (currVersion.endsWith('-beta') || currVersion.endsWith('-alpha')) {
+    console.log(chalk.yellow(`Version ${currVersion} detected as pre-release`));
+    isAutodetectedPrerelease = true;
+  }
+
+  if (!isAutodetectedPrerelease) {
+    const releaseTypePrompt = await promptUser(
+      'What type of release is this?\n1. prerelease\n2. real\nEnter p or r: ',
+    );
+
+    if (releaseTypePrompt === 'p') {
+      isPrerelease = true;
+    } else if (releaseTypePrompt === 'r') {
+      isPrerelease = false;
+    } else {
+      console.log(chalk.yellow('Invalid selection. Aborting!'));
+      process.exit(1);
+    }
+  }
+
+  const releaseVerbiage =
+    isPrerelease || isAutodetectedPrerelease ? 'pre-release' : 'release';
+
+  // Confirm creating a release / pre-release
+  const confirmReleasePrompt = await promptUser(
+    `Are you sure you want to create a ${releaseVerbiage} for ${prettyVersionWithColors}? (y/N) `,
+  );
+  if (!['y', 'Y'].includes(confirmReleasePrompt)) {
+    console.log(chalk.yellow('Aborting!'));
+    process.exit();
+  }
   // Create a new tag and a new github release (all done inside the gh release create cmd)
   return new Promise((resolve, reject) => {
     try {
-      const command = `gh release create ${vVersion} --title "deadbolt ${vVersion}" --target main --generate-notes --draft`;
+      const command = `gh release create ${vVersion} --title "${prettyVersion}" --target main --generate-notes ${
+        isAutodetectedPrerelease || isPrerelease ? '--prerelease' : ''
+      }`;
       console.log(chalk.green.bold(`Executing command: $ ${command}`));
       execSync(command, { stdio: 'inherit' });
       console.log(
         chalk.green.bold(
-          'A draft release has been created. You will need to publish it from the GitHub UI. CI will populate the build artifacts. Make sure to update the Homebrew tap, and any other package managers with the new release.\n',
+          'A release has been created. You will need to publish it from the GitHub UI. CI will populate the build artifacts. Make sure to update the Homebrew tap, and any other package managers with the new release.\n',
         ),
       );
       resolve();
@@ -123,7 +159,7 @@ async function release(): Promise<void> {
 // Run the release process
 release()
   .then(() => {
-    console.log(chalk.green.bold('Draft release completed successfully!'));
+    console.log(chalk.green.bold('Release completed successfully!'));
     process.exit(0);
   })
   .catch((err) => {
