@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import which from 'which';
+import copyVersionFromMainToApp from './copy-version-from-main-to-app';
 
 function logFatalError(error: string): void {
   console.log(chalk.red.bold(error));
@@ -104,6 +105,8 @@ function ensureReleaseIsSafe(): void {
 
 // Main function to run the release process
 async function release(): Promise<void> {
+  // If this next operation causes a source control change, the release will fail (as it should)
+  copyVersionFromMainToApp();
   ensureReleaseIsSafe();
   ensureGHCLIInstalled();
   printCurrentGHReleases();
