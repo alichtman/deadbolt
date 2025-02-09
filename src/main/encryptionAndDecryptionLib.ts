@@ -18,6 +18,7 @@ import prettyPrintFilePath, {
   generateValidEncryptedFilePath,
   generateValidZipFilePath,
 } from './fileUtils';
+import EncryptionOrDecryptionEnum from './EncryptionOrDecryptionEnum';
 
 const AES_256_GCM = 'aes-256-gcm';
 const METADATA_LEN = 96;
@@ -32,12 +33,6 @@ const METADATA_LEN = 96;
 // but we're going to galaxy brain it and just return a string to the renderer process with a prefix to indicate that it's an error.
 // ....
 export const ERROR_MESSAGE_PREFIX = 'ERROR_FROM_ELECTRON_MAIN_THREAD';
-
-export enum EncryptionOrDecryption {
-  ENCRYPTION = 'encryption',
-  DECRYPTION_VERIFICATION_OF_ENCRYPTION = 'verification of encryption (which requires decryption)',
-  DECRYPTION = 'decryption',
-}
 
 function convertErrorToStringForRendererProcess(
   error: Error,
@@ -166,8 +161,8 @@ async function getDecryptedFileContents(
       } else if (data.length === 0) {
         throw new FileReadError(
           isVerification
-            ? EncryptionOrDecryption.DECRYPTION_VERIFICATION_OF_ENCRYPTION
-            : EncryptionOrDecryption.DECRYPTION,
+            ? EncryptionOrDecryptionEnum.DECRYPTION_VERIFICATION_OF_ENCRYPTION
+            : EncryptionOrDecryptionEnum.DECRYPTION,
         );
       }
       return data.subarray(METADATA_LEN);

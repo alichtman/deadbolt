@@ -1,9 +1,9 @@
-import { EncryptionOrDecryption } from '../encryptionAndDecryptionLib';
+import { EncryptionOrDecryptionEnum } from '../EncryptionOrDecryptionEnum';
 
 export default class FileWriteError extends Error {
-  public operation: EncryptionOrDecryption;
+  public operation: EncryptionOrDecryptionEnum;
 
-  constructor(operation: EncryptionOrDecryption) {
+  constructor(operation: EncryptionOrDecryptionEnum) {
     super();
     this.name = 'FileWriteError';
     this.operation = operation;
