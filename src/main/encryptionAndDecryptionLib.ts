@@ -8,7 +8,7 @@
 import fs from 'fs';
 import crypto from 'crypto';
 import { promisify } from 'util';
-import { zip } from 'zip-a-folder';
+import archiver from 'archiver';
 import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordError';
 import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
 import FileReadError from './error-types/FileReadError';
@@ -182,6 +182,33 @@ async function getDecryptedFileContents(
 }
 
 /**
+ * Creates a zip archive of a directory
+ * @param sourcePath Directory to zip
+ * @param outputPath Path for the output zip file
+ * @returns Promise that resolves when zipping is complete
+ */
+function zipDirectory(sourcePath: string, outputPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(outputPath);
+    const archive = archiver('zip', {
+      zlib: { level: 9 }, // Maximum compression
+    });
+
+    output.on('close', () => {
+      resolve();
+    });
+
+    archive.on('error', (err) => {
+      reject(err);
+    });
+
+    archive.pipe(output);
+    archive.directory(sourcePath, false);
+    archive.finalize();
+  });
+}
+
+/**
  * Encrypts a file using this format:
  * (https://gist.github.com/AndiDittrich/4629e7db04819244e843)
  * +--------------------+-----------------------+----------------+----------------+
@@ -206,14 +233,23 @@ export async function encryptFile(
 ): Promise<string> {
   let fileDataToEncrypt: Buffer;
   let filePathToEncrypt: string = filePath;
+  let createdZipFileForFolderEncryption = false;
 
   // Check if the path is a directory
   const isDirectory = (await promisify(fs.stat)(filePath)).isDirectory();
   if (isDirectory) {
     // Zip the folder before encrypting
     const zipFilePath = generateValidZipFilePath(filePath);
-    await zip(filePath, zipFilePath);
-    filePathToEncrypt = zipFilePath;
+    try {
+      await zipDirectory(filePath, zipFilePath);
+      filePathToEncrypt = zipFilePath;
+      createdZipFileForFolderEncryption = true;
+    } catch (error) {
+      if (fs.existsSync(zipFilePath)) {
+        fs.unlinkSync(zipFilePath);
+      }
+      return `${ERROR_MESSAGE_PREFIX}: Failed to encrypt ${filePath}. Something went wrong while zipping the folder.`;
+    }
   }
 
   // Read unencrypted file (or zipped folder) into buffer, or return an error message if we fail to read the file
@@ -223,8 +259,11 @@ export async function encryptFile(
         return data;
       })
       .catch((error) => {
-        if (isDirectory && filePathToEncrypt.endsWith('.zip')) {
-          // if isDirectory, filePathToEncrypt should always be a zip, but double checking just in case
+        // if createdZipFileForFolderEncryption, filePathToEncrypt should always be a zip, but double checking just in case
+        if (
+          createdZipFileForFolderEncryption &&
+          filePathToEncrypt.endsWith('.zip')
+        ) {
           fs.unlinkSync(filePathToEncrypt);
         }
         throw error; // This will be caught by the next catch block, which can return an error message from outside the callback
@@ -281,6 +320,19 @@ export async function encryptFile(
   // If the file was not written, return an error message
   if (!fs.existsSync(encryptedFilePath)) {
     return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be written.`;
+  }
+
+  // Clean up zip file after encryption process is done, if we created it
+  if (createdZipFileForFolderEncryption && filePathToEncrypt.endsWith('.zip')) {
+    try {
+      console.log('Cleaning up temporary zip file:', filePathToEncrypt);
+      fs.unlinkSync(filePathToEncrypt);
+    } catch (error) {
+      console.error(
+        'Failed to clean up temporary zip file:',
+        filePathToEncrypt,
+      );
+    }
   }
 
   // If it was written, let's validate that decrypting it will give us the same SHA256 hash as the encrypted data
