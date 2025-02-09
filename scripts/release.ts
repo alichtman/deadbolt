@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import which from 'which';
+import cliSelect from 'cli-select';
 import copyVersionFromMainToApp from './copy-version-from-main-to-app';
 
 function logFatalError(error: string): void {
@@ -142,18 +143,20 @@ async function release(): Promise<void> {
   }
 
   if (!isAutodetectedPrerelease) {
-    const releaseTypePrompt = await promptUser(
-      'What type of release is this?\n1. prerelease\n2. real\nEnter p or r: ',
-    );
+    console.log('\nWhat type of release is this?');
 
-    if (releaseTypePrompt === 'p') {
-      isPrerelease = true;
-    } else if (releaseTypePrompt === 'r') {
-      isPrerelease = false;
-    } else {
-      console.log(chalk.yellow('Invalid selection. Aborting!'));
-      process.exit(1);
-    }
+    const selection = await cliSelect({
+      values: {
+        prerelease: 'Prerelease',
+        real: 'Real release',
+      },
+      valueRenderer: (value, selected) => {
+        return selected ? chalk.cyan(`> ${value}`) : `  ${value}`;
+      },
+      cleanup: true,
+    });
+
+    isPrerelease = selection.value === 'Prerelease';
   }
 
   const releaseVerbiage =
