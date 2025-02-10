@@ -19,6 +19,10 @@ env:
 jobs:
   build-mac-and-windows:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [mac, windows]
+      fail-fast: false # Continue with other builds if one fails
     steps:
       - uses: actions/checkout@v4
 
@@ -31,27 +35,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build macOS
-        run: npm run package:mac
+      - name: Build ${{ matrix.target }}
+        run: npm run package:${{ matrix.target }}
 
-      - name: Build Windows
-        run: npm run package:windows
-
-      - name: Upload macOS artifacts
+      - name: Upload ${{ matrix.target }} artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mac-artifacts
+          name: ${{ matrix.target }}-artifacts
           path: |
-            release/build/Deadbolt*.dmg
-            release/build/**/*.dmg
-
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-artifacts
-          path: |
-            release/build/*.exe
-            release/build/*.msi
+            ${{ matrix.target == 'mac' && 'release/build/Deadbolt*.dmg' || 'release/build/*.exe' }}
           if-no-files-found: error
 
   build-linux-appimage:
