@@ -33,7 +33,7 @@ $ npm run package
 
 Bump the version in [package.json](../package.json) and run `$ npm run release`. A draft release will be created in GitHub, and CI will populate the build artifacts.
 
-```
+```bash
 $ npm run release
 ```
 

@@ -4,7 +4,7 @@
 
 `deadbolt` simplifies encrypting and decrypting files. All you need is a password.
 
-Select a file (or folder) to encrypt, enter a password, and … that’s it. Decryption is just as easy.
+Select a file (or folder) to encrypt, enter a password, and … that's it. Decryption is just as easy.
 
 You can download `deadbolt` for **macOS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
 
@@ -14,14 +14,40 @@ Check out the [releases tab](https://github.com/alichtman/deadbolt/releases) for
 
 ### `macOS`
 
-If you're running `macOS`, install `deadbolt` from [GitHub Releases](https://github.com/alichtman/deadbolt/releases).
+#### Using Homebrew
 
-If you have an Mac with an M-series chip, the `arm64` version is recommended. If you're not sure, the `x86_64` version will work on all Macs, but be extremely slow.
-
-You can also install `deadbolt` using `brew`, however, [the recipe](https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb) may not be up-to-date.
+The recommended way to install `deadbolt` on `macOS` is with Homebrew, which uses [this recipe](https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb):
 
 ```bash
-$ brew install --cask deadbolt
+$ brew install deadbolt --cask
+```
+
+When you open it, you'll get a warning from Gatekeeper about the app not being verified as malware-free.
+
+<img src="img/not-opened-warning-macos.png" />
+
+This is because the app is not signed/notarized, since I do not have an Apple Developer account. You can bypass this warning by running:
+
+```bash
+$ xattr -c /Applications/Deadbolt.app
+```
+
+Or, go to `System Preferences > Security & Privacy > General` and click "Open Anyway".
+
+<img src="img/security-privacy-apple-settings.png" />
+
+#### Using `.dmg` from GitHub Releases
+
+Install the `deadbolt.dmg` file from [GitHub Releases](https://github.com/alichtman/deadbolt/releases). There are builds for both `x86_64` (Intel) and `arm64` (Apple Silicon -- M1, M2, etc.) CPU architectures.
+
+After downloading:
+
+1. Double-click the `.dmg` file to mount it
+2. Drag the `Deadbolt` app to your `Applications` folder
+3. Unquarantine the app by running:
+
+```bash
+$ xattr -c /Applications/Deadbolt.app
 ```
 
 ### Windows
