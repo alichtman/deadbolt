@@ -64,6 +64,7 @@ export default function EncryptOrDecryptForm({
       <div
         className="formBody"
         style={{ marginTop: isDecryption ? '0px' : '-20px' }}
+        data-testid="encrypt-decrypt-form"
       >
         <PasswordInput
           placeholder="Enter password"
@@ -74,6 +75,7 @@ export default function EncryptOrDecryptForm({
           type={passwordVisibilityType}
           toggleVisibility={() => setIsPasswordVisible(!isPasswordVisible)}
           autoFocus
+          data-testid="password-input"
         />
         {!isDecryption ? (
           <PasswordInput
@@ -85,6 +87,7 @@ export default function EncryptOrDecryptForm({
             autoFocus={false}
             type={passwordVisibilityType}
             toggleVisibility={() => setIsPasswordVisible(!isPasswordVisible)}
+            data-testid="confirm-password-input"
           />
         ) : null}
         {/* Avoid layout shifting when error message is shown by toggling opacity and using a non-breaking space */}
@@ -110,6 +113,7 @@ export default function EncryptOrDecryptForm({
                 onSubmit(file.path, password);
               }
             }}
+            data-testid={isDecryption ? 'decrypt-button' : 'encrypt-button'}
           >
             <img
               className="primaryButtonIcon"
@@ -120,7 +124,11 @@ export default function EncryptOrDecryptForm({
               {isDecryption ? 'Decrypt' : 'Encrypt'}
             </span>
           </Button>
-          <Button buttonType="cancel" onClick={() => onCancel()}>
+          <Button
+            buttonType="cancel"
+            onClick={() => onCancel()}
+            data-testid="cancel-button"
+          >
             <CancelIcon
               style={{
                 fontSize: '16px',

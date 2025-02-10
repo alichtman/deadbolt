@@ -7,9 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import FileUpload from './FileUpload';
 import EncryptOrDecryptForm from './EncryptOrDecryptForm';
 import SucessOrErrorModal from './SuccessOrErrorModal';
-
-export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
-export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
+import { isDeadboltFile } from './utils/fileUtils';
 
 // This is sync'd from src/main/encryptionAndDecryptionLib.ts, but we can't actually import the value here, so we redefine it.
 // This follows the DRYUYRHT (Don't Repeat Yourself Unless You Really Have To) principle.
@@ -25,23 +23,6 @@ enum ViewState {
   ENCRYPT_OR_DECRYPT,
   SUCCESS,
   ERROR,
-}
-
-/**
- * Checks if the given file path corresponds to a Deadbolt file.
- *
- * @param filePath - The path of the file to check. Can be a string or null.
- * @returns `true` if the file path ends with the Deadbolt file extension, otherwise `false`.
- */
-export function isDeadboltFile(filePath: string | undefined): boolean {
-  if (!filePath || filePath.startsWith(ERROR_MESSAGE_PREFIX)) {
-    return false;
-  }
-
-  return (
-    filePath.endsWith(ENCRYPTED_FILE_EXTENSION) ||
-    filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)
-  );
 }
 
 export default function App() {
