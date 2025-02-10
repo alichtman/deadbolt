@@ -13,8 +13,7 @@ mac:
   target:
     target: dmg
     arch:
-      - x64
-      - arm64
+      - universal
   type: distribution
   hardenedRuntime: true
   entitlements: assets/entitlements.mac.plist
