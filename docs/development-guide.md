@@ -1,8 +1,18 @@
 # Development Guide
 
+`node v22` is the supported development version. Feel free to upgrade to the latest version of node if you want to!
+
+Currently, [`nvm`](https://github.com/nvm-sh/nvm#nvmrc) is used to manage the node version.
+
 ## Running + Debugging
 
 ```bash
+# Clone project
+$ git clone git@github.com:alichtman/deadbolt.git && cd deadbolt
+
+# Set up node version
+$ nvm use
+
 # Install dependencies
 $ npm install --save
 
