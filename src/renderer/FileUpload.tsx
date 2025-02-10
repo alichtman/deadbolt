@@ -56,8 +56,16 @@ export default function FileUpload({
 
   return (
     <>
-      <div className="fileUploadRoot" {...getRootProps()} onDrop={onDrop}>
-        <input {...getInputProps()} />
+      <div
+        className="fileUploadRoot"
+        {...getRootProps()}
+        onDrop={onDrop}
+        data-testid="dropzone"
+        role="button"
+        aria-label="Upload file dropzone"
+        tabIndex={0} // Added to make the div focusable
+      >
+        <input {...getInputProps()} data-testid="file-input" />
         <img
           alt="dropFileIcon"
           src={dropFileIcon}
