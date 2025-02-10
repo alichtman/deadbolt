@@ -14,15 +14,19 @@ Check out the [releases tab](https://github.com/alichtman/deadbolt/releases) for
 
 ### `macOS`
 
-#### Using Homebrew
+#### Recommended: Installing with Homebrew
 
-The recommended way to install `deadbolt` on `macOS` is with Homebrew, which uses [this recipe](https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb):
+The recommended way to install `deadbolt` on `macOS` is with [Homebrew](https://brew.sh), which uses [this recipe](https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb):
 
 ```bash
+# Install Homebrew
+$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install deadbolt, using homebrew
 $ brew install deadbolt --cask
 ```
 
-When you open it, you'll get a warning from Gatekeeper about the app not being verified as malware-free.
+When you open the app, you'll receive a Gatekeeper warning about the app not being verified as malware-free.
 
 <img src="img/not-opened-warning-macos.png" />
 
