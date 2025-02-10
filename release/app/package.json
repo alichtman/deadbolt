@@ -1,6 +1,6 @@
 {
   "name": "deadbolt",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Dead-simple file encryption for any OS.",
   "license": "MIT",
   "author": {
