@@ -94,34 +94,38 @@ function moveToOutputPath(sourcePath: string, outputPath: string): void {
  * Prompts for password (and confirmation for encryption)
  */
 async function promptForPassword(confirmPassword: boolean = false): Promise<string | undefined> {
-  const questions: prompts.PromptObject[] = [
-    {
-      type: 'password',
-      name: 'password',
-      message: 'Enter password:',
-      validate: (value: string) => value.length > 0 || 'Password cannot be empty',
-    },
-  ];
-
-  if (confirmPassword) {
-    questions.push({
-      type: 'password',
-      name: 'confirmPassword',
-      message: 'Confirm password:',
-      validate: (value: string, prev: any) =>
-        value === prev.password || 'Passwords do not match',
-    });
-  }
-
-  const response = await prompts(questions);
+  // First, get the password
+  const passwordResponse = await prompts({
+    type: 'password',
+    name: 'password',
+    message: 'Enter password:',
+    validate: (value: string) => value.length > 0 || 'Password cannot be empty',
+  });
 
   // Check if user cancelled
-  if (!response.password) {
+  if (!passwordResponse.password) {
     console.log('\nOperation cancelled.');
     process.exit(0);
   }
 
-  return response.password;
+  // If confirmation is required, prompt for it
+  if (confirmPassword) {
+    const confirmResponse = await prompts({
+      type: 'password',
+      name: 'confirmPassword',
+      message: 'Confirm password:',
+      validate: (value: string) =>
+        value === passwordResponse.password || 'Passwords do not match',
+    });
+
+    // Check if user cancelled
+    if (!confirmResponse.confirmPassword) {
+      console.log('\nOperation cancelled.');
+      process.exit(0);
+    }
+  }
+
+  return passwordResponse.password;
 }
 
 /**
