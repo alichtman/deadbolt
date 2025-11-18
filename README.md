@@ -136,21 +136,21 @@ The `deadbolt` CLI provides full encryption and decryption capabilities from the
 
 ### Installation
 
-Install the CLI globally from the source repository:
+Install the CLI globally:
 
 ```bash
 $ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
 $ npm run install:cli
 ```
 
-This will install dependencies, build the CLI, and make the `deadbolt` command available globally.
+This installs dependencies, builds the CLI, and makes the `deadbolt` command available globally in your PATH. After installation, you can run `deadbolt` from anywhere on your system.
 
 **Alternative:** If you've already cloned the repository:
 
 ```bash
 $ npm install --ignore-scripts
 $ npm run build:cli
-$ npm link
+$ npm link  # Makes 'deadbolt' globally available
 ```
 
 ### Commands
