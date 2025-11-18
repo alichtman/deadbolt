@@ -78,20 +78,22 @@ function handleResult(result: string, operation: 'Encryption' | 'Decryption'): v
     console.error(chalk.red(errorMessage));
     process.exit(1);
   } else {
-    console.log(chalk.green(`\n${operation} successful!`));
+    console.log(chalk.green(`${operation} successful: ${result}`));
   }
 }
 
 /**
  * Moves a file to a specified output path
+ * Returns the final path (outputPath if successful, sourcePath if failed)
  */
-function moveToOutputPath(sourcePath: string, outputPath: string): void {
+function moveToOutputPath(sourcePath: string, outputPath: string): string {
   try {
     fs.renameSync(sourcePath, outputPath);
-    console.log(chalk.blue(`Moved to: ${outputPath}`));
+    return outputPath;
   } catch (error) {
     console.error(chalk.yellow(`Warning: Failed to move file to output path: ${error}`));
     console.error(chalk.yellow(`File is available at: ${sourcePath}`));
+    return sourcePath;
   }
 }
 
@@ -177,11 +179,12 @@ Notes:
     console.log(chalk.cyan('Encrypting...'));
     const result = await encryptFile(absoluteFilePath, password);
 
+    let finalPath = result;
     if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {
-      moveToOutputPath(result, outputPath);
+      finalPath = moveToOutputPath(result, outputPath);
     }
 
-    handleResult(result, 'Encryption');
+    handleResult(finalPath, 'Encryption');
   });
 
 /**
@@ -228,11 +231,12 @@ Notes:
     console.log(chalk.cyan('Decrypting...'));
     const result = await decryptFile(absoluteFilePath, password);
 
+    let finalPath = result;
     if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {
-      moveToOutputPath(result, outputPath);
+      finalPath = moveToOutputPath(result, outputPath);
     }
 
-    handleResult(result, 'Decryption');
+    handleResult(finalPath, 'Decryption');
   });
 
 program.parse();
