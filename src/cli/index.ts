@@ -15,7 +15,21 @@ const program = new Command();
 program
   .name('deadbolt')
   .description('Encrypt and decrypt files using AES-256-GCM encryption')
-  .version('2.0.2');
+  .version('2.0.2')
+  .addHelpText('after', `
+Examples:
+  $ deadbolt encrypt --file document.pdf --password "my-password"
+  $ deadbolt decrypt --file document.pdf.deadbolt --password "my-password"
+  $ deadbolt encrypt    (interactive mode)
+  $ deadbolt decrypt    (interactive mode)
+
+Interactive Mode:
+  Run 'deadbolt encrypt' or 'deadbolt decrypt' without options to launch
+  interactive mode with prompts for file, password, and output path.
+
+Documentation:
+  https://github.com/alichtman/deadbolt
+`);
 
 /**
  * Validates that a file exists
@@ -196,10 +210,23 @@ async function interactiveDecrypt(): Promise<void> {
  */
 program
   .command('encrypt')
-  .description('Encrypt a file or folder')
+  .description('Encrypt a file or folder using AES-256-GCM')
   .option('-f, --file <path>', 'Path to the file or folder to encrypt')
   .option('-p, --password <password>', 'Password for encryption')
-  .option('-o, --output <path>', 'Output path for the encrypted file')
+  .option('-o, --output <path>', 'Output file (optional, defaults to <file>.deadbolt)')
+  .addHelpText('after', `
+Examples:
+  $ deadbolt encrypt --file document.pdf --password "secure-password"
+  $ deadbolt encrypt --file ~/folder --password "pass123"
+  $ deadbolt encrypt --file data.txt --password "pass" --output encrypted.deadbolt
+  $ deadbolt encrypt    (launches interactive mode)
+
+Notes:
+  - Folders are automatically zipped before encryption
+  - Run without options for interactive mode with password confirmation
+  - Encrypted files have .deadbolt extension
+  - Use strong passwords for better security
+`)
   .action(async (options) => {
     // If no options provided, run interactive mode
     if (!options.file && !options.password) {
@@ -235,10 +262,23 @@ program
  */
 program
   .command('decrypt')
-  .description('Decrypt a file')
+  .description('Decrypt a .deadbolt or .dbolt file')
   .option('-f, --file <path>', 'Path to the encrypted file')
   .option('-p, --password <password>', 'Password for decryption')
-  .option('-o, --output <path>', 'Output path for the decrypted file')
+  .option('-o, --output <path>', 'Output file (optional, defaults to original filename)')
+  .addHelpText('after', `
+Examples:
+  $ deadbolt decrypt --file document.pdf.deadbolt --password "secure-password"
+  $ deadbolt decrypt --file encrypted.deadbolt --password "pass123"
+  $ deadbolt decrypt --file data.deadbolt --password "pass" --output decrypted.txt
+  $ deadbolt decrypt    (launches interactive mode)
+
+Notes:
+  - Works with both .deadbolt and .dbolt files
+  - Run without options for interactive mode
+  - Password must match the one used for encryption
+  - Decrypted folders will be .zip files (unzip manually)
+`)
   .action(async (options) => {
     // If no options provided, run interactive mode
     if (!options.file && !options.password) {
