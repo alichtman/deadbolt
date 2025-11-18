@@ -5,6 +5,8 @@ import log from './logger';
 
 export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
 export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
+export const VERSION_HEADER_PREFIX = 'DEADBOLT_V';
+export const LEGACY_METADATA_LEN = 96; // V001 format minimum size
 
 export default function prettyPrintFilePath(
   filePath: string | undefined,
@@ -77,6 +79,59 @@ function removeEncryptedFileExtension(input: string): string {
     return replaceLast(input, LEGACY_ENCRYPTED_FILE_EXTENSION, '');
   }
   return input;
+}
+
+/**
+ * Checks if a file is a valid deadbolt encrypted file by examining its binary header.
+ * Supports both versioned (V002+) and legacy (V001) formats.
+ *
+ * @param filePath - Path to the file to check
+ * @returns true if the file is a valid deadbolt encrypted file, false otherwise
+ */
+export function isDeadboltEncryptedFile(filePath: string): boolean {
+  try {
+    // Check if file exists and is readable
+    if (!fs.existsSync(filePath)) {
+      return false;
+    }
+
+    const stats = fs.statSync(filePath);
+
+    // File must be at least as large as the legacy metadata (96 bytes)
+    if (stats.size < LEGACY_METADATA_LEN) {
+      return false;
+    }
+
+    // Read the first few bytes to check for version header
+    const fd = fs.openSync(filePath, 'r');
+    const headerBuffer = Buffer.alloc(VERSION_HEADER_PREFIX.length);
+    fs.readSync(fd, headerBuffer, 0, VERSION_HEADER_PREFIX.length, 0);
+    fs.closeSync(fd);
+
+    const headerString = headerBuffer.toString('ascii');
+
+    // Check if file starts with "DEADBOLT_V" (versioned format)
+    if (headerString.startsWith(VERSION_HEADER_PREFIX)) {
+      return true;
+    }
+
+    // Legacy format (V001) doesn't have a header, so we check:
+    // 1. Has a valid extension (.deadbolt or .dbolt)
+    // 2. Is at least LEGACY_METADATA_LEN bytes
+    // This isn't foolproof but provides reasonable validation
+    if (
+      (filePath.endsWith(ENCRYPTED_FILE_EXTENSION) ||
+        filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)) &&
+      stats.size >= LEGACY_METADATA_LEN
+    ) {
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    // If we can't read the file, assume it's not a valid encrypted file
+    return false;
+  }
 }
 
 /**
