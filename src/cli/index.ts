@@ -73,7 +73,6 @@ function handleResult(result: string, operation: 'Encryption' | 'Decryption'): v
     process.exit(1);
   } else {
     console.log(`\n${operation} successful!`);
-    console.log(`Output: ${result}`);
   }
 }
 
