@@ -18,14 +18,14 @@ program
   .version('2.0.2')
   .addHelpText('after', `
 Examples:
-  $ deadbolt encrypt --file document.pdf
-  $ deadbolt encrypt --file document.pdf --password "my-password"
-  $ deadbolt decrypt --file document.pdf.deadbolt
-  $ deadbolt decrypt --file document.pdf.deadbolt --password "my-password"
+  $ deadbolt encrypt secret.pdf
+  $ deadbolt encrypt secret.pdf --password "my-password"
+  $ deadbolt decrypt secret.pdf.deadbolt
+  $ deadbolt decrypt secret.pdf.deadbolt --password "my-password"
 
 Password Prompting:
   If --password is not provided, you will be prompted to enter it securely.
-  This keeps passwords out of your shell history.
+  Using --password directly may log your password in shell history.
 
 Documentation:
   https://github.com/alichtman/deadbolt
@@ -132,26 +132,38 @@ async function promptForPassword(confirmPassword: boolean = false): Promise<stri
  * Command-line encrypt mode
  */
 program
-  .command('encrypt')
+  .command('encrypt [file]')
   .description('Encrypt a file or folder using AES-256-GCM')
-  .requiredOption('-f, --file <path>', 'Path to the file or folder to encrypt')
+  .option('-f, --file <path>', 'Path to the file or folder to encrypt')
   .option('-p, --password <password>', 'Password for encryption (will prompt if not provided)')
   .option('-o, --output <path>', 'Output file (optional, defaults to <file>.deadbolt)')
   .addHelpText('after', `
 Examples:
-  $ deadbolt encrypt --file document.pdf
-  $ deadbolt encrypt --file document.pdf --password "secure-password"
-  $ deadbolt encrypt --file ~/folder --password "pass123"
-  $ deadbolt encrypt --file data.txt --output encrypted.deadbolt
+  $ deadbolt encrypt secret.pdf
+  $ deadbolt encrypt secret.pdf --password "secure-password"
+  $ deadbolt encrypt ~/folder --password "pass123"
+  $ deadbolt encrypt data.txt --output encrypted.deadbolt
+  $ deadbolt encrypt --file secret.pdf  (alternative syntax)
 
 Notes:
   - Folders are automatically zipped before encryption
   - Password will be prompted securely if not provided via --password
+  - Using --password directly may log your password in shell history
   - Encrypted files have .deadbolt extension
   - Use strong passwords for better security
 `)
-  .action(async (options) => {
-    const absoluteFilePath = validateFileExists(options.file);
+  .action(async (fileArg, options) => {
+    // Use positional argument if provided, otherwise fall back to --file flag
+    const filePath = fileArg || options.file;
+
+    if (!filePath) {
+      console.error('Error: file or directory path is required');
+      console.error('Usage: deadbolt encrypt <file> [options]');
+      console.error('   or: deadbolt encrypt --file <file> [options]');
+      process.exit(1);
+    }
+
+    const absoluteFilePath = validateFileExists(filePath);
     const outputPath = validateOutputPath(options.output);
 
     // Prompt for password if not provided
@@ -171,26 +183,38 @@ Notes:
  * Command-line decrypt mode
  */
 program
-  .command('decrypt')
+  .command('decrypt [file]')
   .description('Decrypt a .deadbolt or .dbolt file')
-  .requiredOption('-f, --file <path>', 'Path to the encrypted file')
+  .option('-f, --file <path>', 'Path to the encrypted file')
   .option('-p, --password <password>', 'Password for decryption (will prompt if not provided)')
   .option('-o, --output <path>', 'Output file (optional, defaults to original filename)')
   .addHelpText('after', `
 Examples:
-  $ deadbolt decrypt --file document.pdf.deadbolt
-  $ deadbolt decrypt --file document.pdf.deadbolt --password "secure-password"
-  $ deadbolt decrypt --file encrypted.deadbolt --password "pass123"
-  $ deadbolt decrypt --file data.deadbolt --output decrypted.txt
+  $ deadbolt decrypt secret.pdf.deadbolt
+  $ deadbolt decrypt secret.pdf.deadbolt --password "secure-password"
+  $ deadbolt decrypt encrypted.deadbolt --password "pass123"
+  $ deadbolt decrypt data.deadbolt --output decrypted.txt
+  $ deadbolt decrypt --file secret.pdf.deadbolt  (alternative syntax)
 
 Notes:
   - Works with both .deadbolt and .dbolt files
   - Password will be prompted securely if not provided via --password
+  - Using --password directly may log your password in shell history
   - Password must match the one used for encryption
   - Decrypted folders will be .zip files (unzip manually)
 `)
-  .action(async (options) => {
-    const absoluteFilePath = validateFileExists(options.file);
+  .action(async (fileArg, options) => {
+    // Use positional argument if provided, otherwise fall back to --file flag
+    const filePath = fileArg || options.file;
+
+    if (!filePath) {
+      console.error('Error: file path is required');
+      console.error('Usage: deadbolt decrypt <file> [options]');
+      console.error('   or: deadbolt decrypt --file <file> [options]');
+      process.exit(1);
+    }
+
+    const absoluteFilePath = validateFileExists(filePath);
     const outputPath = validateOutputPath(options.output);
 
     // Prompt for password if not provided
