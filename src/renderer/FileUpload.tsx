@@ -3,6 +3,7 @@ import React from 'react';
 import './FileUpload.css';
 import { DropEvent, useDropzone } from 'react-dropzone';
 import { FaGithub, FaInfoCircle } from 'react-icons/fa';
+import { logger } from './logger';
 
 import packageInfo from '../../package.json';
 import dropFileIcon from './assets/dropFileIcon.svg';
@@ -34,13 +35,13 @@ export default function FileUpload({
 }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onSelectFromFileBrowser = (files: File[], _event: DropEvent) => {
-    console.log('File dropped:', files);
+    logger.debug('File dropped:', files);
     setFileToWorkWith(files[0]);
   };
 
   // Drag-and-drop doesn't give us the file path, so we need to use this super hacky workaround: https://github.com/react-dropzone/file-selector/issues/10#issuecomment-2482649010
   const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    console.log('detected file drop event', event);
+    logger.debug('detected file drop event', event);
     event.preventDefault();
     const file = event.dataTransfer?.files[0];
     if (file != null) {

@@ -1,4 +1,4 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off */
+/* eslint global-require: off, promise/always-return: off */
 
 /**
  * This module executes inside of electron's main process. You can start
@@ -10,6 +10,7 @@
  */
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import log from './logger';
 import { resolveHtmlPath } from './resolveHTMLPathUtil';
 import {
   encryptFile,
@@ -34,7 +35,7 @@ const IS_DEBUG_MODE = process.env.DEADBOLT_DEBUG === '1';
 let mainWindow: BrowserWindow | null = null;
 
 ipcMain.handle('encryptFileRequest', async (_event, [filePath, password]) => {
-  console.log(
+  log.debug(
     'encryptFileRequest',
     '{',
     filePath,
@@ -46,7 +47,7 @@ ipcMain.handle('encryptFileRequest', async (_event, [filePath, password]) => {
   }
   // You have no idea how much time I killed trying to debug why throwing here and .catch'ing the promise in the renderer process didn't work.
   const encryptedFilePathOrErrorMessage = await encryptFile(filePath, password);
-  console.log(
+  log.debug(
     'Returning encrypted file path or error message: { ',
     encryptedFilePathOrErrorMessage,
     ' }',
@@ -55,13 +56,13 @@ ipcMain.handle('encryptFileRequest', async (_event, [filePath, password]) => {
 });
 
 ipcMain.handle('decryptFileRequest', async (_event, [filePath, password]) => {
-  console.log('decryptFileRequest', '{', filePath, '}');
+  log.debug('decryptFileRequest', '{', filePath, '}');
   if (!filePath) {
     return `${ERROR_MESSAGE_PREFIX}: No file provided for decryption`;
   }
 
   const decryptedFilePathOrErrorMessage = await decryptFile(filePath, password);
-  console.log(
+  log.debug(
     'Returning decrypted file path or error message: { ',
     decryptedFilePathOrErrorMessage,
     ' }',
@@ -93,7 +94,7 @@ const debugSetup = async () => {
       extensions.map((name) => installer[name]),
       forceDownload,
     )
-    .catch(console.log);
+    .catch((err: Error) => log.error('Error installing extensions:', err));
 };
 
 const createWindow = async () => {
@@ -179,4 +180,4 @@ app
       if (mainWindow === null) createWindow();
     });
   })
-  .catch(console.log);
+  .catch((err: Error) => log.error('Error during app ready:', err));

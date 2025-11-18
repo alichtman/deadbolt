@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import prompts from 'prompts';
 import path from 'path';
 import fs from 'fs';
+import chalk from 'chalk';
 import {
   encryptFile,
   decryptFile,
@@ -16,16 +17,21 @@ program
   .name('deadbolt')
   .description('Encrypt and decrypt files using AES-256-GCM encryption')
   .version('2.0.2')
+  .option('-v, --verbose', 'Enable verbose logging (debug mode)')
   .addHelpText('after', `
 Examples:
   $ deadbolt encrypt secret.pdf
   $ deadbolt encrypt secret.pdf --password "my-password"
   $ deadbolt decrypt secret.pdf.deadbolt
   $ deadbolt decrypt secret.pdf.deadbolt --password "my-password"
+  $ deadbolt encrypt secret.pdf --verbose
 
 Password Prompting:
   If --password is not provided, you will be prompted to enter it securely.
   Using --password directly may log your password in shell history.
+
+Verbose Mode:
+  Use --verbose or -v to enable debug logging for troubleshooting.
 
 Documentation:
   https://github.com/alichtman/deadbolt
@@ -37,7 +43,7 @@ Documentation:
 function validateFileExists(filePath: string): string {
   const absolutePath = path.resolve(filePath);
   if (!fs.existsSync(absolutePath)) {
-    console.error(`Error: File not found: ${absolutePath}`);
+    console.error(chalk.red(`Error: File not found: ${absolutePath}`));
     process.exit(1);
   }
   return absolutePath;
@@ -55,7 +61,7 @@ function validateOutputPath(outputPath: string | undefined): string | undefined 
   const dir = path.dirname(absolutePath);
 
   if (!fs.existsSync(dir)) {
-    console.error(`Error: Output directory does not exist: ${dir}`);
+    console.error(chalk.red(`Error: Output directory does not exist: ${dir}`));
     process.exit(1);
   }
 
@@ -68,11 +74,11 @@ function validateOutputPath(outputPath: string | undefined): string | undefined 
 function handleResult(result: string, operation: 'Encryption' | 'Decryption'): void {
   if (result.startsWith(ERROR_MESSAGE_PREFIX)) {
     const errorMessage = result.substring(ERROR_MESSAGE_PREFIX.length + 1);
-    console.error(`\n${operation} failed:`);
-    console.error(errorMessage);
+    console.error(chalk.red(`\n${operation} failed:`));
+    console.error(chalk.red(errorMessage));
     process.exit(1);
   } else {
-    console.log(`\n${operation} successful!`);
+    console.log(chalk.green(`\n${operation} successful!`));
   }
 }
 
@@ -82,10 +88,10 @@ function handleResult(result: string, operation: 'Encryption' | 'Decryption'): v
 function moveToOutputPath(sourcePath: string, outputPath: string): void {
   try {
     fs.renameSync(sourcePath, outputPath);
-    console.log(`Moved to: ${outputPath}`);
+    console.log(chalk.blue(`Moved to: ${outputPath}`));
   } catch (error) {
-    console.error(`Warning: Failed to move file to output path: ${error}`);
-    console.error(`File is available at: ${sourcePath}`);
+    console.error(chalk.yellow(`Warning: Failed to move file to output path: ${error}`));
+    console.error(chalk.yellow(`File is available at: ${sourcePath}`));
   }
 }
 
@@ -103,7 +109,7 @@ async function promptForPassword(confirmPassword: boolean = false): Promise<stri
 
   // Check if user cancelled
   if (!passwordResponse.password) {
-    console.log('\nOperation cancelled.');
+    console.log(chalk.yellow('\nOperation cancelled.'));
     process.exit(0);
   }
 
@@ -119,7 +125,7 @@ async function promptForPassword(confirmPassword: boolean = false): Promise<stri
 
     // Check if user cancelled
     if (!confirmResponse.confirmPassword) {
-      console.log('\nOperation cancelled.');
+      console.log(chalk.yellow('\nOperation cancelled.'));
       process.exit(0);
     }
   }
@@ -156,9 +162,9 @@ Notes:
     const filePath = fileArg || options.file;
 
     if (!filePath) {
-      console.error('Error: file or directory path is required');
-      console.error('Usage: deadbolt encrypt <file> [options]');
-      console.error('   or: deadbolt encrypt --file <file> [options]');
+      console.error(chalk.red('Error: file or directory path is required'));
+      console.error(chalk.red('Usage: deadbolt encrypt <file> [options]'));
+      console.error(chalk.red('   or: deadbolt encrypt --file <file> [options]'));
       process.exit(1);
     }
 
@@ -168,7 +174,7 @@ Notes:
     // Prompt for password if not provided
     const password = options.password || await promptForPassword(true);
 
-    console.log('Encrypting...');
+    console.log(chalk.cyan('Encrypting...'));
     const result = await encryptFile(absoluteFilePath, password);
 
     if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {
@@ -207,9 +213,9 @@ Notes:
     const filePath = fileArg || options.file;
 
     if (!filePath) {
-      console.error('Error: file path is required');
-      console.error('Usage: deadbolt decrypt <file> [options]');
-      console.error('   or: deadbolt decrypt --file <file> [options]');
+      console.error(chalk.red('Error: file path is required'));
+      console.error(chalk.red('Usage: deadbolt decrypt <file> [options]'));
+      console.error(chalk.red('   or: deadbolt decrypt --file <file> [options]'));
       process.exit(1);
     }
 
@@ -219,7 +225,7 @@ Notes:
     // Prompt for password if not provided
     const password = options.password || await promptForPassword(false);
 
-    console.log('Decrypting...');
+    console.log(chalk.cyan('Decrypting...'));
     const result = await decryptFile(absoluteFilePath, password);
 
     if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {

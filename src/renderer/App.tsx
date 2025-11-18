@@ -1,9 +1,9 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-else-return */
-/* eslint-disable no-console */
 import { useState } from 'react';
 import './App.css';
 import CircularProgress from '@mui/material/CircularProgress';
+import { logger } from './logger';
 import FileUpload from './FileUpload';
 import EncryptOrDecryptForm from './EncryptOrDecryptForm';
 import SucessOrErrorModal from './SuccessOrErrorModal';
@@ -68,11 +68,11 @@ export default function App() {
     window.electronAPI
       .revealFileInFinder(pathToEncryptedOrDecryptedFile)
       .then((result) => {
-        console.log('Revealed in finder:', result);
+        logger.debug('Revealed in finder:', result);
         return result;
       })
       .catch((error) => {
-        console.error('Failed to reveal in finder:', error);
+        logger.error('Failed to reveal in finder:', error);
         return error;
       });
   };
@@ -83,9 +83,9 @@ export default function App() {
       .encryptFileRequest(fileName, password)
       .then((resolvedFilePathOrError) => {
         setLoading(false);
-        console.log('Resolved file path:', resolvedFilePathOrError);
+        logger.debug('Resolved file path:', resolvedFilePathOrError);
         if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
-          console.error('Error from encryptFile:', resolvedFilePathOrError);
+          logger.error('Error from encryptFile:', resolvedFilePathOrError);
           setViewState(ViewState.ERROR);
           setFileDecryptOrEncryptErrorMessage(
             extractErrorMessageFromErrorString(resolvedFilePathOrError),
@@ -114,7 +114,7 @@ export default function App() {
       .then((resolvedFilePathOrError) => {
         setLoading(false);
         if (resolvedFilePathOrError.startsWith(ERROR_MESSAGE_PREFIX)) {
-          console.error('Error from decryptFile:', resolvedFilePathOrError);
+          logger.error('Error from decryptFile:', resolvedFilePathOrError);
           setViewState(ViewState.ERROR);
           setFileDecryptOrEncryptErrorMessage(
             extractErrorMessageFromErrorString(resolvedFilePathOrError),
@@ -131,8 +131,8 @@ export default function App() {
 
   const handleFileSelection = (file: File) => {
     const isEncrypted = isDeadboltFile(file.name);
-    console.log('File is encrypted?', isEncrypted);
-    console.log('File path:', file.name);
+    logger.debug('File is encrypted?', isEncrypted);
+    logger.debug('File path:', file.name);
     setFileToWorkWith(file);
     setFileIsEncrypted(isEncrypted);
     setViewState(ViewState.ENCRYPT_OR_DECRYPT);
@@ -194,7 +194,7 @@ export default function App() {
                 return alert('File path copied to clipboard!');
               })
               .catch((err) => {
-                console.error('Failed to copy: ', err);
+                logger.error('Failed to copy: ', err);
               });
             resetToFileUpload();
           }

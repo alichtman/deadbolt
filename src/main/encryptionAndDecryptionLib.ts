@@ -1,5 +1,4 @@
 /* eslint-disable spaced-comment */
-/* eslint-disable no-console */
 
 /**************
  * Constants
@@ -9,6 +8,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { promisify } from 'util';
 import archiver from 'archiver';
+import log from './logger';
 import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordError';
 import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
 import FileReadError from './error-types/FileReadError';
@@ -325,10 +325,10 @@ export async function encryptFile(
   // Clean up zip file after encryption process is done, if we created it
   if (createdZipFileForFolderEncryption && filePathToEncrypt.endsWith('.zip')) {
     try {
-      console.log('Cleaning up temporary zip file:', filePathToEncrypt);
+      log.debug('Cleaning up temporary zip file:', filePathToEncrypt);
       fs.unlinkSync(filePathToEncrypt);
     } catch (error) {
-      console.error(
+      log.error(
         'Failed to clean up temporary zip file:',
         filePathToEncrypt,
       );
@@ -356,7 +356,7 @@ export async function encryptFile(
     return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be verified after encryption. It's likely corrupted. The hash of the data before encryption was ${unencryptedFileDataSHA256}, and the hash of the data after decryption was ${decryptedFileSHA256}.`;
   }
 
-  console.log('Successfully encrypted file: ', encryptedFilePath);
+  log.info('Successfully encrypted file: ', encryptedFilePath);
   return encryptedFilePath;
 }
 
@@ -389,7 +389,7 @@ export async function decryptFile(
     );
 
     if (fs.existsSync(decryptedFilePath)) {
-      console.log('Successfully decrypted file: ', decryptedFilePath);
+      log.info('Successfully decrypted file: ', decryptedFilePath);
       return decryptedFilePath;
     }
     return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;
