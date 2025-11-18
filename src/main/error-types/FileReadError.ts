@@ -1,4 +1,4 @@
-import { EncryptionOrDecryptionEnum } from '../EncryptionOrDecryptionEnum';
+import EncryptionOrDecryptionEnum from '../EncryptionOrDecryptionEnum';
 
 export default class FileReadError extends Error {
   public operation: EncryptionOrDecryptionEnum;
