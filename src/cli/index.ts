@@ -18,14 +18,14 @@ program
   .version('2.0.2')
   .addHelpText('after', `
 Examples:
+  $ deadbolt encrypt --file document.pdf
   $ deadbolt encrypt --file document.pdf --password "my-password"
+  $ deadbolt decrypt --file document.pdf.deadbolt
   $ deadbolt decrypt --file document.pdf.deadbolt --password "my-password"
-  $ deadbolt encrypt    (interactive mode)
-  $ deadbolt decrypt    (interactive mode)
 
-Interactive Mode:
-  Run 'deadbolt encrypt' or 'deadbolt decrypt' without options to launch
-  interactive mode with prompts for file, password, and output path.
+Password Prompting:
+  If --password is not provided, you will be prompted to enter it securely.
+  This keeps passwords out of your shell history.
 
 Documentation:
   https://github.com/alichtman/deadbolt
@@ -91,118 +91,37 @@ function moveToOutputPath(sourcePath: string, outputPath: string): void {
 }
 
 /**
- * Interactive encrypt mode
+ * Prompts for password (and confirmation for encryption)
  */
-async function interactiveEncrypt(): Promise<void> {
-  console.log('\n🔐 Deadbolt - Interactive Encryption Mode\n');
-
-  const response = await prompts([
-    {
-      type: 'text',
-      name: 'filePath',
-      message: 'Enter the path to the file or folder to encrypt:',
-      validate: (value: string) => {
-        const absolutePath = path.resolve(value);
-        return fs.existsSync(absolutePath) || 'File or folder does not exist';
-      },
-    },
+async function promptForPassword(confirmPassword: boolean = false): Promise<string | undefined> {
+  const questions: prompts.PromptObject[] = [
     {
       type: 'password',
       name: 'password',
       message: 'Enter password:',
       validate: (value: string) => value.length > 0 || 'Password cannot be empty',
     },
-    {
+  ];
+
+  if (confirmPassword) {
+    questions.push({
       type: 'password',
       name: 'confirmPassword',
       message: 'Confirm password:',
       validate: (value: string, prev: any) =>
         value === prev.password || 'Passwords do not match',
-    },
-    {
-      type: 'text',
-      name: 'outputPath',
-      message: 'Enter output path (press Enter for default):',
-      initial: '',
-    },
-  ]);
+    });
+  }
+
+  const response = await prompts(questions);
 
   // Check if user cancelled
-  if (!response.filePath || !response.password) {
+  if (!response.password) {
     console.log('\nOperation cancelled.');
     process.exit(0);
   }
 
-  const absoluteFilePath = path.resolve(response.filePath);
-  const outputPath = response.outputPath
-    ? validateOutputPath(response.outputPath)
-    : undefined;
-
-  console.log('\nEncrypting...');
-  const result = await encryptFile(absoluteFilePath, response.password);
-
-  if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {
-    moveToOutputPath(result, outputPath);
-  }
-
-  handleResult(result, 'Encryption');
-}
-
-/**
- * Interactive decrypt mode
- */
-async function interactiveDecrypt(): Promise<void> {
-  console.log('\n🔓 Deadbolt - Interactive Decryption Mode\n');
-
-  const response = await prompts([
-    {
-      type: 'text',
-      name: 'filePath',
-      message: 'Enter the path to the encrypted file:',
-      validate: (value: string) => {
-        const absolutePath = path.resolve(value);
-        if (!fs.existsSync(absolutePath)) {
-          return 'File does not exist';
-        }
-        if (!absolutePath.endsWith('.deadbolt') && !absolutePath.endsWith('.dbolt')) {
-          return 'File must have .deadbolt or .dbolt extension';
-        }
-        return true;
-      },
-    },
-    {
-      type: 'password',
-      name: 'password',
-      message: 'Enter password:',
-      validate: (value: string) => value.length > 0 || 'Password cannot be empty',
-    },
-    {
-      type: 'text',
-      name: 'outputPath',
-      message: 'Enter output path (press Enter for default):',
-      initial: '',
-    },
-  ]);
-
-  // Check if user cancelled
-  if (!response.filePath || !response.password) {
-    console.log('\nOperation cancelled.');
-    process.exit(0);
-  }
-
-  const absoluteFilePath = path.resolve(response.filePath);
-  const outputPath = response.outputPath
-    ? validateOutputPath(response.outputPath)
-    : undefined;
-
-  console.log('\nDecrypting...');
-  const result = await decryptFile(absoluteFilePath, response.password);
-
-  if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {
-    moveToOutputPath(result, outputPath);
-  }
-
-  handleResult(result, 'Decryption');
+  return response.password;
 }
 
 /**
@@ -211,44 +130,31 @@ async function interactiveDecrypt(): Promise<void> {
 program
   .command('encrypt')
   .description('Encrypt a file or folder using AES-256-GCM')
-  .option('-f, --file <path>', 'Path to the file or folder to encrypt')
-  .option('-p, --password <password>', 'Password for encryption')
+  .requiredOption('-f, --file <path>', 'Path to the file or folder to encrypt')
+  .option('-p, --password <password>', 'Password for encryption (will prompt if not provided)')
   .option('-o, --output <path>', 'Output file (optional, defaults to <file>.deadbolt)')
   .addHelpText('after', `
 Examples:
+  $ deadbolt encrypt --file document.pdf
   $ deadbolt encrypt --file document.pdf --password "secure-password"
   $ deadbolt encrypt --file ~/folder --password "pass123"
-  $ deadbolt encrypt --file data.txt --password "pass" --output encrypted.deadbolt
-  $ deadbolt encrypt    (launches interactive mode)
+  $ deadbolt encrypt --file data.txt --output encrypted.deadbolt
 
 Notes:
   - Folders are automatically zipped before encryption
-  - Run without options for interactive mode with password confirmation
+  - Password will be prompted securely if not provided via --password
   - Encrypted files have .deadbolt extension
   - Use strong passwords for better security
 `)
   .action(async (options) => {
-    // If no options provided, run interactive mode
-    if (!options.file && !options.password) {
-      await interactiveEncrypt();
-      return;
-    }
-
-    // Validate required options
-    if (!options.file) {
-      console.error('Error: --file is required');
-      process.exit(1);
-    }
-    if (!options.password) {
-      console.error('Error: --password is required');
-      process.exit(1);
-    }
-
     const absoluteFilePath = validateFileExists(options.file);
     const outputPath = validateOutputPath(options.output);
 
+    // Prompt for password if not provided
+    const password = options.password || await promptForPassword(true);
+
     console.log('Encrypting...');
-    const result = await encryptFile(absoluteFilePath, options.password);
+    const result = await encryptFile(absoluteFilePath, password);
 
     if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {
       moveToOutputPath(result, outputPath);
@@ -263,44 +169,31 @@ Notes:
 program
   .command('decrypt')
   .description('Decrypt a .deadbolt or .dbolt file')
-  .option('-f, --file <path>', 'Path to the encrypted file')
-  .option('-p, --password <password>', 'Password for decryption')
+  .requiredOption('-f, --file <path>', 'Path to the encrypted file')
+  .option('-p, --password <password>', 'Password for decryption (will prompt if not provided)')
   .option('-o, --output <path>', 'Output file (optional, defaults to original filename)')
   .addHelpText('after', `
 Examples:
+  $ deadbolt decrypt --file document.pdf.deadbolt
   $ deadbolt decrypt --file document.pdf.deadbolt --password "secure-password"
   $ deadbolt decrypt --file encrypted.deadbolt --password "pass123"
-  $ deadbolt decrypt --file data.deadbolt --password "pass" --output decrypted.txt
-  $ deadbolt decrypt    (launches interactive mode)
+  $ deadbolt decrypt --file data.deadbolt --output decrypted.txt
 
 Notes:
   - Works with both .deadbolt and .dbolt files
-  - Run without options for interactive mode
+  - Password will be prompted securely if not provided via --password
   - Password must match the one used for encryption
   - Decrypted folders will be .zip files (unzip manually)
 `)
   .action(async (options) => {
-    // If no options provided, run interactive mode
-    if (!options.file && !options.password) {
-      await interactiveDecrypt();
-      return;
-    }
-
-    // Validate required options
-    if (!options.file) {
-      console.error('Error: --file is required');
-      process.exit(1);
-    }
-    if (!options.password) {
-      console.error('Error: --password is required');
-      process.exit(1);
-    }
-
     const absoluteFilePath = validateFileExists(options.file);
     const outputPath = validateOutputPath(options.output);
 
+    // Prompt for password if not provided
+    const password = options.password || await promptForPassword(false);
+
     console.log('Decrypting...');
-    const result = await decryptFile(absoluteFilePath, options.password);
+    const result = await decryptFile(absoluteFilePath, password);
 
     if (outputPath && !result.startsWith(ERROR_MESSAGE_PREFIX)) {
       moveToOutputPath(result, outputPath);
