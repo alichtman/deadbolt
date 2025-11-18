@@ -35,6 +35,7 @@
   },
   "scripts": {
     "build:cli": "tsc src/cli/index.ts --outDir dist/cli --module commonjs --target es2020 --moduleResolution node --esModuleInterop --resolveJsonModule --skipLibCheck",
+    "install:cli": "npm install --ignore-scripts && npm run build:cli && npm link",
     "build": "npm run update-versions && concurrently \"npm run build:main\" \"npm run build:renderer\"",
     "build:dll": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
     "build:main": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.prod.ts",

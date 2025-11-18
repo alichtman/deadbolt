@@ -18,18 +18,6 @@ Download the desktop app from the [releases tab](https://github.com/alichtman/de
 
 `deadbolt` includes a command-line interface for encrypting and decrypting files without the GUI.
 
-**Installation:**
-
-```bash
-$ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
-$ npm install --ignore-scripts
-$ npm run build:cli
-```
-
-Then run with `node dist/cli/cli/index.js [command]` or install globally with `npm link` to use the `deadbolt` command directly.
-
-**Commands:**
-
 ```bash
 # Encrypt a file or folder
 $ deadbolt encrypt --file document.pdf --password "my-secure-password"
@@ -42,44 +30,7 @@ $ deadbolt encrypt
 $ deadbolt decrypt
 ```
 
-**Options:**
-- `-f, --file <path>` - Path to the file or folder to encrypt/decrypt
-- `-p, --password <password>` - Password for encryption/decryption
-- `-o, --output <path>` - Output file (optional)
-
-**Encrypting folders:** When encrypting a folder, `deadbolt` automatically creates a zip archive before encryption.
-
-**Examples:**
-
-```bash
-# Encrypt a file
-$ deadbolt encrypt --file document.pdf --password "my-secure-password"
-# Output: document.pdf.deadbolt
-
-# Encrypt a folder
-$ deadbolt encrypt --file ~/Documents/my-folder --password "my-secure-password"
-# Output: ~/Documents/my-folder.zip.deadbolt
-
-# Decrypt a file
-$ deadbolt decrypt --file document.pdf.deadbolt --password "my-secure-password"
-# Output: document.pdf
-
-# Encrypt with custom output file
-$ deadbolt encrypt --file data.txt --password "pass123" --output encrypted-data.deadbolt
-
-# Interactive mode
-$ deadbolt encrypt
-🔐 Deadbolt - Interactive Encryption Mode
-
-? Enter the path to the file or folder to encrypt: document.pdf
-? Enter password: ****
-? Confirm password: ****
-? Enter output path (press Enter for default):
-
-Encrypting...
-Encryption successful!
-Output: document.pdf.deadbolt
-```
+See the [CLI Usage section](#cli-usage) for installation instructions and detailed documentation.
 
 ## Building / Installing
 
@@ -178,6 +129,141 @@ $ flatpak run org.alichtman.deadbolt
 ```bash
 $ yay -S deadbolt-bin
 ```
+
+## CLI Usage
+
+The `deadbolt` CLI provides full encryption and decryption capabilities from the command line, with both interactive and non-interactive modes.
+
+### Installation
+
+Install the CLI globally from the source repository:
+
+```bash
+$ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
+$ npm run install:cli
+```
+
+This will install dependencies, build the CLI, and make the `deadbolt` command available globally.
+
+**Alternative:** If you've already cloned the repository:
+
+```bash
+$ npm install --ignore-scripts
+$ npm run build:cli
+$ npm link
+```
+
+### Commands
+
+#### `deadbolt encrypt`
+
+Encrypt a file or folder with a password.
+
+**Usage:**
+
+```bash
+# With command-line arguments
+$ deadbolt encrypt --file <path> --password <password> [--output <path>]
+
+# Interactive mode (prompts for all inputs)
+$ deadbolt encrypt
+```
+
+**Options:**
+- `-f, --file <path>` - Path to the file or folder to encrypt
+- `-p, --password <password>` - Password for encryption
+- `-o, --output <path>` - Output file (optional)
+
+**Examples:**
+
+```bash
+# Encrypt a file
+$ deadbolt encrypt --file document.pdf --password "my-secure-password"
+# Output: document.pdf.deadbolt
+
+# Encrypt a folder (automatically zips it first)
+$ deadbolt encrypt --file ~/Documents/my-folder --password "my-secure-password"
+# Output: ~/Documents/my-folder.zip.deadbolt
+
+# Encrypt with custom output file
+$ deadbolt encrypt --file data.txt --password "pass123" --output encrypted-data.deadbolt
+
+# Interactive mode
+$ deadbolt encrypt
+🔐 Deadbolt - Interactive Encryption Mode
+
+? Enter the path to the file or folder to encrypt: document.pdf
+? Enter password: ****
+? Confirm password: ****
+? Enter output path (press Enter for default):
+
+Encrypting...
+Encryption successful!
+Output: document.pdf.deadbolt
+```
+
+#### `deadbolt decrypt`
+
+Decrypt a `.deadbolt` or `.dbolt` file.
+
+**Usage:**
+
+```bash
+# With command-line arguments
+$ deadbolt decrypt --file <path> --password <password> [--output <path>]
+
+# Interactive mode (prompts for all inputs)
+$ deadbolt decrypt
+```
+
+**Options:**
+- `-f, --file <path>` - Path to the encrypted file
+- `-p, --password <password>` - Password for decryption
+- `-o, --output <path>` - Output file (optional)
+
+**Examples:**
+
+```bash
+# Decrypt a file
+$ deadbolt decrypt --file document.pdf.deadbolt --password "my-secure-password"
+# Output: document.pdf
+
+# Decrypt with custom output file
+$ deadbolt decrypt --file encrypted.deadbolt --password "pass123" --output decrypted.txt
+
+# Interactive mode
+$ deadbolt decrypt
+🔓 Deadbolt - Interactive Decryption Mode
+
+? Enter the path to the encrypted file: document.pdf.deadbolt
+? Enter password: ****
+? Enter output path (press Enter for default):
+
+Decrypting...
+Decryption successful!
+Output: document.pdf
+```
+
+### Interactive Mode
+
+Running `deadbolt encrypt` or `deadbolt decrypt` without any options launches an interactive mode with the following prompts:
+
+**For encryption:**
+- File path to encrypt
+- Password (hidden input)
+- Password confirmation
+- Optional output file
+
+**For decryption:**
+- Encrypted file path
+- Password (hidden input)
+- Optional output file
+
+### Notes
+
+- **Folder encryption**: When encrypting a folder, `deadbolt` automatically creates a zip archive before encryption. The output will be `<folder-name>.zip.deadbolt`.
+- **Security**: Passwords are hidden during interactive input for security.
+- **Cross-platform**: Encrypted files can be decrypted on any platform (macOS, Windows, Linux).
 
 ## How it Works
 
