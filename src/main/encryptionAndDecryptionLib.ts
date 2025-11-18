@@ -17,6 +17,7 @@ import prettyPrintFilePath, {
   generateValidDecryptedFilePath,
   generateValidEncryptedFilePath,
   generateValidZipFilePath,
+  isDeadboltEncryptedFile,
 } from './fileUtils';
 import EncryptionOrDecryptionEnum from './EncryptionOrDecryptionEnum';
 
@@ -30,10 +31,10 @@ const VERSION_HEADER_LEN = VERSION_HEADER.length; // 13 bytes
 
 // Version to iterations mapping
 // V001 is the legacy format (no version header in file)
-// V002 adds version header and increases iterations to 600,000
+// V002 adds version header and increases iterations to 1,000,000
 const VERSION_ITERATIONS_MAP: Record<string, number> = {
   '001': 10000, // Legacy format
-  '002': 600000, // Current format - follows OWASP recommendations for PBKDF2-SHA512
+  '002': 1000000, // Current format - exceeds OWASP recommendations for maximum security
 };
 
 // Metadata lengths
@@ -125,7 +126,7 @@ function sha256Hash(data: Buffer): string {
  * Iteration count depends on the file format version.
  * @param  {Buffer} salt          64 byte random salt
  * @param  {string} encryptionKey User's entered encryption key
- * @param  {number} iterations    Number of PBKDF2 iterations (default: 600000 for V002)
+ * @param  {number} iterations    Number of PBKDF2 iterations (default: 1000000 for V002)
  * @return {Buffer}               SHA512 hash that will be used as the encryption key.
  */
 function createDerivedKey(
@@ -444,6 +445,12 @@ export async function decryptFile(
   filePath: string,
   decryptionKey: crypto.BinaryLike,
 ): Promise<string> {
+  // Validate that the file is a valid deadbolt encrypted file before attempting decryption
+  if (!isDeadboltEncryptedFile(filePath)) {
+    const prettyFilePath = prettyPrintFilePath(filePath);
+    return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is not a valid deadbolt encrypted file.\nPlease ensure you've selected a file encrypted with deadbolt.`;
+  }
+
   const decryptedFilePath = generateValidDecryptedFilePath(filePath);
   let decryptedText: Buffer | string;
   try {

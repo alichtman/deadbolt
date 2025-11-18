@@ -141,7 +141,7 @@ $ yay -S deadbolt-bin
 
 `deadbolt` is built on Electron and uses `crypto.js` from the `node.js` standard library. The encryption protocol used is `AES-256-GCM`. This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents.
 
-The current format (V002) creates a 256-bit derived key for the cipher using **600,000 iterations** of `pbkdf2` with the `SHA-512 HMAC` digest algorithm, a 512-bit (64-byte) randomly generated salt, and a user-provided password. The authenticity of the data is verified with the authentication tag provided by using GCM. These parameters follow [OWASP Password Storage recommendations](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2) and are designed to resist modern GPU-based attacks.
+The current format (V002) creates a 256-bit derived key for the cipher using **1,000,000 iterations** of `pbkdf2` with the `SHA-512 HMAC` digest algorithm, a 512-bit (64-byte) randomly generated salt, and a user-provided password. The authenticity of the data is verified with the authentication tag provided by using GCM. These parameters exceed [OWASP Password Storage recommendations](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2) (which suggest 210,000-600,000 for PBKDF2-SHA512) and provide maximum protection against modern GPU-based attacks.
 
 Encrypted files include a version header (`DEADBOLT_V002`) at the beginning of the file, allowing for future cryptographic improvements while maintaining backwards compatibility. Files encrypted with the legacy format (V001, which used 10,000 iterations) can still be decrypted.
 
