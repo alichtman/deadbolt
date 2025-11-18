@@ -10,6 +10,10 @@ import {
   decryptFile,
   ERROR_MESSAGE_PREFIX,
 } from '../main/encryptionAndDecryptionLib';
+import {
+  ENCRYPTED_FILE_EXTENSION,
+  LEGACY_ENCRYPTED_FILE_EXTENSION,
+} from '../main/fileUtils';
 
 const program = new Command();
 
@@ -47,6 +51,18 @@ function validateFileExists(filePath: string): string {
     process.exit(1);
   }
   return absolutePath;
+}
+
+/**
+ * Validates that a file is an encrypted file (has .deadbolt or .dbolt extension)
+ */
+function validateEncryptedFile(filePath: string): void {
+  if (!filePath.endsWith(ENCRYPTED_FILE_EXTENSION) && !filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)) {
+    console.error(chalk.red(`Error: File is not an encrypted file`));
+    console.error(chalk.red(`Expected file extension: ${ENCRYPTED_FILE_EXTENSION} or ${LEGACY_ENCRYPTED_FILE_EXTENSION}`));
+    console.error(chalk.red(`Received: ${path.basename(filePath)}`));
+    process.exit(1);
+  }
 }
 
 /**
@@ -223,6 +239,7 @@ Notes:
     }
 
     const absoluteFilePath = validateFileExists(filePath);
+    validateEncryptedFile(absoluteFilePath);
     const outputPath = validateOutputPath(options.output);
 
     // Prompt for password if not provided
