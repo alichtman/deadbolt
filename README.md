@@ -145,14 +145,6 @@ $ npm run install:cli
 
 This installs dependencies, builds the CLI, and makes the `deadbolt` command available globally in your PATH. After installation, you can run `deadbolt` from anywhere on your system.
 
-**Alternative:** If you've already cloned the repository:
-
-```bash
-$ npm install --ignore-scripts
-$ npm run build:cli
-$ npm link  # Makes 'deadbolt' globally available
-```
-
 ### Commands
 
 #### `deadbolt encrypt`
