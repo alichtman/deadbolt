@@ -166,7 +166,7 @@ function createDerivedKey(
  * @param encryptedFilePath Path to the encrypted file
  * @returns Object containing version string and format specification
  */
-function detectFileVersion(
+function detectDeadboltFileFormat(
   encryptedFilePath: string,
 ): { version: string; format: DeadboltFileFormat } {
   const fd = fs.openSync(encryptedFilePath, 'r');
@@ -206,7 +206,7 @@ async function getDecryptedFileContents(
   isVerification: boolean = false,
 ): Promise<Buffer> {
   // Detect file version and get format specification
-  const { format } = detectFileVersion(encryptedFilePath);
+  const { format } = detectDeadboltFileFormat(encryptedFilePath);
 
   // Read salt, IV and authTag from file using format offsets
   const fd = fs.openSync(encryptedFilePath, 'r');
