@@ -458,9 +458,19 @@ export async function decryptFile(
   decryptionKey: crypto.BinaryLike,
 ): Promise<string> {
   // Validate that the file is a valid deadbolt encrypted file before attempting decryption
-  if (!isDeadboltEncryptedFile(filePath)) {
+  try {
+    if (!isDeadboltEncryptedFile(filePath)) {
+      const prettyFilePath = prettyPrintFilePath(filePath);
+      return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is not a valid deadbolt encrypted file.\nPlease ensure you've selected a file encrypted with deadbolt.`;
+    }
+  } catch (error) {
+    // Handle I/O errors from validation (e.g., permission errors)
     const prettyFilePath = prettyPrintFilePath(filePath);
-    return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is not a valid deadbolt encrypted file.\nPlease ensure you've selected a file encrypted with deadbolt.`;
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === 'EACCES' || err.code === 'EPERM') {
+      return `${ERROR_MESSAGE_PREFIX}: Permission denied when trying to read \`${prettyFilePath}\`.\nPlease check file permissions.`;
+    }
+    return `${ERROR_MESSAGE_PREFIX}: Failed to read \`${prettyFilePath}\`: ${err.message}`;
   }
 
   const decryptedFilePath = generateValidDecryptedFilePath(filePath);
