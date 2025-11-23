@@ -29,25 +29,23 @@ const CURRENT_VERSION = '002';
 const VERSION_HEADER = `${VERSION_HEADER_PREFIX}${CURRENT_VERSION}`; // "DEADBOLT_V002"
 const VERSION_HEADER_LEN = VERSION_HEADER.length; // 13 bytes
 
-// Version format specification
-interface VersionFormat {
+// Deadbolt file format specification
+interface DeadboltFileFormat {
   pbkdf2Iterations: number;
   saltOffset: number;
   ivOffset: number;
   authTagOffset: number;
   metadataLength: number;
-  hasVersionHeader: boolean;
 }
 
 // Format specifications for each version
-const VERSION_FORMATS: Record<string, VersionFormat> = {
+const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
   '001': {
     pbkdf2Iterations: 10000,
     saltOffset: 0,
     ivOffset: 64,
     authTagOffset: 80,
     metadataLength: 96, // salt(64) + IV(16) + authTag(16)
-    hasVersionHeader: false,
   },
   '002': {
     pbkdf2Iterations: 1000000,
@@ -55,7 +53,6 @@ const VERSION_FORMATS: Record<string, VersionFormat> = {
     ivOffset: VERSION_HEADER_LEN + 64, // 77 bytes
     authTagOffset: VERSION_HEADER_LEN + 80, // 93 bytes
     metadataLength: VERSION_HEADER_LEN + 96, // version(13) + salt(64) + IV(16) + authTag(16) = 109
-    hasVersionHeader: true,
   },
 };
 
@@ -171,7 +168,7 @@ function createDerivedKey(
  */
 function detectFileVersion(
   encryptedFilePath: string,
-): { version: string; format: VersionFormat } {
+): { version: string; format: DeadboltFileFormat } {
   const fd = fs.openSync(encryptedFilePath, 'r');
   const versionBuffer = Buffer.alloc(VERSION_HEADER_LEN);
   fs.readSync(fd, versionBuffer, 0, VERSION_HEADER_LEN, 0);
