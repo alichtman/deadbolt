@@ -90,6 +90,11 @@ function readFileWithPromise(path: string): Promise<Buffer> {
   });
 }
 
+/**
+ * This is not used for any cryptographic purpose, just to validate data integrity after encryption
+ * @param data
+ * @returns SHA256 hash of data as a hex string
+ */
 function sha256Hash(data: Buffer): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
