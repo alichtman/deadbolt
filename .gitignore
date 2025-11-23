@@ -31,4 +31,3 @@ npm-debug.log.*
 
 # Unreadable file
 src/__tests__/test_data/unreadable_file.txt
-src/__tests__/test_data
