@@ -132,7 +132,7 @@ function sha256Hash(data: Buffer): string {
 function createDerivedKey(
   salt: crypto.BinaryLike,
   encryptionKey: crypto.BinaryLike,
-  iterations: number = VERSION_ITERATIONS_MAP['002'],
+  iterations: number = VERSION_ITERATIONS_MAP[CURRENT_VERSION],
 ): Buffer {
   return crypto.pbkdf2Sync(
     encryptionKey,
