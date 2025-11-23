@@ -1,12 +1,15 @@
-# We ... don't have any tests, so this is just commented out boilerplate.
-# We should really have some tests!
-name: Test
+name: CLI Tests
 
 on:
-  workflow_dispatch
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  test:
+  cli-tests:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -23,15 +26,17 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: npm install
-        run: |
-          npm install
+      - name: Install dependencies
+        run: npm install
 
-      - name: npm test
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npm run package
-          npm run lint
-          npm exec tsc
-          npm test
+      - name: Build main process
+        run: npm run build:main
+
+      - name: Build renderer process
+        run: npm run build:renderer
+
+      - name: Build CLI
+        run: npm run build:cli
+
+      - name: Run CLI tests
+        run: npm test
