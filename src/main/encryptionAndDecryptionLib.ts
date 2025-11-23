@@ -288,17 +288,19 @@ function zipDirectory(sourcePath: string, outputPath: string): Promise<void> {
 
 /**
  * Encrypts a file using this format (V002):
- * +------------------+--------------------+-----------------------+----------------+----------------+
- * | Version Header   | Salt               | Initialization Vector | Auth Tag       | Payload        |
- * | File version     | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
- * | 13 Bytes, ASCII  | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-109) Bytes  |
- * +------------------+--------------------+-----------------------+----------------+----------------+
+ * +---------------------+--------------------+-----------------------+----------------+----------------+
+ * | Version Header      | Salt               | Initialization Vector | Auth Tag       | Payload        |
+ * | DEADBOLT_V###       | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
+ * | 13 Bytes, ASCII     | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-109) Bytes  |
+ * | (e.g. DEADBOLT_V002)| (512 bits)         | (128 bits)            | (128 bits)     |                |
+ * +---------------------+--------------------+-----------------------+----------------+----------------+
  *
  * Legacy format (V001) did not include the version header:
  * +--------------------+-----------------------+----------------+----------------+
  * | Salt               | Initialization Vector | Auth Tag       | Payload        |
  * | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
  * | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-96) Bytes   |
+ * | (512 bits)         | (128 bits)            | (128 bits)     |                |
  * +--------------------+-----------------------+----------------+----------------+
  *
  * A huge thank you to: https://medium.com/@brandonstilson/lets-encrypt-files-with-node-85037bea8c0e
