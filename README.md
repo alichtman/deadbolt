@@ -10,15 +10,18 @@ You can download `deadbolt` for **macOS**, **Windows**, or **Linux**. Any encryp
 
 ### GUI
 
-Select a file (or folder) to encrypt, enter a password, and … that's it. Decryption is just as easy.
-
 Download the desktop app from the [releases tab](https://github.com/alichtman/deadbolt/releases) or see the [installation section](#building--installing) below for platform-specific instructions.
+
+Select a file (or folder) to encrypt, enter a password, and … that's it. Decryption is just as easy.
 
 ### CLI
 
 `deadbolt` includes a command-line interface for encrypting and decrypting files without the GUI. If you don't provide a password, you'll be prompted to enter it securely.
 
 ```bash
+$ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
+$ npm run install:cli
+
 # Encrypt a file or folder
 $ deadbolt encrypt secret.pdf
 
@@ -29,8 +32,6 @@ $ deadbolt decrypt secret.pdf.deadbolt
 $ deadbolt encrypt secret.pdf --password "my-secure-password"
 $ deadbolt decrypt secret.pdf.deadbolt --password "my-secure-password"
 ```
-
-See the [CLI Usage section](#cli-usage) for installation instructions and detailed documentation.
 
 ## Building / Installing
 
@@ -129,92 +130,6 @@ $ flatpak run org.alichtman.deadbolt
 ```bash
 $ yay -S deadbolt-bin
 ```
-
-## CLI Usage
-
-The `deadbolt` CLI provides full encryption and decryption capabilities from the command line.
-
-### Installation
-
-Install the CLI globally:
-
-```bash
-$ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
-$ npm run install:cli
-```
-
-This installs dependencies, builds the CLI, and makes the `deadbolt` command available globally in your PATH. After installation, you can run `deadbolt` from anywhere on your system.
-
-### Commands
-
-#### `deadbolt encrypt`
-
-Encrypt a file or folder with a password.
-
-**Usage:**
-
-```bash
-$ deadbolt encrypt <file> [--password <password>] [--output <path>]
-```
-
-**Options:**
-- `-p, --password <password>` - Password for encryption (will prompt if not provided)
-- `-o, --output <path>` - Output file (optional)
-
-**Examples:**
-
-```bash
-# Encrypt a file (password will be prompted)
-$ deadbolt encrypt secret.pdf
-Enter password: ****
-Confirm password: ****
-
-# Encrypt with password in command (warning: may be logged in shell history)
-$ deadbolt encrypt secret.pdf --password "my-secure-password"
-# Output: secret.pdf.deadbolt
-
-# Encrypt a folder (automatically zips it first)
-$ deadbolt encrypt ~/Documents/my-folder --password "my-secure-password"
-# Output: ~/Documents/my-folder.zip.deadbolt
-
-# Encrypt with custom output file
-$ deadbolt encrypt data.txt --password "pass123" --output encrypted-data.deadbolt
-```
-
-#### `deadbolt decrypt`
-
-Decrypt a `.deadbolt` or `.dbolt` file.
-
-**Usage:**
-
-```bash
-$ deadbolt decrypt <file> [--password <password>] [--output <path>]
-```
-
-**Options:**
-- `-p, --password <password>` - Password for decryption (will prompt if not provided)
-- `-o, --output <path>` - Output file (optional)
-
-**Examples:**
-
-```bash
-# Decrypt a file (password will be prompted)
-$ deadbolt decrypt secret.pdf.deadbolt
-Enter password: ****
-
-# Decrypt with password in command (warning: may be logged in shell history)
-$ deadbolt decrypt secret.pdf.deadbolt --password "my-secure-password"
-# Output: secret.pdf
-
-# Decrypt with custom output file
-$ deadbolt decrypt encrypted.deadbolt --password "pass123" --output decrypted.txt
-```
-
-### Notes
-
-- **Password prompting**: If you don't provide the `--password` flag, you'll be prompted to enter it securely. Password input is hidden, and for encryption you'll be asked to confirm it. Using `--password` directly may log your password in shell history.
-- **Folder encryption**: When encrypting a folder, `deadbolt` automatically creates a zip archive before encryption. The output will be `<folder-name>.zip.deadbolt`.
-- **Cross-platform**: Encrypted files can be decrypted on any platform (macOS, Windows, Linux).
 
 ## How it Works
 
