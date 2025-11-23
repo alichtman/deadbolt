@@ -5,6 +5,7 @@ import prompts from 'prompts';
 import path from 'path';
 import fs from 'fs';
 import chalk from 'chalk';
+import log from '../main/logger';
 import {
   encryptFile,
   decryptFile,
@@ -22,7 +23,9 @@ program
   .description('Encrypt and decrypt files using AES-256-GCM encryption')
   .version('2.0.2')
   .option('-v, --verbose', 'Enable verbose logging (debug mode)')
-  .addHelpText('after', `
+  .addHelpText(
+    'after',
+    `
 Examples:
   $ deadbolt encrypt secret.pdf
   $ deadbolt encrypt secret.pdf --password "my-password"
@@ -39,7 +42,8 @@ Verbose Mode:
 
 Documentation:
   https://github.com/alichtman/deadbolt
-`);
+`,
+  );
 
 /**
  * Validates that a file exists
@@ -47,7 +51,7 @@ Documentation:
 function validateFileExists(filePath: string): string {
   const absolutePath = path.resolve(filePath);
   if (!fs.existsSync(absolutePath)) {
-    console.error(chalk.red(`Error: File not found: ${absolutePath}`));
+    log.error(`Error: File not found: ${absolutePath}`);
     process.exit(1);
   }
   return absolutePath;
@@ -57,10 +61,15 @@ function validateFileExists(filePath: string): string {
  * Validates that a file is an encrypted file (has .deadbolt or .dbolt extension)
  */
 function validateEncryptedFile(filePath: string): void {
-  if (!filePath.endsWith(ENCRYPTED_FILE_EXTENSION) && !filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)) {
-    console.error(chalk.red(`Error: File is not an encrypted file`));
-    console.error(chalk.red(`Expected file extension: ${ENCRYPTED_FILE_EXTENSION} or ${LEGACY_ENCRYPTED_FILE_EXTENSION}`));
-    console.error(chalk.red(`Received: ${path.basename(filePath)}`));
+  if (
+    !filePath.endsWith(ENCRYPTED_FILE_EXTENSION) &&
+    !filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)
+  ) {
+    log.error(`Error: File is not an encrypted file`);
+    log.error(
+      `Expected file extension: ${ENCRYPTED_FILE_EXTENSION} or ${LEGACY_ENCRYPTED_FILE_EXTENSION}`,
+    );
+    log.error(`Received: ${path.basename(filePath)}`);
     process.exit(1);
   }
 }
@@ -68,7 +77,9 @@ function validateEncryptedFile(filePath: string): void {
 /**
  * Validates that a directory exists (for output path)
  */
-function validateOutputPath(outputPath: string | undefined): string | undefined {
+function validateOutputPath(
+  outputPath: string | undefined,
+): string | undefined {
   if (!outputPath) {
     return undefined;
   }
@@ -77,7 +88,7 @@ function validateOutputPath(outputPath: string | undefined): string | undefined 
   const dir = path.dirname(absolutePath);
 
   if (!fs.existsSync(dir)) {
-    console.error(chalk.red(`Error: Output directory does not exist: ${dir}`));
+    log.error(`Error: Output directory does not exist: ${dir}`);
     process.exit(1);
   }
 
@@ -87,14 +98,18 @@ function validateOutputPath(outputPath: string | undefined): string | undefined 
 /**
  * Handles the result from encryption/decryption operations
  */
-function handleResult(result: string, operation: 'Encryption' | 'Decryption'): void {
+function handleResult(
+  result: string,
+  operation: 'Encryption' | 'Decryption',
+): void {
   if (result.startsWith(ERROR_MESSAGE_PREFIX)) {
     const errorMessage = result.substring(ERROR_MESSAGE_PREFIX.length + 1);
-    console.error(chalk.red(`\n${operation} failed:`));
-    console.error(chalk.red(errorMessage));
+    log.error(`\n${operation} failed:`);
+    log.error(errorMessage);
     process.exit(1);
   } else {
-    console.log(chalk.green(`${operation} successful: ${result}`));
+    // Success message is already emitted in encryptFile/decryptFile functions, so we skip it here
+    // log.success(`${operation} successful: ${result}`);
   }
 }
 
@@ -107,48 +122,114 @@ function moveToOutputPath(sourcePath: string, outputPath: string): string {
     fs.renameSync(sourcePath, outputPath);
     return outputPath;
   } catch (error) {
-    console.error(chalk.yellow(`Warning: Failed to move file to output path: ${error}`));
-    console.error(chalk.yellow(`File is available at: ${sourcePath}`));
+    log.warn(`Warning: Failed to move file to output path: ${error}`);
+    log.warn(`File is available at: ${sourcePath}`);
     return sourcePath;
   }
 }
 
 /**
+ * Validates password meets minimum requirements
+ */
+function validatePassword(password: string): boolean {
+  if (password.length < 8) {
+    log.error('Error: Password must be at least 8 characters');
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Gets password either from command-line options or by prompting the user.
+ * Validates password if provided via options, exits on validation failure.
+ */
+async function getPassword(
+  providedPassword: string | undefined,
+  confirmPassword: boolean,
+): Promise<string> {
+  if (providedPassword) {
+    if (!validatePassword(providedPassword)) {
+      process.exit(1);
+    }
+    return providedPassword;
+  }
+
+  return (await promptForPassword(confirmPassword))!;
+}
+
+/**
  * Prompts for password (and confirmation for encryption)
  */
-async function promptForPassword(confirmPassword: boolean = false): Promise<string | undefined> {
-  // First, get the password
-  const passwordResponse = await prompts({
-    type: 'password',
-    name: 'password',
-    message: 'Enter password:',
-    validate: (value: string) => value.length > 0 || 'Password cannot be empty',
-  });
+async function promptForPassword(
+  confirmPassword: boolean = false,
+): Promise<string | undefined> {
+  let password: string | undefined;
 
-  // Check if user cancelled
-  if (!passwordResponse.password) {
-    console.log(chalk.yellow('\nOperation cancelled.'));
-    process.exit(0);
+  // Loop until we get a valid password
+  while (!password) {
+    const passwordResponse = await prompts(
+      {
+        type: 'password',
+        name: 'password',
+        message: 'Enter password:  ',
+      },
+      {
+        onCancel: () => {
+          log.warn('\nOperation cancelled.');
+          process.exit(0);
+        },
+      },
+    );
+
+    // Check if user cancelled
+    if (!passwordResponse.password) {
+      log.warn('\nOperation cancelled.');
+      process.exit(0);
+    }
+
+    // Validate password length
+    if (passwordResponse.password.length < 8) {
+      log.error('Password must be at least 8 characters\n');
+      continue;
+    }
+
+    password = passwordResponse.password;
   }
 
   // If confirmation is required, prompt for it
   if (confirmPassword) {
-    const confirmResponse = await prompts({
-      type: 'password',
-      name: 'confirmPassword',
-      message: 'Confirm password:',
-      validate: (value: string) =>
-        value === passwordResponse.password || 'Passwords do not match',
-    });
+    while (true) {
+      const confirmResponse = await prompts(
+        {
+          type: 'password',
+          name: 'confirmPassword',
+          message: 'Confirm password:',
+        },
+        {
+          onCancel: () => {
+            log.warn('\nOperation cancelled.');
+            process.exit(0);
+          },
+        },
+      );
 
-    // Check if user cancelled
-    if (!confirmResponse.confirmPassword) {
-      console.log(chalk.yellow('\nOperation cancelled.'));
-      process.exit(0);
+      // Check if user cancelled
+      if (!confirmResponse.confirmPassword) {
+        log.warn('\nOperation cancelled.');
+        process.exit(0);
+      }
+
+      // Validate passwords match
+      if (confirmResponse.confirmPassword !== password) {
+        log.error('Passwords do not match\n');
+        continue;
+      }
+
+      break;
     }
   }
 
-  return passwordResponse.password;
+  return password;
 }
 
 /**
@@ -158,9 +239,17 @@ program
   .command('encrypt [file]')
   .description('Encrypt a file or folder using AES-256-GCM')
   .option('-f, --file <path>', 'Path to the file or folder to encrypt')
-  .option('-p, --password <password>', 'Password for encryption (will prompt if not provided)')
-  .option('-o, --output <path>', 'Output file (optional, defaults to <file>.deadbolt)')
-  .addHelpText('after', `
+  .option(
+    '-p, --password <password>',
+    'Password for encryption (will prompt if not provided)',
+  )
+  .option(
+    '-o, --output <path>',
+    'Output file (optional, defaults to <file>.deadbolt)',
+  )
+  .addHelpText(
+    'after',
+    `
 Examples:
   $ deadbolt encrypt secret.pdf
   $ deadbolt encrypt secret.pdf --password "secure-password"
@@ -174,25 +263,26 @@ Notes:
   - Using --password directly may log your password in shell history
   - Encrypted files have .deadbolt extension
   - Use strong passwords for better security
-`)
+`,
+  )
   .action(async (fileArg, options) => {
     // Use positional argument if provided, otherwise fall back to --file flag
     const filePath = fileArg || options.file;
 
     if (!filePath) {
-      console.error(chalk.red('Error: file or directory path is required'));
-      console.error(chalk.red('Usage: deadbolt encrypt <file> [options]'));
-      console.error(chalk.red('   or: deadbolt encrypt --file <file> [options]'));
+      log.error('Error: file or directory path is required');
+      log.error('Usage: deadbolt encrypt <file> [options]');
+      log.error('   or: deadbolt encrypt --file <file> [options]');
       process.exit(1);
     }
 
     const absoluteFilePath = validateFileExists(filePath);
     const outputPath = validateOutputPath(options.output);
 
-    // Prompt for password if not provided
-    const password = options.password || await promptForPassword(true);
+    // Get and validate password
+    const password = await getPassword(options.password, true);
 
-    console.log(chalk.cyan('Encrypting...'));
+    log.info('Encrypting...');
     const result = await encryptFile(absoluteFilePath, password);
 
     let finalPath = result;
@@ -210,9 +300,17 @@ program
   .command('decrypt [file]')
   .description('Decrypt a .deadbolt or .dbolt file')
   .option('-f, --file <path>', 'Path to the encrypted file')
-  .option('-p, --password <password>', 'Password for decryption (will prompt if not provided)')
-  .option('-o, --output <path>', 'Output file (optional, defaults to original filename)')
-  .addHelpText('after', `
+  .option(
+    '-p, --password <password>',
+    'Password for decryption (will prompt if not provided)',
+  )
+  .option(
+    '-o, --output <path>',
+    'Output file (optional, defaults to original filename)',
+  )
+  .addHelpText(
+    'after',
+    `
 Examples:
   $ deadbolt decrypt secret.pdf.deadbolt
   $ deadbolt decrypt secret.pdf.deadbolt --password "secure-password"
@@ -226,15 +324,16 @@ Notes:
   - Using --password directly may log your password in shell history
   - Password must match the one used for encryption
   - Decrypted folders will be .zip files (unzip manually)
-`)
+`,
+  )
   .action(async (fileArg, options) => {
     // Use positional argument if provided, otherwise fall back to --file flag
     const filePath = fileArg || options.file;
 
     if (!filePath) {
-      console.error(chalk.red('Error: file path is required'));
-      console.error(chalk.red('Usage: deadbolt decrypt <file> [options]'));
-      console.error(chalk.red('   or: deadbolt decrypt --file <file> [options]'));
+      log.error('Error: file path is required');
+      log.error('Usage: deadbolt decrypt <file> [options]');
+      log.error('   or: deadbolt decrypt --file <file> [options]');
       process.exit(1);
     }
 
@@ -242,10 +341,10 @@ Notes:
     validateEncryptedFile(absoluteFilePath);
     const outputPath = validateOutputPath(options.output);
 
-    // Prompt for password if not provided
-    const password = options.password || await promptForPassword(false);
+    // Get and validate password
+    const password = await getPassword(options.password, false);
 
-    console.log(chalk.cyan('Decrypting...'));
+    log.info('Decrypting...');
     const result = await decryptFile(absoluteFilePath, password);
 
     let finalPath = result;

@@ -328,10 +328,7 @@ export async function encryptFile(
       log.debug('Cleaning up temporary zip file:', filePathToEncrypt);
       fs.unlinkSync(filePathToEncrypt);
     } catch (error) {
-      log.error(
-        'Failed to clean up temporary zip file:',
-        filePathToEncrypt,
-      );
+      log.error('Failed to clean up temporary zip file:', filePathToEncrypt);
     }
   }
 
@@ -356,7 +353,7 @@ export async function encryptFile(
     return `${ERROR_MESSAGE_PREFIX}: ${encryptedFilePath} failed to be verified after encryption. It's likely corrupted. The hash of the data before encryption was ${unencryptedFileDataSHA256}, and the hash of the data after decryption was ${decryptedFileSHA256}.`;
   }
 
-  log.info('Successfully encrypted file: ', encryptedFilePath);
+  log.success('Successfully encrypted file: ', encryptedFilePath);
   return encryptedFilePath;
 }
 
@@ -389,7 +386,7 @@ export async function decryptFile(
     );
 
     if (fs.existsSync(decryptedFilePath)) {
-      log.info('Successfully decrypted file: ', decryptedFilePath);
+      log.success('Successfully decrypted file: ', decryptedFilePath);
       return decryptedFilePath;
     }
     return `${ERROR_MESSAGE_PREFIX}: ${decryptedFilePath} failed to be written.`;

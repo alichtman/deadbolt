@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
+import { execSync } from 'child_process';
 import { encryptFile, decryptFile, ERROR_MESSAGE_PREFIX } from '../main/encryptionAndDecryptionLib';
 
 describe('CLI E2E Tests - Encryption and Decryption', () => {
@@ -318,6 +319,105 @@ describe('CLI E2E Tests - Encryption and Decryption', () => {
         const decryptedContent = fs.readFileSync(decryptedFilePath, 'utf8');
         expect(decryptedContent).toBe(originalContent);
       }
+    });
+  });
+
+  describe('CLI Password Validation', () => {
+    const cliPath = path.join(__dirname, '../../dist/deadbolt-cli.js');
+
+    it('should reject password shorter than 8 characters for encrypt command', () => {
+      const testFilePath = path.join(testDir, 'test.txt');
+      fs.writeFileSync(testFilePath, 'test content', 'utf8');
+
+      let error: any;
+      try {
+        execSync(`node "${cliPath}" encrypt "${testFilePath}" --password "short"`, {
+          encoding: 'utf8',
+          stdio: 'pipe',
+        });
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.status).toBe(1);
+      expect(error.stderr.toString()).toContain('Password must be at least 8 characters');
+    });
+
+    it('should reject password shorter than 8 characters for decrypt command', () => {
+      const testFilePath = path.join(testDir, 'test.txt');
+      const password = 'valid-password';
+
+      // First create an encrypted file with a valid password
+      fs.writeFileSync(testFilePath, 'test content', 'utf8');
+      execSync(`node "${cliPath}" encrypt "${testFilePath}" --password "${password}"`, {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
+
+      const encryptedFilePath = testFilePath + '.deadbolt';
+      expect(fs.existsSync(encryptedFilePath)).toBe(true);
+
+      // Now try to decrypt with a short password
+      let error: any;
+      try {
+        execSync(`node "${cliPath}" decrypt "${encryptedFilePath}" --password "short"`, {
+          encoding: 'utf8',
+          stdio: 'pipe',
+        });
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.status).toBe(1);
+      expect(error.stderr.toString()).toContain('Password must be at least 8 characters');
+    });
+
+    it('should accept password with exactly 8 characters', () => {
+      const testFilePath = path.join(testDir, 'test.txt');
+      const password = '12345678'; // Exactly 8 characters
+
+      fs.writeFileSync(testFilePath, 'test content', 'utf8');
+
+      let error: any;
+      try {
+        execSync(`node "${cliPath}" encrypt "${testFilePath}" --password "${password}"`, {
+          encoding: 'utf8',
+          stdio: 'pipe',
+        });
+      } catch (err) {
+        error = err;
+      }
+
+      // Should succeed (no error thrown)
+      expect(error).toBeUndefined();
+
+      const encryptedFilePath = testFilePath + '.deadbolt';
+      expect(fs.existsSync(encryptedFilePath)).toBe(true);
+    });
+
+    it('should accept password longer than 8 characters', () => {
+      const testFilePath = path.join(testDir, 'test.txt');
+      const password = 'this-is-a-long-password';
+
+      fs.writeFileSync(testFilePath, 'test content', 'utf8');
+
+      let error: any;
+      try {
+        execSync(`node "${cliPath}" encrypt "${testFilePath}" --password "${password}"`, {
+          encoding: 'utf8',
+          stdio: 'pipe',
+        });
+      } catch (err) {
+        error = err;
+      }
+
+      // Should succeed (no error thrown)
+      expect(error).toBeUndefined();
+
+      const encryptedFilePath = testFilePath + '.deadbolt';
+      expect(fs.existsSync(encryptedFilePath)).toBe(true);
     });
   });
 });

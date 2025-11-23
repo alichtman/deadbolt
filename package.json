@@ -31,11 +31,13 @@
   ],
   "main": "./.erb/dll/main.bundle.dev.js",
   "bin": {
-    "deadbolt": "./dist/cli/cli/index.js"
+    "deadbolt": "./dist/deadbolt-cli.js"
   },
   "scripts": {
-    "build:cli": "tsc src/cli/index.ts --outDir dist/cli --module commonjs --target es2020 --moduleResolution node --esModuleInterop --resolveJsonModule --skipLibCheck",
+    "build:cli": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.cli.ts && chmod +x dist/deadbolt-cli.js",
+    "cli": "npm run build:cli && node dist/deadbolt-cli.js",
     "install:cli": "npm install --ignore-scripts && npm run build:cli && npm link",
+    "clean": "rimraf dist",
     "build": "npm run update-versions && concurrently \"npm run build:main\" \"npm run build:renderer\"",
     "build:dll": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
     "build:main": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.prod.ts",
