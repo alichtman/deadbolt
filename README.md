@@ -4,9 +4,34 @@
 
 `deadbolt` simplifies encrypting and decrypting files. All you need is a password.
 
+You can download `deadbolt` for **macOS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
+
+## Quickstart
+
+### GUI
+
+Download the desktop app from the [releases tab](https://github.com/alichtman/deadbolt/releases) or see the [installation section](#building--installing) below for platform-specific instructions.
+
 Select a file (or folder) to encrypt, enter a password, and … that's it. Decryption is just as easy.
 
-You can download `deadbolt` for **macOS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
+### CLI
+
+`deadbolt` includes a command-line interface for encrypting and decrypting files without the GUI. If you don't provide a password, you'll be prompted to enter it securely.
+
+```bash
+$ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
+$ npm run install:cli
+
+# Encrypt a file or folder
+$ deadbolt encrypt secret.pdf
+
+# Decrypt a file
+$ deadbolt decrypt secret.pdf.deadbolt
+
+# Provide password directly (warning: may be logged in shell history)
+$ deadbolt encrypt secret.pdf --password "my-secure-password"
+$ deadbolt decrypt secret.pdf.deadbolt --password "my-secure-password"
+```
 
 ## Building / Installing
 

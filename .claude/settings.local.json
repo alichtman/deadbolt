@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:cli:*)",
+      "Bash(node dist/deadbolt-cli.js:*)",
+      "Bash(cat:*)",
+      "Bash(npm run test)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
