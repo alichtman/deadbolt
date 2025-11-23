@@ -29,17 +29,38 @@ const CURRENT_VERSION = '002';
 const VERSION_HEADER = `${VERSION_HEADER_PREFIX}${CURRENT_VERSION}`; // "DEADBOLT_V002"
 const VERSION_HEADER_LEN = VERSION_HEADER.length; // 13 bytes
 
-// Version to iterations mapping
-// V001 is the legacy format (no version header in file)
-// V002 adds version header and increases iterations to 1,000,000
-const VERSION_ITERATIONS_MAP: Record<string, number> = {
-  '001': 10000, // Legacy format
-  '002': 1000000, // Current format - exceeds OWASP recommendations for maximum security
+// Version format specification
+interface VersionFormat {
+  pbkdf2Iterations: number;
+  saltOffset: number;
+  ivOffset: number;
+  authTagOffset: number;
+  metadataLength: number;
+  hasVersionHeader: boolean;
+}
+
+// Format specifications for each version
+const VERSION_FORMATS: Record<string, VersionFormat> = {
+  '001': {
+    pbkdf2Iterations: 10000,
+    saltOffset: 0,
+    ivOffset: 64,
+    authTagOffset: 80,
+    metadataLength: 96, // salt(64) + IV(16) + authTag(16)
+    hasVersionHeader: false,
+  },
+  '002': {
+    pbkdf2Iterations: 1000000,
+    saltOffset: VERSION_HEADER_LEN, // 13 bytes
+    ivOffset: VERSION_HEADER_LEN + 64, // 77 bytes
+    authTagOffset: VERSION_HEADER_LEN + 80, // 93 bytes
+    metadataLength: VERSION_HEADER_LEN + 96, // version(13) + salt(64) + IV(16) + authTag(16) = 109
+    hasVersionHeader: true,
+  },
 };
 
-// Metadata lengths
-const LEGACY_METADATA_LEN = 96; // V001: salt(64) + IV(16) + authTag(16)
-const METADATA_LEN = LEGACY_METADATA_LEN + VERSION_HEADER_LEN; // V002: version(13) + salt(64) + IV(16) + authTag(16) = 109
+// Legacy metadata length for validation
+const LEGACY_METADATA_LEN = VERSION_FORMATS['001'].metadataLength;
 
 /*************
  * Error Prefix
@@ -124,33 +145,33 @@ function sha256Hash(data: Buffer): string {
 /**
  * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64B salt with PBKDF2.
  * Iteration count depends on the file format version.
- * @param  {Buffer} salt          64 byte random salt
- * @param  {string} encryptionKey User's entered encryption key
- * @param  {number} iterations    Number of PBKDF2 iterations (default: 1000000 for V002)
- * @return {Buffer}               SHA512 hash that will be used as the encryption key.
+ * @param  {Buffer} salt               64 byte random salt
+ * @param  {string} encryptionKey      User's entered encryption key
+ * @param  {number} pbkdf2Iterations   Number of PBKDF2 iterations (default: 1000000 for V002)
+ * @return {Buffer}                    SHA512 hash that will be used as the encryption key.
  */
 function createDerivedKey(
   salt: crypto.BinaryLike,
   encryptionKey: crypto.BinaryLike,
-  iterations: number = VERSION_ITERATIONS_MAP[CURRENT_VERSION],
+  pbkdf2Iterations: number = VERSION_FORMATS[CURRENT_VERSION].pbkdf2Iterations,
 ): Buffer {
   return crypto.pbkdf2Sync(
     encryptionKey,
     salt,
-    iterations,
+    pbkdf2Iterations,
     32, // This value is in bytes
     'sha512',
   );
 }
 
 /**
- * Detects the version of an encrypted file and returns the appropriate iteration count.
+ * Detects the version of an encrypted file and returns its format specification.
  * @param encryptedFilePath Path to the encrypted file
- * @returns Object containing version, iterations, and whether it's a legacy file
+ * @returns Object containing version string and format specification
  */
 function detectFileVersion(
   encryptedFilePath: string,
-): { version: string; iterations: number; isLegacy: boolean } {
+): { version: string; format: VersionFormat } {
   const fd = fs.openSync(encryptedFilePath, 'r');
   const versionBuffer = Buffer.alloc(VERSION_HEADER_LEN);
   fs.readSync(fd, versionBuffer, 0, VERSION_HEADER_LEN, 0);
@@ -162,17 +183,17 @@ function detectFileVersion(
   if (versionString.startsWith(VERSION_HEADER_PREFIX)) {
     // Extract version number (last 3 digits)
     const version = versionString.substring(VERSION_HEADER_PREFIX.length);
-    const iterations = VERSION_ITERATIONS_MAP[version];
+    const format = VERSION_FORMATS[version];
 
-    if (!iterations) {
+    if (!format) {
       throw new Error(`Unknown file version: ${version}`);
     }
 
-    return { version, iterations, isLegacy: false };
+    return { version, format };
   }
 
   // Legacy format (no version header)
-  return { version: '001', iterations: VERSION_ITERATIONS_MAP['001'], isLegacy: true };
+  return { version: '001', format: VERSION_FORMATS['001'] };
 }
 
 /**
@@ -187,29 +208,23 @@ async function getDecryptedFileContents(
   decryptionKey: crypto.BinaryLike,
   isVerification: boolean = false,
 ): Promise<Buffer> {
-  // Detect file version and get appropriate iteration count
-  const { iterations, isLegacy } = detectFileVersion(encryptedFilePath);
+  // Detect file version and get format specification
+  const { format } = detectFileVersion(encryptedFilePath);
 
-  // Calculate offsets based on whether this is a legacy file
-  const saltOffset = isLegacy ? 0 : VERSION_HEADER_LEN;
-  const ivOffset = saltOffset + 64;
-  const authTagOffset = ivOffset + 16;
-  const metadataLength = isLegacy ? LEGACY_METADATA_LEN : METADATA_LEN;
-
-  // Read salt, IV and authTag from file
+  // Read salt, IV and authTag from file using format offsets
   const fd = fs.openSync(encryptedFilePath, 'r');
   const salt = Buffer.alloc(64);
-  fs.readSync(fd, salt, 0, 64, saltOffset);
+  fs.readSync(fd, salt, 0, 64, format.saltOffset);
 
   const initializationVector = Buffer.alloc(16);
-  fs.readSync(fd, initializationVector, 0, 16, ivOffset);
+  fs.readSync(fd, initializationVector, 0, 16, format.ivOffset);
 
   const authTag = Buffer.alloc(16);
-  fs.readSync(fd, authTag, 0, 16, authTagOffset);
+  fs.readSync(fd, authTag, 0, 16, format.authTagOffset);
   fs.closeSync(fd);
 
-  // Decrypt the cipher text using the appropriate iteration count
-  const derivedKey = createDerivedKey(salt, decryptionKey, iterations);
+  // Decrypt the cipher text using the format's PBKDF2 iteration count
+  const derivedKey = createDerivedKey(salt, decryptionKey, format.pbkdf2Iterations);
   const decrypt = crypto.createDecipheriv(
     AES_256_GCM,
     derivedKey,
@@ -222,9 +237,7 @@ async function getDecryptedFileContents(
   // Read encrypted file, and drop the metadata bytes
   const cipherText = await readFileWithPromise(encryptedFilePath)
     .then((data) => {
-      // For legacy files, check against LEGACY_METADATA_LEN
-      const minMetadataLen = isLegacy ? LEGACY_METADATA_LEN : METADATA_LEN;
-      if (data.length < minMetadataLen && data.length > 0) {
+      if (data.length < format.metadataLength && data.length > 0) {
         throw new EncryptedFileMissingMetadataError();
       } else if (data.length === 0) {
         throw new FileReadError(
@@ -233,7 +246,7 @@ async function getDecryptedFileContents(
             : EncryptionOrDecryptionEnum.DECRYPTION,
         );
       }
-      return data.subarray(metadataLength);
+      return data.subarray(format.metadataLength);
     })
     .catch((error: Error) => {
       // Unclear if we need to catch and rethrow, or if the exception would bubble up. Leaving in for now
