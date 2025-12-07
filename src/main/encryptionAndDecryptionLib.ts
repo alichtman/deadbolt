@@ -17,11 +17,47 @@ import prettyPrintFilePath, {
   generateValidDecryptedFilePath,
   generateValidEncryptedFilePath,
   generateValidZipFilePath,
+  isDeadboltEncryptedFile,
 } from './fileUtils';
 import EncryptionOrDecryptionEnum from './EncryptionOrDecryptionEnum';
 
 const AES_256_GCM = 'aes-256-gcm';
-const METADATA_LEN = 96;
+
+// Version constants for binary format
+const VERSION_HEADER_PREFIX = 'DEADBOLT_V';
+const CURRENT_VERSION = '002';
+const VERSION_HEADER = `${VERSION_HEADER_PREFIX}${CURRENT_VERSION}`; // "DEADBOLT_V002"
+const VERSION_HEADER_LEN = VERSION_HEADER.length; // 13 bytes
+
+// Deadbolt file format specification
+interface DeadboltFileFormat {
+  pbkdf2Iterations: number;
+  saltOffset: number;
+  ivOffset: number;
+  authTagOffset: number;
+  metadataLength: number;
+}
+
+// Format specifications for each version
+const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
+  '001': {
+    pbkdf2Iterations: 10000,
+    saltOffset: 0,
+    ivOffset: 64,
+    authTagOffset: 80,
+    metadataLength: 96, // salt(64) + IV(16) + authTag(16)
+  },
+  '002': {
+    pbkdf2Iterations: 1000000,
+    saltOffset: VERSION_HEADER_LEN, // 13 bytes
+    ivOffset: VERSION_HEADER_LEN + 64, // 77 bytes
+    authTagOffset: VERSION_HEADER_LEN + 80, // 93 bytes
+    metadataLength: VERSION_HEADER_LEN + 96, // version(13) + salt(64) + IV(16) + authTag(16) = 109
+  },
+};
+
+// Legacy metadata length for validation
+const LEGACY_METADATA_LEN = VERSION_FORMATS['001'].metadataLength;
 
 /*************
  * Error Prefix
@@ -104,23 +140,57 @@ function sha256Hash(data: Buffer): string {
  *********************************/
 
 /**
- * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64B salt with 10,000 iterations of PBKDF2
- * Follows the NIST standards described here: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
- * @param  {Buffer} salt          64 byte random salt
- * @param  {string} encryptionKey User's entered encryption key
- * @return {Buffer}               SHA512 hash that will be used as the IV.
+ * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64B salt with PBKDF2.
+ * Iteration count depends on the file format version.
+ * @param  {Buffer} salt               64 byte random salt
+ * @param  {string} encryptionKey      User's entered encryption key
+ * @param  {number} pbkdf2Iterations   Number of PBKDF2 iterations (default: 1000000 for V002)
+ * @return {Buffer}                    SHA512 hash that will be used as the encryption key.
  */
 function createDerivedKey(
   salt: crypto.BinaryLike,
   encryptionKey: crypto.BinaryLike,
+  pbkdf2Iterations: number = VERSION_FORMATS[CURRENT_VERSION].pbkdf2Iterations,
 ): Buffer {
   return crypto.pbkdf2Sync(
     encryptionKey,
     salt,
-    10000,
+    pbkdf2Iterations,
     32, // This value is in bytes
     'sha512',
   );
+}
+
+/**
+ * Detects the version of an encrypted file and returns its format specification.
+ * @param encryptedFilePath Path to the encrypted file
+ * @returns Object containing version string and format specification
+ */
+function detectDeadboltFileFormat(
+  encryptedFilePath: string,
+): { version: string; format: DeadboltFileFormat } {
+  const fd = fs.openSync(encryptedFilePath, 'r');
+  const versionBuffer = Buffer.alloc(VERSION_HEADER_LEN);
+  fs.readSync(fd, versionBuffer, 0, VERSION_HEADER_LEN, 0);
+  fs.closeSync(fd);
+
+  const versionString = versionBuffer.toString('ascii');
+
+  // Check if file starts with "DEADBOLT_V"
+  if (versionString.startsWith(VERSION_HEADER_PREFIX)) {
+    // Extract version number (last 3 digits)
+    const version = versionString.substring(VERSION_HEADER_PREFIX.length);
+    const format = VERSION_FORMATS[version];
+
+    if (!format) {
+      throw new Error(`Unknown file version: ${version}`);
+    }
+
+    return { version, format };
+  }
+
+  // Legacy format (no version header)
+  return { version: '001', format: VERSION_FORMATS['001'] };
 }
 
 /**
@@ -135,20 +205,23 @@ async function getDecryptedFileContents(
   decryptionKey: crypto.BinaryLike,
   isVerification: boolean = false,
 ): Promise<Buffer> {
-  // Read salt, IV and authTag from beginning of file.
+  // Detect file version and get format specification
+  const { format } = detectDeadboltFileFormat(encryptedFilePath);
+
+  // Read salt, IV and authTag from file using format offsets
   const fd = fs.openSync(encryptedFilePath, 'r');
   const salt = Buffer.alloc(64);
-  fs.readSync(fd, salt, 0, 64, 0);
+  fs.readSync(fd, salt, 0, 64, format.saltOffset);
 
   const initializationVector = Buffer.alloc(16);
-  fs.readSync(fd, initializationVector, 0, 16, 64);
+  fs.readSync(fd, initializationVector, 0, 16, format.ivOffset);
 
   const authTag = Buffer.alloc(16);
-  fs.readSync(fd, authTag, 0, 16, 80);
+  fs.readSync(fd, authTag, 0, 16, format.authTagOffset);
   fs.closeSync(fd);
 
-  // Decrypt the cipher text
-  const derivedKey = createDerivedKey(salt, decryptionKey);
+  // Decrypt the cipher text using the format's PBKDF2 iteration count
+  const derivedKey = createDerivedKey(salt, decryptionKey, format.pbkdf2Iterations);
   const decrypt = crypto.createDecipheriv(
     AES_256_GCM,
     derivedKey,
@@ -158,10 +231,10 @@ async function getDecryptedFileContents(
   // Detect decryption/corruption errors. This will throw when we call decrypt.final() if data has been corrupted / tampered with
   decrypt.setAuthTag(authTag);
 
-  // Read encrypted file, and drop the first METADATA_LEN bytes
+  // Read encrypted file, and drop the metadata bytes
   const cipherText = await readFileWithPromise(encryptedFilePath)
     .then((data) => {
-      if (data.length < METADATA_LEN && data.length > 0) {
+      if (data.length < format.metadataLength && data.length > 0) {
         throw new EncryptedFileMissingMetadataError();
       } else if (data.length === 0) {
         throw new FileReadError(
@@ -170,7 +243,7 @@ async function getDecryptedFileContents(
             : EncryptionOrDecryptionEnum.DECRYPTION,
         );
       }
-      return data.subarray(METADATA_LEN);
+      return data.subarray(format.metadataLength);
     })
     .catch((error: Error) => {
       // Unclear if we need to catch and rethrow, or if the exception would bubble up. Leaving in for now
@@ -214,12 +287,20 @@ function zipDirectory(sourcePath: string, outputPath: string): Promise<void> {
 }
 
 /**
- * Encrypts a file using this format:
- * (https://gist.github.com/AndiDittrich/4629e7db04819244e843)
+ * Encrypts a file using this format (V002):
+ * +---------------------+--------------------+-----------------------+----------------+----------------+
+ * | Version Header      | Salt               | Initialization Vector | Auth Tag       | Payload        |
+ * | DEADBOLT_V###       | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
+ * | 13 Bytes, ASCII     | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-109) Bytes  |
+ * | (e.g. DEADBOLT_V002)| (512 bits)         | (128 bits)            | (128 bits)     |                |
+ * +---------------------+--------------------+-----------------------+----------------+----------------+
+ *
+ * Legacy format (V001) did not include the version header:
  * +--------------------+-----------------------+----------------+----------------+
  * | Salt               | Initialization Vector | Auth Tag       | Payload        |
  * | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
  * | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-96) Bytes   |
+ * | (512 bits)         | (128 bits)            | (128 bits)     |                |
  * +--------------------+-----------------------+----------------+----------------+
  *
  * A huge thank you to: https://medium.com/@brandonstilson/lets-encrypt-files-with-node-85037bea8c0e
@@ -299,8 +380,9 @@ export async function encryptFile(
 
   const authTag = cipher.getAuthTag();
 
-  // Write salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
+  // Write version header, salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
   const encryptedFileDataWithMetadata = Buffer.concat([
+    Buffer.from(VERSION_HEADER, 'ascii'), // V002 format includes version header
     salt,
     initializationVector,
     Buffer.from(authTag),
@@ -375,6 +457,22 @@ export async function decryptFile(
   filePath: string,
   decryptionKey: crypto.BinaryLike,
 ): Promise<string> {
+  // Validate that the file is a valid deadbolt encrypted file before attempting decryption
+  try {
+    if (!isDeadboltEncryptedFile(filePath)) {
+      const prettyFilePath = prettyPrintFilePath(filePath);
+      return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is not a valid deadbolt encrypted file.\nPlease ensure you've selected a file encrypted with deadbolt.`;
+    }
+  } catch (error) {
+    // Handle I/O errors from validation (e.g., permission errors)
+    const prettyFilePath = prettyPrintFilePath(filePath);
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === 'EACCES' || err.code === 'EPERM') {
+      return `${ERROR_MESSAGE_PREFIX}: Permission denied when trying to read \`${prettyFilePath}\`.\nPlease check file permissions.`;
+    }
+    return `${ERROR_MESSAGE_PREFIX}: Failed to read \`${prettyFilePath}\`: ${err.message}`;
+  }
+
   const decryptedFilePath = generateValidDecryptedFilePath(filePath);
   let decryptedText: Buffer | string;
   try {
