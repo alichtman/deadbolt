@@ -397,7 +397,10 @@ describe('CLI E2E Tests', () => {
   });
 
   describe('Error Handling', () => {
-    it('should show helpful error when unable to write encrypted file', () => {
+    // Skip on Windows because chmod on directories doesn't prevent file creation
+    // Windows uses ACLs (Access Control Lists) instead of Unix permissions
+    const testFn = process.platform === 'win32' ? it.skip : it;
+    testFn('should show helpful error when unable to write encrypted file', () => {
       // Create a file in a directory that will be made read-only
       const unwritableDir = path.join(testDir, 'unwritable_folder');
       fs.mkdirSync(unwritableDir);
