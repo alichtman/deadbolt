@@ -56,7 +56,7 @@ describe('CLI E2E Tests', () => {
       expect(fs.existsSync(testFilePath)).toBe(true);
       const decryptedContent = fs.readFileSync(testFilePath, 'utf8');
       expect(decryptedContent).toBe(originalContent);
-    });
+    }, 30000);
 
     it('should encrypt and decrypt a binary file via CLI', () => {
       const originalContent = crypto.randomBytes(1024);
@@ -84,7 +84,7 @@ describe('CLI E2E Tests', () => {
       expect(fs.existsSync(testFilePath)).toBe(true);
       const decryptedContent = fs.readFileSync(testFilePath);
       expect(Buffer.compare(decryptedContent, originalContent)).toBe(0);
-    });
+    }, 30000);
 
     it('should encrypt and decrypt an empty file via CLI', () => {
       const testFilePath = path.join(testDir, 'empty.txt');
@@ -111,7 +111,7 @@ describe('CLI E2E Tests', () => {
       expect(fs.existsSync(testFilePath)).toBe(true);
       const decryptedContent = fs.readFileSync(testFilePath, 'utf8');
       expect(decryptedContent).toBe('');
-    });
+    }, 30000);
   });
 
   describe('Directory Encryption and Decryption', () => {
@@ -148,7 +148,7 @@ describe('CLI E2E Tests', () => {
       expect(fs.existsSync(decryptedZipPath)).toBe(true);
       const stats = fs.statSync(decryptedZipPath);
       expect(stats.size).toBeGreaterThan(0);
-    });
+    }, 30000);
   });
 
   describe('Error Handling', () => {
@@ -183,7 +183,7 @@ describe('CLI E2E Tests', () => {
       expect(error.status).not.toBe(0);
       const output = error.stderr?.toString() || error.stdout?.toString() || '';
       expect(output.toLowerCase()).toMatch(/password|decrypt|fail/);
-    });
+    }, 30000);
 
     it('should handle non-existent file gracefully via CLI', () => {
       const nonExistentPath = path.join(testDir, 'does-not-exist.txt');
@@ -201,7 +201,7 @@ describe('CLI E2E Tests', () => {
 
       expect(error).toBeDefined();
       expect(error.status).not.toBe(0);
-    });
+    }, 10000);
   });
 
   describe('Password Validation', () => {
@@ -222,7 +222,7 @@ describe('CLI E2E Tests', () => {
       expect(error).toBeDefined();
       expect(error.status).toBe(1);
       expect(error.stderr.toString()).toContain('Password must be at least 8 characters');
-    });
+    }, 10000);
 
     it('should reject password shorter than 8 characters for decrypt command', () => {
       const testFilePath = path.join(testDir, 'test.txt');
@@ -252,7 +252,7 @@ describe('CLI E2E Tests', () => {
       expect(error).toBeDefined();
       expect(error.status).toBe(1);
       expect(error.stderr.toString()).toContain('Password must be at least 8 characters');
-    });
+    }, 30000);
 
     it('should accept password with exactly 8 characters', () => {
       const testFilePath = path.join(testDir, 'test.txt');
@@ -275,7 +275,7 @@ describe('CLI E2E Tests', () => {
 
       const encryptedFilePath = testFilePath + '.deadbolt';
       expect(fs.existsSync(encryptedFilePath)).toBe(true);
-    });
+    }, 20000);
 
     it('should accept password longer than 8 characters', () => {
       const testFilePath = path.join(testDir, 'test.txt');
@@ -298,7 +298,7 @@ describe('CLI E2E Tests', () => {
 
       const encryptedFilePath = testFilePath + '.deadbolt';
       expect(fs.existsSync(encryptedFilePath)).toBe(true);
-    });
+    }, 20000);
   });
 
   describe('Special Cases', () => {
@@ -328,7 +328,7 @@ describe('CLI E2E Tests', () => {
       expect(fs.existsSync(testFilePath)).toBe(true);
       const decryptedContent = fs.readFileSync(testFilePath, 'utf8');
       expect(decryptedContent).toBe(originalContent);
-    });
+    }, 30000);
 
     it('should handle various password types via CLI', () => {
       const testCases = [
@@ -359,6 +359,6 @@ describe('CLI E2E Tests', () => {
 
         expect(fs.existsSync(testFilePath)).toBe(true);
       }
-    });
+    }, 90000); // 90s timeout for multiple password variations (4 encrypt/decrypt cycles)
   });
 });

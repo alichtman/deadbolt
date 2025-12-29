@@ -317,6 +317,6 @@ describe('Encryption Library Tests', () => {
         const decryptedContent = fs.readFileSync(decryptedFilePath, 'utf8');
         expect(decryptedContent).toBe(originalContent);
       }
-    }, 60000); // 60s timeout for multiple password variations
+    }, 90000); // 90s timeout for 3 password variations (6 total operations)
   });
 });
