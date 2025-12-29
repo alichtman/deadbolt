@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 describe('Format Version Backwards Compatibility - CLI E2E', () => {
   const cliPath = path.join(__dirname, '../../dist/deadbolt-cli.js');
@@ -27,6 +27,29 @@ describe('Format Version Backwards Compatibility - CLI E2E', () => {
   });
 
   describe('V001 Legacy Format Decryption', () => {
+    it('should display V001 warning when decrypting V001 files', () => {
+      // Copy V001 encrypted test file to temp directory
+      const v001EncryptedSource = path.join(
+        __dirname,
+        'test_data/deadbolt_v001/Demo.deadboltv1.jpg.deadbolt',
+      );
+      const v001EncryptedCopy = path.join(testDir, 'Demo-warning-test.jpg.deadbolt');
+
+      fs.copyFileSync(v001EncryptedSource, v001EncryptedCopy);
+
+      // Decrypt using CLI and capture output
+      const stdout = execSync(
+        `node "${cliPath}" decrypt "${v001EncryptedCopy}" --password "${password}"`,
+        { encoding: 'utf8', cwd: testDir },
+      );
+
+      // Verify V001 warning is displayed
+      expect(stdout).toContain('Legacy V001 Format Detected');
+      expect(stdout).toContain('consider re-encrypting this file');
+      expect(stdout).toContain('PBKDF2');
+      expect(stdout).toContain('Argon2id');
+    }, 30000);
+
     it('should decrypt V001 encrypted files using CLI', () => {
       // Copy V001 encrypted test file to temp directory
       const v001EncryptedSource = path.join(
@@ -145,7 +168,7 @@ describe('Format Version Backwards Compatibility - CLI E2E', () => {
         .update(decryptedContent)
         .digest('hex');
       expect(decryptedHash).toBe(originalHash);
-    }, 60000); // 60s timeout for 1M iterations
+    }, 30000); // 30s timeout (Argon2id is much faster than PBKDF2 1M)
 
     it('should decrypt V002 files if test data has V002 format', () => {
       const v002EncryptedSource = path.join(
@@ -188,6 +211,6 @@ describe('Format Version Backwards Compatibility - CLI E2E', () => {
         .update(decryptedContent)
         .digest('hex');
       expect(decryptedHash).toBe(originalHash);
-    }, 60000);
+    }, 30000); // 30s timeout (Argon2id is much faster than PBKDF2 1M)
   });
 });

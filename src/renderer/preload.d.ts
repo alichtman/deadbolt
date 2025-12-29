@@ -11,6 +11,7 @@ declare global {
         password: string,
       ) => Promise<string>;
       prettyPrintFilePath: (filePath: string) => Promise<string>;
+      getDeadboltFileVersion: (filePath: string) => Promise<number | null>;
     };
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "deadbolt",
   "productName": "Deadbolt",
-  "version": "2.1.0",
+  "version": "2.1.0-alpha",
   "description": "Dead-simple file encryption for any OS.",
   "keywords": [
     "encryption",
@@ -80,6 +80,7 @@
     ]
   },
   "jest": {
+    "globalSetup": "./.erb/scripts/jest-global-setup.ts",
     "moduleDirectories": [
       "node_modules",
       "release/app/node_modules",
