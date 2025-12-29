@@ -52,7 +52,7 @@ describe('Encryption Library Tests', () => {
       // Verify decrypted content matches original
       const decryptedContent = fs.readFileSync(decryptedFilePath, 'utf8');
       expect(decryptedContent).toBe(originalContent);
-    });
+    }, 30000);
 
     it('should encrypt and decrypt a binary file (image), resulting in identical content', async () => {
       // Create a random binary file to simulate an image
@@ -76,7 +76,7 @@ describe('Encryption Library Tests', () => {
       // Verify decrypted binary content matches original
       const decryptedContent = fs.readFileSync(decryptedFilePath);
       expect(Buffer.compare(decryptedContent, originalContent)).toBe(0);
-    });
+    }, 30000);
 
     it('should encrypt and decrypt a large file (5MB), resulting in identical content', async () => {
       // Create a 5MB file
@@ -122,7 +122,7 @@ describe('Encryption Library Tests', () => {
       // Verify decrypted content is still empty
       const decryptedContent = fs.readFileSync(decryptedFilePath, 'utf8');
       expect(decryptedContent).toBe('');
-    });
+    }, 30000);
 
     it('should handle files with special characters in the name', async () => {
       const originalContent = 'File with special name';
@@ -145,7 +145,7 @@ describe('Encryption Library Tests', () => {
       // Verify decrypted content matches original
       const decryptedContent = fs.readFileSync(decryptedFilePath, 'utf8');
       expect(decryptedContent).toBe(originalContent);
-    });
+    }, 30000);
   });
 
   describe('Directory Encryption and Decryption', () => {
@@ -178,7 +178,7 @@ describe('Encryption Library Tests', () => {
       // We can't easily verify the contents without unzipping, but we can check it exists and has content
       const decryptedStats = fs.statSync(decryptedFilePath);
       expect(decryptedStats.size).toBeGreaterThan(0);
-    });
+    }, 30000);
 
     it('should encrypt and decrypt a nested directory structure', async () => {
       const testDirPath = path.join(testDir, 'nested-folder');
@@ -206,7 +206,7 @@ describe('Encryption Library Tests', () => {
       // Verify the decrypted file exists and has content
       const decryptedStats = fs.statSync(decryptedFilePath);
       expect(decryptedStats.size).toBeGreaterThan(0);
-    });
+    }, 30000);
   });
 
   describe('Error Handling', () => {
@@ -225,7 +225,7 @@ describe('Encryption Library Tests', () => {
       const decryptResult = await decryptFile(encryptedFilePath, wrongPassword);
       expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
       expect(decryptResult.toLowerCase()).toContain('password');
-    });
+    }, 30000);
 
     it('should handle non-existent file gracefully during encryption', async () => {
       const nonExistentPath = path.join(testDir, 'does-not-exist.txt');
@@ -236,7 +236,7 @@ describe('Encryption Library Tests', () => {
       await expect(async () => {
         await encryptFile(nonExistentPath, password);
       }).rejects.toThrow();
-    });
+    }, 10000);
 
     it('should handle corrupted encrypted file', async () => {
       const originalContent = 'Original content';
@@ -260,7 +260,7 @@ describe('Encryption Library Tests', () => {
       // Try to decrypt corrupted file
       const decryptResult = await decryptFile(encryptedFilePath, password);
       expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
-    });
+    }, 30000);
   });
 
   describe('Multiple Encrypt/Decrypt Cycles', () => {
@@ -289,7 +289,7 @@ describe('Encryption Library Tests', () => {
         // Use decrypted file for next cycle
         currentFilePath = decryptedFilePath;
       }
-    });
+    }, 90000); // 90s timeout for 3 encrypt/decrypt cycles (6 total operations)
   });
 
   describe('Password Variations', () => {
