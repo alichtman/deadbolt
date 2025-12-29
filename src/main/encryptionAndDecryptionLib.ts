@@ -31,7 +31,13 @@ const VERSION_HEADER_LEN = VERSION_HEADER.length; // 13 bytes
 
 // Deadbolt file format specification
 interface DeadboltFileFormat {
-  pbkdf2Iterations: number;
+  kdfType: 'pbkdf2' | 'argon2id';
+  pbkdf2Iterations?: number;
+  argon2Params?: {
+    memoryCost: number; // in KiB
+    timeCost: number; // iterations
+    parallelism: number; // threads
+  };
   saltOffset: number;
   ivOffset: number;
   authTagOffset: number;
@@ -41,6 +47,7 @@ interface DeadboltFileFormat {
 // Format specifications for each version
 const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
   '001': {
+    kdfType: 'pbkdf2',
     pbkdf2Iterations: 10000,
     saltOffset: 0,
     ivOffset: 64,
@@ -48,7 +55,12 @@ const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
     metadataLength: 96, // salt(64) + IV(16) + authTag(16)
   },
   '002': {
-    pbkdf2Iterations: 1000000,
+    kdfType: 'argon2id',
+    argon2Params: {
+      memoryCost: 19456, // 19MB in KiB (OWASP recommendation)
+      timeCost: 2, // iterations
+      parallelism: 1, // threads
+    },
     saltOffset: VERSION_HEADER_LEN, // 13 bytes
     ivOffset: VERSION_HEADER_LEN + 64, // 77 bytes
     authTagOffset: VERSION_HEADER_LEN + 80, // 93 bytes
@@ -140,25 +152,80 @@ function sha256Hash(data: Buffer): string {
  *********************************/
 
 /**
- * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64B salt with PBKDF2.
- * Iteration count depends on the file format version.
+ * Converts crypto.BinaryLike to Buffer.
+ * BinaryLike = string | NodeJS.ArrayBufferView, where ArrayBufferView includes
+ * Uint8Array, DataView, etc. This ensures we always get a Buffer for argon2.
+ */
+function ensureBufferForArgon2(data: crypto.BinaryLike): Buffer {
+  if (Buffer.isBuffer(data)) {
+    return data;
+  }
+  if (typeof data === 'string') {
+    return Buffer.from(data, 'utf8');
+  }
+  // NodeJS.ArrayBufferView (Uint8Array, DataView, etc.)
+  // Access underlying ArrayBuffer with proper offset and length
+  return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+}
+
+/**
+ * Returns a derived key to be used for AES encryption.
+ * Uses PBKDF2-SHA512 for V001 (legacy) or Argon2id for V002.
  * @param  {Buffer} salt               64 byte random salt
  * @param  {string} encryptionKey      User's entered encryption key
- * @param  {number} pbkdf2Iterations   Number of PBKDF2 iterations (default: 1000000 for V002)
- * @return {Buffer}                    SHA512 hash that will be used as the encryption key.
+ * @param  {DeadboltFileFormat} format File format specification
+ * @return {Promise<Buffer>}           32-byte key for AES-256-GCM
  */
-function createDerivedKey(
-  salt: crypto.BinaryLike,
+async function createDerivedKey(
+  salt: Buffer,
   encryptionKey: crypto.BinaryLike,
-  pbkdf2Iterations: number = VERSION_FORMATS[CURRENT_VERSION].pbkdf2Iterations,
-): Buffer {
-  return crypto.pbkdf2Sync(
-    encryptionKey,
-    salt,
-    pbkdf2Iterations,
-    32, // This value is in bytes
-    'sha512',
-  );
+  format: DeadboltFileFormat,
+): Promise<Buffer> {
+  switch (format.kdfType) {
+    case 'argon2id': {
+      try {
+        const argon2 = await import('@node-rs/argon2');
+        const encryptionKeyBuffer = ensureBufferForArgon2(encryptionKey);
+
+        // Use hashRaw() instead of hash() to get raw bytes for key derivation.
+        // hashRaw() returns a Buffer of raw hash bytes (32 bytes for AES-256).
+        // hash() returns a PHC-encoded string like "$argon2id$v=19$m=19456,t=2,p=1$...",
+        // which is used for password storage/verification, not encryption key derivation.
+        const hash = await argon2.hashRaw(encryptionKeyBuffer, {
+          algorithm: argon2.Algorithm.Argon2id,
+          memoryCost: format.argon2Params!.memoryCost,
+          timeCost: format.argon2Params!.timeCost,
+          parallelism: format.argon2Params!.parallelism,
+          outputLen: 32,
+          salt: salt,
+        });
+
+        return hash as Buffer;
+      } catch (error) {
+        log.error('Failed to load or execute argon2:', error);
+        throw new Error(
+          'Argon2id key derivation failed. Ensure native modules are properly compiled.',
+        );
+      }
+    }
+
+    case 'pbkdf2': {
+      // V001 legacy PBKDF2
+      return crypto.pbkdf2Sync(
+        encryptionKey,
+        salt,
+        format.pbkdf2Iterations!,
+        32,
+        'sha512',
+      );
+    }
+
+    default: {
+      // Exhaustive check - will error if we add new KDF types without handling them
+      const exhaustiveCheck: never = format.kdfType;
+      throw new Error(`Unsupported KDF type: ${exhaustiveCheck}`);
+    }
+  }
 }
 
 /**
@@ -166,9 +233,10 @@ function createDerivedKey(
  * @param encryptedFilePath Path to the encrypted file
  * @returns Object containing version string and format specification
  */
-function detectDeadboltFileFormat(
-  encryptedFilePath: string,
-): { version: string; format: DeadboltFileFormat } {
+function detectDeadboltFileFormat(encryptedFilePath: string): {
+  version: string;
+  detectedFileFormat: DeadboltFileFormat;
+} {
   const fd = fs.openSync(encryptedFilePath, 'r');
   const versionBuffer = Buffer.alloc(VERSION_HEADER_LEN);
   fs.readSync(fd, versionBuffer, 0, VERSION_HEADER_LEN, 0);
@@ -186,11 +254,11 @@ function detectDeadboltFileFormat(
       throw new Error(`Unknown file version: ${version}`);
     }
 
-    return { version, format };
+    return { version, detectedFileFormat: format };
   }
 
   // Legacy format (no version header)
-  return { version: '001', format: VERSION_FORMATS['001'] };
+  return { version: '001', detectedFileFormat: VERSION_FORMATS['001'] };
 }
 
 /**
@@ -206,22 +274,26 @@ async function getDecryptedFileContents(
   isVerification: boolean = false,
 ): Promise<Buffer> {
   // Detect file version and get format specification
-  const { format } = detectDeadboltFileFormat(encryptedFilePath);
+  const { detectedFileFormat } = detectDeadboltFileFormat(encryptedFilePath);
 
-  // Read salt, IV and authTag from file using format offsets
+  // Read salt, IV, and authTag from file using format offsets
   const fd = fs.openSync(encryptedFilePath, 'r');
   const salt = Buffer.alloc(64);
-  fs.readSync(fd, salt, 0, 64, format.saltOffset);
+  fs.readSync(fd, salt, 0, 64, detectedFileFormat.saltOffset);
 
   const initializationVector = Buffer.alloc(16);
-  fs.readSync(fd, initializationVector, 0, 16, format.ivOffset);
+  fs.readSync(fd, initializationVector, 0, 16, detectedFileFormat.ivOffset);
 
   const authTag = Buffer.alloc(16);
-  fs.readSync(fd, authTag, 0, 16, format.authTagOffset);
+  fs.readSync(fd, authTag, 0, 16, detectedFileFormat.authTagOffset);
   fs.closeSync(fd);
 
-  // Decrypt the cipher text using the format's PBKDF2 iteration count
-  const derivedKey = createDerivedKey(salt, decryptionKey, format.pbkdf2Iterations);
+  // Decrypt the cipher text using the format's KDF
+  const derivedKey = await createDerivedKey(
+    salt,
+    decryptionKey,
+    detectedFileFormat,
+  );
   const decrypt = crypto.createDecipheriv(
     AES_256_GCM,
     derivedKey,
@@ -234,7 +306,7 @@ async function getDecryptedFileContents(
   // Read encrypted file, and drop the metadata bytes
   const cipherText = await readFileWithPromise(encryptedFilePath)
     .then((data) => {
-      if (data.length < format.metadataLength && data.length > 0) {
+      if (data.length < detectedFileFormat.metadataLength && data.length > 0) {
         throw new EncryptedFileMissingMetadataError();
       } else if (data.length === 0) {
         throw new FileReadError(
@@ -243,7 +315,7 @@ async function getDecryptedFileContents(
             : EncryptionOrDecryptionEnum.DECRYPTION,
         );
       }
-      return data.subarray(format.metadataLength);
+      return data.subarray(detectedFileFormat.metadataLength);
     })
     .catch((error: Error) => {
       // Unclear if we need to catch and rethrow, or if the exception would bubble up. Leaving in for now
@@ -362,7 +434,11 @@ export async function encryptFile(
   }
 
   const salt = crypto.randomBytes(64);
-  const derivedKey = createDerivedKey(salt, password);
+  const derivedKey = await createDerivedKey(
+    salt,
+    password,
+    VERSION_FORMATS[CURRENT_VERSION],
+  );
   const initializationVector = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(
     AES_256_GCM,

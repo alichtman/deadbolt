@@ -319,4 +319,39 @@ describe('Encryption Library Tests', () => {
       }
     }, 90000); // 90s timeout for 3 password variations (6 total operations)
   });
+
+  describe('Argon2id Key Derivation (V002)', () => {
+    it('should use Argon2id for V002 encryption', async () => {
+      const testFilePath = path.join(testDir, 'argon2-test.txt');
+      const originalContent = 'Test Argon2id KDF';
+      fs.writeFileSync(testFilePath, originalContent, 'utf8');
+
+      const encryptedFilePath = await encryptFile(testFilePath, 'test-password');
+      expect(encryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
+
+      // Verify file has V002 header
+      const encryptedData = fs.readFileSync(encryptedFilePath);
+      expect(encryptedData.subarray(0, 13).toString('ascii')).toBe('DEADBOLT_V002');
+
+      // Decrypt and verify
+      const decryptedFilePath = await decryptFile(encryptedFilePath, 'test-password');
+      expect(decryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
+
+      const decryptedContent = fs.readFileSync(decryptedFilePath, 'utf8');
+      expect(decryptedContent).toBe(originalContent);
+    }, 30000);
+
+    it('should fail with wrong password', async () => {
+      const testFilePath = path.join(testDir, 'wrong-pw.txt');
+      fs.writeFileSync(testFilePath, 'Secret', 'utf8');
+
+      const encryptedFilePath = await encryptFile(testFilePath, 'correct-pass');
+      expect(encryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
+
+      const decryptResult = await decryptFile(encryptedFilePath, 'wrong-pass');
+
+      expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
+      expect(decryptResult.toLowerCase()).toContain('password');
+    }, 30000);
+  });
 });

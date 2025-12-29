@@ -4,7 +4,13 @@
       "Bash(npm run build:cli:*)",
       "Bash(node dist/deadbolt-cli.js:*)",
       "Bash(cat:*)",
-      "Bash(npm run test)"
+      "Bash(npm run test)",
+      "Bash(npm run test:*)",
+      "Bash(node ../../../../dist/deadbolt-cli.js:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebSearch",
+      "Bash(npm view:*)",
+      "Bash(tar:*)"
     ],
     "deny": [],
     "ask": []

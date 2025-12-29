@@ -2,7 +2,7 @@
 
 <img src="img/deadbolt-header.png" />
 
-`deadbolt` simplifies encrypting and decrypting files. All you need is a password.
+`deadbolt` simplifies encrypting and decrypting files. All you need is a password. Works on any laptop / desktop that you do.
 
 You can download `deadbolt` for **macOS**, **Windows**, or **Linux**. Any encrypted file can be shared across these platforms.
 
@@ -123,9 +123,9 @@ deadbolt on main is 📦 v2.0.0-beta via node v22.11.0 took 7s
 $ flatpak run org.alichtman.deadbolt
 ```
 
-#### Arch
+#### Arch Linux
 
-`deadbolt` is [packaged as `deadbolt-bin` on `aur`](https://aur.archlinux.org/packages/deadbolt-bin). I do not maintain this package, so use at your own risk.
+`deadbolt` is [packaged as `deadbolt-bin` on `aur`](https://aur.archlinux.org/packages/deadbolt-bin). I do not maintain this package.
 
 ```bash
 $ yay -S deadbolt-bin
@@ -135,19 +135,41 @@ $ yay -S deadbolt-bin
 
 ### Non-Technical Version
 
-`deadbolt` uses a proven, secure encryption algorithm to make sure your files stay safe.
+`deadbolt` uses proven, secure password hashing and data encryption algorithms to make sure your files stay private.
 
 ### Technical Version
 
-`deadbolt` is built on Electron and uses `crypto.js` from the `node.js` standard library. The encryption protocol used is `AES-256-GCM`. This algorithm is part of the NSA's [Commercial National Security Algorithm Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) and is approved to protect up to TOP SECRET documents.
+`deadbolt` is built on Electron and uses `crypto.js` from the `node.js` standard library as well as the [`@node-rs/argon2` library](https://www.npmjs.com/package/@node-rs/argon2). `AES-256-GCM` is used as an encryption protocol, and `argon2id` is used as a password hashing function. The integrity of all encrypted data is verified with the authentication tag provided by AES-GCM mode.
 
-The current format (V002) creates a 256-bit derived key for the cipher using **1,000,000 iterations** of `pbkdf2` with the `SHA-512 HMAC` digest algorithm, a 512-bit (64-byte) randomly generated salt, and a user-provided password. The authenticity of the data is verified with the authentication tag provided by using GCM. These parameters exceed [OWASP Password Storage recommendations](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2) (which suggest 210,000-600,000 for PBKDF2-SHA512) and provide maximum protection against modern GPU-based attacks.
+> NOTE
+> Starting in `deadbolt v2.1.0`, the password-based key derivation function (PBKDF) changed from `pbkdf2-sha512` to `argon2id`. All newly encrypted files will benefit from the security upgrade.
 
-Encrypted files include a version header (`DEADBOLT_V002`) at the beginning of the file, allowing for future cryptographic improvements while maintaining backwards compatibility. Files encrypted with the legacy format (V001, which used 10,000 iterations) can still be decrypted.
+### Deadbolt File Formats
+
+Encrypted files include a version header (starting with `DEADBOLT_V002` -- if it's missing, it's V1) at the beginning of the file, allowing for cryptographic improvements while maintaining backwards compatibility. 
+
+**V002 Format (Current)**
+- **Password Hashing Algorithm**: `argon2id`
+- **Parameters**: [OWASP recommended settings](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id)
+  - Memory cost: 19 MB (19,456 KiB)
+  - Time cost: 2 iterations
+  - Parallelism: 1 thread
+- **Salt**: 512-bit (64-byte) randomly generated
+- **Output**: 256-bit (32-byte) key for AES-256-GCM
+
+**V001 Format (Legacy)**
+- **Password Hashing Algorithm**: `PBKDF2-SHA512`
+- **Parameters**:
+  - Iterations: 10,000
+  - HMAC digest: SHA-512
+- **Salt**: 512-bit (64-byte) randomly generated
+- **Output**: 256-bit (32-byte) key for AES-256-GCM
+- **Version Header**: None (no `DEADBOLT_V` prefix)
+- **Maintained for backwards compatibility** - V001 files can still be decrypted, but users are encouraged to re-encrypt with V002 for improved security
 
 ## Security Review
 
-The cryptography components of `deadbolt` were written by an ex-Facebook Security Engineer ([@alichtman](https://github.com/alichtman) -- me), and have been briefly reviewed by [Vlad Ionescu](https://github.com/vladionescu), an ex-Facebook tech lead from the Red Team / Offensive Security Group. Their review is:
+The cryptography components of `deadbolt` were written by an ex-Facebook Security Engineer ([@alichtman](https://github.com/alichtman) -- me), and have been briefly reviewed by [Vlad Ionescu](https://github.com/vladionescu), an ex-Facebook Red Team / Offensive Security Group tech lead. Their review is:
 
 > "yeah fuck it, it's fine. You're using very boring methods for everything -- that's the way to do it"
 

@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './EncryptOrDecryptForm.css';
 import CancelIcon from '@mui/icons-material/Cancel';
+import WarningIcon from '@mui/icons-material/Warning';
 import PasswordInput from './PasswordInput';
 import Button from './Button';
 import DecryptIcon from './assets/decryptIcon.svg';
 import EncryptIcon from './assets/encryptIcon.svg';
 import EncryptOrDecryptFileHeader from './EncryptOrDecryptFileHeader';
+import { logger } from './logger';
 
 export default function EncryptOrDecryptForm({
   isDecryption,
@@ -23,6 +25,21 @@ export default function EncryptOrDecryptForm({
   const [displayError, setDisplayError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [fileVersion, setFileVersion] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (isDecryption) {
+      window.electronAPI
+        .getDeadboltFileVersion(file.path)
+        .then((version) => {
+          setFileVersion(version);
+          return version;
+        })
+        .catch((error) => {
+          logger.error('Failed to get file version:', error);
+        });
+    }
+  }, [isDecryption, file.path]);
 
   // Must match the confirmation, and longer than 8 characters
   const validatePassword = () => {
@@ -65,6 +82,34 @@ export default function EncryptOrDecryptForm({
         className="formBody"
         style={{ marginTop: isDecryption ? '0px' : '-20px' }}
       >
+        {isDecryption && fileVersion === 1 && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '14px 16px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '4px',
+              marginBottom: '16px',
+              textAlign: 'center',
+              color: '#856404',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <WarningIcon style={{ fontSize: '20px', color: '#ffc107' }} />
+              <strong style={{ fontSize: '14px' }}>
+                Legacy Deadbolt File Format Detected
+              </strong>
+            </div>
+            <div style={{ fontSize: '12px', lineHeight: '1.5' }}>
+              For better security, consider re-encrypting this file with
+              deadbolt. See the README for more information.
+            </div>
+          </div>
+        )}
         <PasswordInput
           placeholder="Enter password"
           value={password}

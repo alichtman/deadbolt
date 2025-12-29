@@ -9,6 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
+import fs from 'fs';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import log from './logger';
 import { resolveHtmlPath } from './resolveHTMLPathUtil';
@@ -76,6 +77,29 @@ ipcMain.handle('prettyPrintFilePath', (_event, [filePath]) => {
 
 ipcMain.handle('revealFileInFinder', (_event, [filePath]) => {
   shell.showItemInFolder(filePath);
+});
+
+/**
+ * Checks the version of a Deadbolt encrypted file
+ * @returns Version number (1 for V001, 2 for V002, etc.) or null if unable to determine
+ */
+ipcMain.handle('getDeadboltFileVersion', (_event, [filePath]) => {
+  try {
+    const fileContent = fs.readFileSync(filePath);
+    const header = fileContent.subarray(0, 13).toString('ascii');
+
+    if (header.startsWith('DEADBOLT_V')) {
+      // Extract version number from header (e.g., "DEADBOLT_V002" -> 2)
+      const versionStr = header.replace('DEADBOLT_V', '');
+      return parseInt(versionStr, 10);
+    }
+
+    // No header means V001
+    return 1;
+  } catch (error) {
+    log.error('Failed to check file format version:', error);
+    return null;
+  }
 });
 
 if (process.env.NODE_ENV === 'production') {
