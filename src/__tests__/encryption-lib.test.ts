@@ -251,15 +251,17 @@ describe('Encryption Library Tests', () => {
       // Corrupt the encrypted file by modifying bytes
       const encryptedData = fs.readFileSync(encryptedFilePath);
       const corruptedData = Buffer.from(encryptedData);
-      // Corrupt a byte in the payload (after the 96-byte metadata header)
-      if (corruptedData.length > 100) {
-        corruptedData[100] = corruptedData[100] ^ 0xFF; // Flip bits
+      // Corrupt a byte in the payload (after the 109-byte metadata for V002)
+      if (corruptedData.length > 110) {
+        corruptedData[110] = corruptedData[110] ^ 0xFF; // Flip bits
       }
       fs.writeFileSync(encryptedFilePath, corruptedData);
 
-      // Try to decrypt corrupted file
+      // Try to decrypt corrupted file - should fail with wrong password error
       const decryptResult = await decryptFile(encryptedFilePath, password);
       expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
+      expect(decryptResult).toContain('Failed to decrypt');
+      expect(decryptResult).toContain('Is the password correct');
     }, 30000);
   });
 

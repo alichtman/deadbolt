@@ -42,8 +42,19 @@ const configuration: webpack.Configuration = {
     new webpack.BannerPlugin({
       banner: `#!/usr/bin/env node
 // Add release/app/node_modules to module search paths for native dependencies
+const fs = require('fs');
 const path = require('path');
-module.paths.push(path.join(__dirname, '../release/app/node_modules'));
+
+const candidateModuleDirs = [
+  path.join(__dirname, '../release/app/node_modules'),
+  path.join(process.cwd(), 'release/app/node_modules'),
+];
+
+for (const dir of candidateModuleDirs) {
+  if (fs.existsSync(dir) && !module.paths.includes(dir)) {
+    module.paths.push(dir);
+  }
+}
 `,
       raw: true,
     }),

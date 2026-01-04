@@ -30,19 +30,27 @@ const VERSION_HEADER = `${VERSION_HEADER_PREFIX}${CURRENT_VERSION}`; // "DEADBOL
 const VERSION_HEADER_LEN = VERSION_HEADER.length; // 13 bytes
 
 // Deadbolt file format specification
-interface DeadboltFileFormat {
-  kdfType: 'pbkdf2' | 'argon2id';
-  pbkdf2Iterations?: number;
-  argon2Params?: {
-    memoryCost: number; // in KiB
-    timeCost: number; // iterations
-    parallelism: number; // threads
-  };
-  saltOffset: number;
-  ivOffset: number;
-  authTagOffset: number;
-  metadataLength: number;
-}
+type DeadboltFileFormat =
+  | {
+      kdfType: 'pbkdf2';
+      pbkdf2Iterations: number;
+      saltOffset: number;
+      ivOffset: number;
+      authTagOffset: number;
+      metadataLength: number;
+    }
+  | {
+      kdfType: 'argon2id';
+      argon2Params: {
+        memoryCost: number; // in KiB
+        timeCost: number; // iterations
+        parallelism: number; // threads
+      };
+      saltOffset: number;
+      ivOffset: number;
+      authTagOffset: number;
+      metadataLength: number;
+    };
 
 // Format specifications for each version
 const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
@@ -64,12 +72,9 @@ const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
     saltOffset: VERSION_HEADER_LEN, // 13 bytes
     ivOffset: VERSION_HEADER_LEN + 64, // 77 bytes
     authTagOffset: VERSION_HEADER_LEN + 80, // 93 bytes
-    metadataLength: VERSION_HEADER_LEN + 96, // version(13) + salt(64) + IV(16) + authTag(16) = 109
+    metadataLength: VERSION_HEADER_LEN + 96, // version(13) + salt(64) + IV(16) + authTag(16) = 109 bytes
   },
 };
-
-// Legacy metadata length for validation
-const LEGACY_METADATA_LEN = VERSION_FORMATS['001'].metadataLength;
 
 /*************
  * Error Prefix
@@ -193,14 +198,14 @@ async function createDerivedKey(
         // which is used for password storage/verification, not encryption key derivation.
         const hash = await argon2.hashRaw(encryptionKeyBuffer, {
           algorithm: argon2.Algorithm.Argon2id,
-          memoryCost: format.argon2Params!.memoryCost,
-          timeCost: format.argon2Params!.timeCost,
-          parallelism: format.argon2Params!.parallelism,
+          memoryCost: format.argon2Params.memoryCost,
+          timeCost: format.argon2Params.timeCost,
+          parallelism: format.argon2Params.parallelism,
           outputLen: 32,
           salt: salt,
         });
 
-        return hash as Buffer;
+        return hash;
       } catch (error) {
         log.error('Failed to load or execute argon2:', error);
         throw new Error(
@@ -214,7 +219,7 @@ async function createDerivedKey(
       return crypto.pbkdf2Sync(
         encryptionKey,
         salt,
-        format.pbkdf2Iterations!,
+        format.pbkdf2Iterations,
         32,
         'sha512',
       );
@@ -222,8 +227,8 @@ async function createDerivedKey(
 
     default: {
       // Exhaustive check - will error if we add new KDF types without handling them
-      const exhaustiveCheck: never = format.kdfType;
-      throw new Error(`Unsupported KDF type: ${exhaustiveCheck}`);
+      const exhaustiveCheck: never = format;
+      throw new Error(`Unsupported KDF type`);
     }
   }
 }
@@ -237,28 +242,38 @@ function detectDeadboltFileFormat(encryptedFilePath: string): {
   version: string;
   detectedFileFormat: DeadboltFileFormat;
 } {
-  const fd = fs.openSync(encryptedFilePath, 'r');
-  const versionBuffer = Buffer.alloc(VERSION_HEADER_LEN);
-  fs.readSync(fd, versionBuffer, 0, VERSION_HEADER_LEN, 0);
-  fs.closeSync(fd);
+  let fd: number | null = null;
+  try {
+    fd = fs.openSync(encryptedFilePath, 'r');
+    const versionBuffer = Buffer.alloc(VERSION_HEADER_LEN);
+    fs.readSync(fd, versionBuffer, 0, VERSION_HEADER_LEN, 0);
 
-  const versionString = versionBuffer.toString('ascii');
+    const versionString = versionBuffer.toString('ascii');
 
-  // Check if file starts with "DEADBOLT_V"
-  if (versionString.startsWith(VERSION_HEADER_PREFIX)) {
-    // Extract version number (last 3 digits)
-    const version = versionString.substring(VERSION_HEADER_PREFIX.length);
-    const format = VERSION_FORMATS[version];
+    // Check if file starts with "DEADBOLT_V"
+    if (versionString.startsWith(VERSION_HEADER_PREFIX)) {
+      // Extract version number (last 3 digits)
+      const version = versionString.substring(VERSION_HEADER_PREFIX.length);
+      const format = VERSION_FORMATS[version];
 
-    if (!format) {
-      throw new Error(`Unknown file version: ${version}`);
+      if (!format) {
+        throw new Error(`Unknown file version: ${version}`);
+      }
+
+      return { version, detectedFileFormat: format };
     }
 
-    return { version, detectedFileFormat: format };
+    // Legacy format (no version header)
+    return { version: '001', detectedFileFormat: VERSION_FORMATS['001'] };
+  } finally {
+    if (fd !== null) {
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        log.error('Failed to close file descriptor:', e);
+      }
+    }
   }
-
-  // Legacy format (no version header)
-  return { version: '001', detectedFileFormat: VERSION_FORMATS['001'] };
 }
 
 /**

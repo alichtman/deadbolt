@@ -55,3 +55,37 @@
   opacity: 1;
   color: #ffffff;
 }
+
+.warningBanner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #856404;
+}
+
+.warningBannerHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.warningBannerTitle {
+  font-size: 14px;
+}
+
+.warningBannerMessage {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.warningIcon {
+  font-size: 20px;
+  color: #ffc107;
+}

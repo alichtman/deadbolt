@@ -142,7 +142,7 @@ $ yay -S deadbolt-bin
 `deadbolt` is built on Electron and uses `crypto.js` from the `node.js` standard library as well as the [`@node-rs/argon2` library](https://www.npmjs.com/package/@node-rs/argon2). `AES-256-GCM` is used as an encryption protocol, and `argon2id` is used as a password hashing function. The integrity of all encrypted data is verified with the authentication tag provided by AES-GCM mode.
 
 > NOTE
-> Starting in `deadbolt v2.1.0`, the password-based key derivation function (PBKDF) changed from `pbkdf2-sha512` to `argon2id`. All newly encrypted files will benefit from the security upgrade.
+> Starting in `deadbolt v2.1.0-alpha`, the password-based key derivation function (PBKDF) changed from `pbkdf2-sha512` to `argon2id`. All newly encrypted files will benefit from the security upgrade.
 
 ### Deadbolt File Formats
 

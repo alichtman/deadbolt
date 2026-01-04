@@ -354,13 +354,13 @@ Notes:
         );
         console.log(
           chalk.yellow(
-            'V001 uses PBKDF2 (10K iterations), V002 uses Argon2id (stronger).\n',
+            'V001 uses PBKDF2 (10K iterations). V002 uses Argon2id with 19MB memory requirement, making password cracking significantly more expensive for GPU/ASIC attackers.\n',
           ),
         );
       }
-    } catch (error) {
-      // Silently ignore errors when checking file format
-      log.debug(`Could not check file format version: ${error}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.debug(`Could not check file format version: ${message}`);
     }
 
     // Get and validate password

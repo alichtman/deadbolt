@@ -28,7 +28,7 @@ export default function EncryptOrDecryptForm({
   const [fileVersion, setFileVersion] = useState<number | null>(null);
 
   useEffect(() => {
-    if (isDecryption) {
+    if (isDecryption && file?.path) {
       window.electronAPI
         .getDeadboltFileVersion(file.path)
         .then((version) => {
@@ -39,7 +39,7 @@ export default function EncryptOrDecryptForm({
           logger.error('Failed to get file version:', error);
         });
     }
-  }, [isDecryption, file.path]);
+  }, [isDecryption, file?.path]);
 
   // Must match the confirmation, and longer than 8 characters
   const validatePassword = () => {
@@ -83,28 +83,14 @@ export default function EncryptOrDecryptForm({
         style={{ marginTop: isDecryption ? '0px' : '-20px' }}
       >
         {isDecryption && fileVersion === 1 && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '14px 16px',
-              backgroundColor: '#fff3cd',
-              border: '1px solid #ffc107',
-              borderRadius: '4px',
-              marginBottom: '16px',
-              textAlign: 'center',
-              color: '#856404',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <WarningIcon style={{ fontSize: '20px', color: '#ffc107' }} />
-              <strong style={{ fontSize: '14px' }}>
+          <div className="warningBanner">
+            <div className="warningBannerHeader">
+              <WarningIcon className="warningIcon" />
+              <strong className="warningBannerTitle">
                 Legacy Deadbolt File Format Detected
               </strong>
             </div>
-            <div style={{ fontSize: '12px', lineHeight: '1.5' }}>
+            <div className="warningBannerMessage">
               For better security, consider re-encrypting this file with
               deadbolt. See the README for more information.
             </div>

@@ -104,12 +104,22 @@ export function isDeadboltEncryptedFile(filePath: string): boolean {
   }
 
   // Read the first few bytes to check for version header (will throw on permission errors)
-  const fd = fs.openSync(filePath, 'r');
-  const headerBuffer = Buffer.alloc(VERSION_HEADER_PREFIX.length);
-  fs.readSync(fd, headerBuffer, 0, VERSION_HEADER_PREFIX.length, 0);
-  fs.closeSync(fd);
-
-  const headerString = headerBuffer.toString('ascii');
+  let fd: number | null = null;
+  let headerString: string;
+  try {
+    fd = fs.openSync(filePath, 'r');
+    const headerBuffer = Buffer.alloc(VERSION_HEADER_PREFIX.length);
+    fs.readSync(fd, headerBuffer, 0, VERSION_HEADER_PREFIX.length, 0);
+    headerString = headerBuffer.toString('ascii');
+  } finally {
+    if (fd !== null) {
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        log.error('Failed to close file descriptor:', e);
+      }
+    }
+  }
 
   // Check if file starts with "DEADBOLT_V" (versioned format)
   if (headerString.startsWith(VERSION_HEADER_PREFIX)) {
