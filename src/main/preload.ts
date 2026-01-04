@@ -11,4 +11,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('prettyPrintFilePath', [filePath]),
   revealFileInFinder: (filePath: string) =>
     ipcRenderer.invoke('revealFileInFinder', [filePath]),
+  getDeadboltFileVersion: (filePath: string) =>
+    ipcRenderer.invoke('getDeadboltFileVersion', [filePath]),
 });
