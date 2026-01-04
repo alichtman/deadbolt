@@ -65,14 +65,14 @@ const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
   '002': {
     kdfType: 'argon2id',
     argon2Params: {
-      memoryCost: 19456, // 19MB in KiB (OWASP recommendation)
-      timeCost: 2, // iterations
-      parallelism: 1, // threads
+      memoryCost: 2097152, // 2 GiB in KiB (RFC 9106 FIRST recommendation)
+      timeCost: 1, // iteration (RFC 9106 FIRST)
+      parallelism: 4, // lanes (RFC 9106 FIRST)
     },
     saltOffset: VERSION_HEADER_LEN, // 13 bytes
-    ivOffset: VERSION_HEADER_LEN + 64, // 77 bytes
-    authTagOffset: VERSION_HEADER_LEN + 80, // 93 bytes
-    metadataLength: VERSION_HEADER_LEN + 96, // version(13) + salt(64) + IV(16) + authTag(16) = 109 bytes
+    ivOffset: VERSION_HEADER_LEN + 16, // 29 bytes
+    authTagOffset: VERSION_HEADER_LEN + 32, // 45 bytes
+    metadataLength: VERSION_HEADER_LEN + 48, // version(13) + salt(16) + IV(16) + authTag(16) = 61 bytes
   },
 };
 
@@ -95,7 +95,7 @@ function convertErrorToStringForRendererProcess(
   const prettyFilePath = prettyPrintFilePath(filePath);
   switch (true) {
     case error instanceof DecryptionWrongPasswordError:
-      return `${ERROR_MESSAGE_PREFIX}: Failed to decrypt \`${prettyFilePath}\`\nIs the password correct?`;
+      return `${ERROR_MESSAGE_PREFIX}: Failed to decrypt \`${prettyFilePath}\`\nIs the password correct? The file may also be corrupted.`;
 
     case error instanceof EncryptedFileMissingMetadataError:
       return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is missing metadata.\nIt's likely corrupted.`;
@@ -201,16 +201,15 @@ async function createDerivedKey(
           memoryCost: format.argon2Params.memoryCost,
           timeCost: format.argon2Params.timeCost,
           parallelism: format.argon2Params.parallelism,
-          outputLen: 32,
+          outputLen: 32, // 32 bytes = 256 bits
           salt: salt,
         });
 
         return hash;
       } catch (error) {
-        log.error('Failed to load or execute argon2:', error);
-        throw new Error(
-          'Argon2id key derivation failed. Ensure native modules are properly compiled.',
-        );
+        const err = (error as Error).message;
+        log.error('Failed to load or execute argon2:', err);
+        throw error;
       }
     }
 
@@ -293,8 +292,11 @@ async function getDecryptedFileContents(
 
   // Read salt, IV, and authTag from file using format offsets
   const fd = fs.openSync(encryptedFilePath, 'r');
-  const salt = Buffer.alloc(64);
-  fs.readSync(fd, salt, 0, 64, detectedFileFormat.saltOffset);
+  // Calculate salt length from format offsets (V001: 64 bytes, V002: 16 bytes)
+  const saltLength =
+    detectedFileFormat.ivOffset - detectedFileFormat.saltOffset;
+  const salt = Buffer.alloc(saltLength);
+  fs.readSync(fd, salt, 0, saltLength, detectedFileFormat.saltOffset);
 
   const initializationVector = Buffer.alloc(16);
   fs.readSync(fd, initializationVector, 0, 16, detectedFileFormat.ivOffset);
@@ -378,8 +380,8 @@ function zipDirectory(sourcePath: string, outputPath: string): Promise<void> {
  * +---------------------+--------------------+-----------------------+----------------+----------------+
  * | Version Header      | Salt               | Initialization Vector | Auth Tag       | Payload        |
  * | DEADBOLT_V###       | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
- * | 13 Bytes, ASCII     | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-109) Bytes  |
- * | (e.g. DEADBOLT_V002)| (512 bits)         | (128 bits)            | (128 bits)     |                |
+ * | 13 Bytes, ASCII     | 16 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-61) Bytes   |
+ * | (e.g. DEADBOLT_V002)| (128 bits)         | (128 bits)            | (128 bits)     |                |
  * +---------------------+--------------------+-----------------------+----------------+----------------+
  *
  * Legacy format (V001) did not include the version header:
@@ -448,12 +450,11 @@ export async function encryptFile(
     return `${ERROR_MESSAGE_PREFIX}: ${filePathToEncrypt} failed to be opened for reading.`;
   }
 
-  const salt = crypto.randomBytes(64);
-  const derivedKey = await createDerivedKey(
-    salt,
-    password,
-    VERSION_FORMATS[CURRENT_VERSION],
-  );
+  // Calculate salt length from current format specification (V001: 64, V002: 16)
+  const currentFormat = VERSION_FORMATS[CURRENT_VERSION];
+  const saltLength = currentFormat.ivOffset - currentFormat.saltOffset;
+  const salt = crypto.randomBytes(saltLength);
+  const derivedKey = await createDerivedKey(salt, password, currentFormat);
   const initializationVector = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(
     AES_256_GCM,
@@ -469,14 +470,14 @@ export async function encryptFile(
   const cipherText = cipher.update(fileDataToEncrypt);
   cipher.final();
 
-  const authTag = cipher.getAuthTag();
+  const aesGcmAuthTag = cipher.getAuthTag();
 
   // Write version header, salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
   const encryptedFileDataWithMetadata = Buffer.concat([
     Buffer.from(VERSION_HEADER, 'ascii'), // V002 format includes version header
     salt,
     initializationVector,
-    Buffer.from(authTag),
+    Buffer.from(aesGcmAuthTag),
     cipherText,
   ]);
 
