@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './EncryptOrDecryptForm.css';
 import CancelIcon from '@mui/icons-material/Cancel';
 import WarningIcon from '@mui/icons-material/Warning';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import PasswordInput from './PasswordInput';
 import Button from './Button';
 import DecryptIcon from './assets/decryptIcon.svg';
@@ -91,8 +92,23 @@ export default function EncryptOrDecryptForm({
               </strong>
             </div>
             <div className="warningBannerMessage">
-              For better security, consider re-encrypting this file with
-              deadbolt. See the README for more information.
+              <div>
+                To upgrade the security of this encrypted file, consider
+                re-encrypting this file with deadbolt v2.0.1 or above.
+              </div>
+              <div>
+                <span>See the </span>
+                <a
+                  href="https://github.com/alichtman/deadbolt?tab=readme-ov-file#technical-version"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="warningBannerLink"
+                >
+                  README
+                  <GitHubIcon className="warningBannerLinkIcon" />
+                </a>
+                <span> for more information.</span>
+              </div>
             </div>
           </div>
         )}
