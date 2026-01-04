@@ -7,6 +7,7 @@ export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
 export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
 export const VERSION_HEADER_PREFIX = 'DEADBOLT_V';
 export const LEGACY_METADATA_LEN = 96; // V001 format minimum size
+export const MIN_METADATA_LEN = 61; // V002 format minimum size (smallest across all formats)
 
 export default function prettyPrintFilePath(
   filePath: string | undefined,
@@ -98,8 +99,8 @@ export function isDeadboltEncryptedFile(filePath: string): boolean {
   // Get file stats (will throw on permission errors)
   const stats = fs.statSync(filePath);
 
-  // File must be at least as large as the legacy metadata (96 bytes)
-  if (stats.size < LEGACY_METADATA_LEN) {
+  // File must be at least as large as the minimum metadata across all formats (61 bytes for V002)
+  if (stats.size < MIN_METADATA_LEN) {
     return false;
   }
 
