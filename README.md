@@ -150,11 +150,11 @@ Encrypted files include a version header (starting with `DEADBOLT_V002` -- if it
 
 **V002 Format (Current)**
 - **Password Hashing Algorithm**: `argon2id`
-- **Parameters**: [OWASP recommended settings](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id)
-  - Memory cost: 19 MB (19,456 KiB)
-  - Time cost: 2 iterations
-  - Parallelism: 1 thread
-- **Salt**: 512-bit (64-byte) randomly generated
+- **Parameters**: [RFC 9106 FIRST recommendation](https://datatracker.ietf.org/doc/rfc9106/) (see Section 7.4: Parameter Choice)
+  - Memory cost: 2 GiB (2,097,152 KiB)
+  - Time cost: 1 iteration
+  - Parallelism: 4 lanes
+- **Salt**: 128-bit (16-byte) randomly generated
 - **Output**: 256-bit (32-byte) key for AES-256-GCM
 
 **V001 Format (Legacy)**

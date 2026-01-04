@@ -354,7 +354,7 @@ Notes:
         );
         console.log(
           chalk.yellow(
-            'V001 uses PBKDF2 (10K iterations). V002 uses Argon2id with 19MB memory requirement, making password cracking significantly more expensive for GPU/ASIC attackers.\n',
+            'V001 uses PBKDF2 (10K iterations). V002 uses Argon2id with 2 GiB memory, 1 iteration, and 4-lane parallelism (RFC 9106 FIRST recommendation), making password cracking significantly more expensive for GPU/ASIC attackers.\n',
           ),
         );
       }
