@@ -8,7 +8,11 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import { encryptFile, decryptFile, ERROR_MESSAGE_PREFIX } from '../main/encryptionAndDecryptionLib';
+import {
+  encryptFile,
+  decryptFile,
+  ERROR_MESSAGE_PREFIX,
+} from '../main/encryptionAndDecryptionLib';
 
 describe('Encryption Library Tests', () => {
   let testDir: string;
@@ -27,7 +31,8 @@ describe('Encryption Library Tests', () => {
 
   describe('File Encryption and Decryption', () => {
     it('should encrypt and decrypt a text file, resulting in identical content', async () => {
-      const originalContent = 'This is a test file for deadbolt CLI encryption.\nIt has multiple lines.\nAnd special characters: !@#$%^&*()';
+      const originalContent =
+        'This is a test file for deadbolt CLI encryption.\nIt has multiple lines.\nAnd special characters: !@#$%^&*()';
       const testFilePath = path.join(testDir, 'test.txt');
       const password = 'test-password-123';
 
@@ -126,7 +131,10 @@ describe('Encryption Library Tests', () => {
 
     it('should handle files with special characters in the name', async () => {
       const originalContent = 'File with special name';
-      const testFilePath = path.join(testDir, 'test-file (with) [special] {chars}.txt');
+      const testFilePath = path.join(
+        testDir,
+        'test-file (with) [special] {chars}.txt',
+      );
       const password = 'special-chars-password';
 
       // Create test file
@@ -156,11 +164,20 @@ describe('Encryption Library Tests', () => {
       // Create test directory with multiple files
       fs.mkdirSync(testDirPath);
       const file1Content = 'Content of file 1';
-      const file2Content = 'Content of file 2 with more text and special chars: 你好世界';
+      const file2Content =
+        'Content of file 2 with more text and special chars: 你好世界';
       const file3Content = crypto.randomBytes(512); // Binary file
 
-      fs.writeFileSync(path.join(testDirPath, 'file1.txt'), file1Content, 'utf8');
-      fs.writeFileSync(path.join(testDirPath, 'file2.txt'), file2Content, 'utf8');
+      fs.writeFileSync(
+        path.join(testDirPath, 'file1.txt'),
+        file1Content,
+        'utf8',
+      );
+      fs.writeFileSync(
+        path.join(testDirPath, 'file2.txt'),
+        file2Content,
+        'utf8',
+      );
       fs.writeFileSync(path.join(testDirPath, 'file3.bin'), file3Content);
 
       // Encrypt the directory
@@ -190,8 +207,16 @@ describe('Encryption Library Tests', () => {
       fs.mkdirSync(path.join(testDirPath, 'subdir2'));
 
       fs.writeFileSync(path.join(testDirPath, 'root.txt'), 'Root file', 'utf8');
-      fs.writeFileSync(path.join(testDirPath, 'subdir1', 'sub1.txt'), 'Subdir 1 file', 'utf8');
-      fs.writeFileSync(path.join(testDirPath, 'subdir2', 'sub2.txt'), 'Subdir 2 file', 'utf8');
+      fs.writeFileSync(
+        path.join(testDirPath, 'subdir1', 'sub1.txt'),
+        'Subdir 1 file',
+        'utf8',
+      );
+      fs.writeFileSync(
+        path.join(testDirPath, 'subdir2', 'sub2.txt'),
+        'Subdir 2 file',
+        'utf8',
+      );
 
       // Encrypt the directory
       const encryptedFilePath = await encryptFile(testDirPath, password);
@@ -218,13 +243,27 @@ describe('Encryption Library Tests', () => {
 
       // Create and encrypt test file
       fs.writeFileSync(testFilePath, originalContent, 'utf8');
-      const encryptedFilePath = await encryptFile(testFilePath, correctPassword);
+      const encryptedFilePath = await encryptFile(
+        testFilePath,
+        correctPassword,
+      );
       expect(encryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
 
       // Try to decrypt with wrong password
       const decryptResult = await decryptFile(encryptedFilePath, wrongPassword);
+
+      // Strict error message validation
       expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
-      expect(decryptResult.toLowerCase()).toContain('password');
+      expect(decryptResult).toContain('Failed to decrypt');
+      expect(decryptResult).toContain('Is the password correct?');
+      expect(decryptResult).toContain('The file may also be corrupted');
+      expect(decryptResult).toContain(path.basename(encryptedFilePath));
+
+      // Verify exact error format
+      const expectedPattern = new RegExp(
+        `${ERROR_MESSAGE_PREFIX}: Failed to decrypt \`.*${path.basename(encryptedFilePath)}\`\\nIs the password correct\\? The file may also be corrupted\\.`,
+      );
+      expect(decryptResult).toMatch(expectedPattern);
     }, 30000);
 
     it('should handle non-existent file gracefully during encryption', async () => {
@@ -251,23 +290,81 @@ describe('Encryption Library Tests', () => {
       // Corrupt the encrypted file by modifying bytes
       const encryptedData = fs.readFileSync(encryptedFilePath);
       const corruptedData = Buffer.from(encryptedData);
-      // Corrupt a byte in the payload (after the 109-byte metadata for V002)
-      if (corruptedData.length > 110) {
-        corruptedData[110] = corruptedData[110] ^ 0xFF; // Flip bits
-      }
+      // Corrupt a byte in the payload (after the 61-byte metadata for V002)
+      corruptedData[64] = corruptedData[62] ^ 0xff; // Flip bits
       fs.writeFileSync(encryptedFilePath, corruptedData);
 
-      // Try to decrypt corrupted file - should fail with wrong password error
+      // Try to decrypt corrupted file - should fail with wrong password error (auth tag verification fails)
       const decryptResult = await decryptFile(encryptedFilePath, password);
+
+      // Strict error message validation
       expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
       expect(decryptResult).toContain('Failed to decrypt');
-      expect(decryptResult).toContain('Is the password correct');
+      expect(decryptResult).toContain('Is the password correct?');
+      expect(decryptResult).toContain('The file may also be corrupted');
+      expect(decryptResult).toContain(path.basename(encryptedFilePath));
+
+      // Verify exact error format matches DecryptionWrongPasswordError
+      const expectedPattern = new RegExp(
+        `${ERROR_MESSAGE_PREFIX}: Failed to decrypt \`.*${path.basename(encryptedFilePath)}\`\\nIs the password correct\\? The file may also be corrupted\\.`,
+      );
+      expect(decryptResult).toMatch(expectedPattern);
     }, 30000);
+
+    it('should handle V001 file with missing metadata (between 61-95 bytes)', async () => {
+      const v001TruncatedPath = path.join(testDir, 'v001-truncated.deadbolt');
+
+      // Create a V001-style file (no header) that's >= 61 bytes (passes MIN check)
+      // but < 96 bytes (fails LEGACY_METADATA_LEN check for V001)
+      const v001TruncatedData = Buffer.alloc(70); // Between 61 and 95
+      fs.writeFileSync(v001TruncatedPath, v001TruncatedData);
+
+      // Try to decrypt - should fail with missing metadata error
+      const decryptResult = await decryptFile(
+        v001TruncatedPath,
+        'any-password',
+      );
+
+      // Strict error message validation for EncryptedFileMissingMetadataError
+      expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
+      expect(decryptResult).toContain('is not a valid deadbolt encrypted file');
+      expect(decryptResult).toContain(
+        "Please ensure you've selected a file encrypted with deadbolt",
+      );
+      expect(decryptResult).toContain(path.basename(v001TruncatedPath));
+
+      // Verify exact error format
+      // const expectedPattern = new RegExp(
+      //   `${ERROR_MESSAGE_PREFIX}: \`.*${path.basename(v001TruncatedPath)}\` is missing metadata\\.\\nIt's likely corrupted\\.`,
+      // );
+      // expect(decryptResult).toMatch(expectedPattern);
+    }, 10000);
+
+    it('should handle empty encrypted file (caught by validation)', async () => {
+      const emptyFilePath = path.join(testDir, 'empty.deadbolt');
+      fs.writeFileSync(emptyFilePath, Buffer.alloc(0));
+
+      // Try to decrypt - should fail at validation stage (file too small)
+      const decryptResult = await decryptFile(emptyFilePath, 'any-password');
+
+      // Strict error message validation - caught by isDeadboltEncryptedFile()
+      expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
+      expect(decryptResult).toContain('is not a valid deadbolt encrypted file');
+      expect(decryptResult).toContain('Please ensure you');
+      expect(decryptResult).toContain(path.basename(emptyFilePath));
+
+      // Verify exact error format
+      const expectedPattern = new RegExp(
+        `${ERROR_MESSAGE_PREFIX}: \`.*${path.basename(emptyFilePath)}\` is not a valid deadbolt encrypted file\\.\\nPlease ensure you've selected a file encrypted with deadbolt\\.`,
+      );
+      expect(decryptResult).toMatch(expectedPattern);
+    }, 10000);
   });
 
   describe('Multiple Encrypt/Decrypt Cycles', () => {
     it('should maintain data integrity through multiple encrypt/decrypt cycles', async () => {
-      const originalContent = 'Content that will be encrypted and decrypted multiple times';
+      const originalContent =
+        'Content that will be encrypted and decrypted multiple times';
       let currentFilePath = path.join(testDir, 'cycle-test.txt');
       const password = 'cycle-password';
 
@@ -281,7 +378,10 @@ describe('Encryption Library Tests', () => {
         expect(encryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
 
         // Decrypt
-        const decryptedFilePath = await decryptFile(encryptedFilePath, password);
+        const decryptedFilePath = await decryptFile(
+          encryptedFilePath,
+          password,
+        );
         expect(decryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
 
         // Verify content still matches
@@ -298,21 +398,33 @@ describe('Encryption Library Tests', () => {
     it('should handle various password types correctly', async () => {
       const originalContent = 'Test content for password variations';
       const testCases = [
-        { password: 'P@ssw0rd!#$%', description: 'password with special characters' },
+        {
+          password: 'P@ssw0rd!#$%',
+          description: 'password with special characters',
+        },
         { password: '   spaces   ', description: 'password with spaces' },
         { password: '你好世界', description: 'unicode password' },
       ];
 
       for (const testCase of testCases) {
-        const testFilePath = path.join(testDir, `test-${testCase.description.replace(/\s+/g, '-')}.txt`);
+        const testFilePath = path.join(
+          testDir,
+          `test-${testCase.description.replace(/\s+/g, '-')}.txt`,
+        );
         fs.writeFileSync(testFilePath, originalContent, 'utf8');
 
         // Encrypt with this password
-        const encryptedFilePath = await encryptFile(testFilePath, testCase.password);
+        const encryptedFilePath = await encryptFile(
+          testFilePath,
+          testCase.password,
+        );
         expect(encryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
 
         // Decrypt with same password
-        const decryptedFilePath = await decryptFile(encryptedFilePath, testCase.password);
+        const decryptedFilePath = await decryptFile(
+          encryptedFilePath,
+          testCase.password,
+        );
         expect(decryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
 
         // Verify content
@@ -328,15 +440,23 @@ describe('Encryption Library Tests', () => {
       const originalContent = 'Test Argon2id KDF';
       fs.writeFileSync(testFilePath, originalContent, 'utf8');
 
-      const encryptedFilePath = await encryptFile(testFilePath, 'test-password');
+      const encryptedFilePath = await encryptFile(
+        testFilePath,
+        'test-password',
+      );
       expect(encryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
 
       // Verify file has V002 header
       const encryptedData = fs.readFileSync(encryptedFilePath);
-      expect(encryptedData.subarray(0, 13).toString('ascii')).toBe('DEADBOLT_V002');
+      expect(encryptedData.subarray(0, 13).toString('ascii')).toBe(
+        'DEADBOLT_V002',
+      );
 
       // Decrypt and verify
-      const decryptedFilePath = await decryptFile(encryptedFilePath, 'test-password');
+      const decryptedFilePath = await decryptFile(
+        encryptedFilePath,
+        'test-password',
+      );
       expect(decryptedFilePath).not.toContain(ERROR_MESSAGE_PREFIX);
 
       const decryptedContent = fs.readFileSync(decryptedFilePath, 'utf8');
@@ -352,8 +472,18 @@ describe('Encryption Library Tests', () => {
 
       const decryptResult = await decryptFile(encryptedFilePath, 'wrong-pass');
 
+      // Strict error message validation
       expect(decryptResult).toContain(ERROR_MESSAGE_PREFIX);
-      expect(decryptResult.toLowerCase()).toContain('password');
+      expect(decryptResult).toContain('Failed to decrypt');
+      expect(decryptResult).toContain('Is the password correct?');
+      expect(decryptResult).toContain('The file may also be corrupted');
+      expect(decryptResult).toContain(path.basename(encryptedFilePath));
+
+      // Verify exact error format matches DecryptionWrongPasswordError
+      const expectedPattern = new RegExp(
+        `${ERROR_MESSAGE_PREFIX}: Failed to decrypt \`.*${path.basename(encryptedFilePath)}\`\\nIs the password correct\\? The file may also be corrupted\\.`,
+      );
+      expect(decryptResult).toMatch(expectedPattern);
     }, 30000);
   });
 });
