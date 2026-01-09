@@ -6,7 +6,7 @@ import './colors.css';
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useState, useEffect } from 'react';
 import { getIcon } from 'material-file-icons';
-import { isDeadboltFile } from './App';
+import { isDeadboltFile } from './utils/fileUtils';
 // import deadboltIcon from '../../assets/icon.png';
 
 function FileIcon({
