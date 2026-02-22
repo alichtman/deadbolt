@@ -109,7 +109,8 @@
       ".erb/dll"
     ],
     "modulePathIgnorePatterns": [
-      "<rootDir>/release/"
+      "<rootDir>/release/app/dist",
+      "<rootDir>/release/app/package.json"
     ],
     "transform": {
       "\\.(ts|tsx|js|jsx)$": "ts-jest"
