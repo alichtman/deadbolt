@@ -94,7 +94,7 @@ export default function EncryptOrDecryptForm({
             <div className="warningBannerMessage">
               <div>
                 To upgrade the security of this encrypted file, consider
-                re-encrypting this file with deadbolt v2.0.1 or above.
+                re-encrypting this file with deadbolt v2.1.0 or above.
               </div>
               <div>
                 <span>See the </span>
