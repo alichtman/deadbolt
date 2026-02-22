@@ -13,6 +13,7 @@ import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordE
 import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
 import FileReadError from './error-types/FileReadError';
 import FileWriteError from './error-types/FileWriteError';
+import UnsupportedDeadboltFileVersion from './error-types/UnsupportedDeadboltFileVersion';
 import prettyPrintFilePath, {
   generateValidDecryptedFilePath,
   generateValidEncryptedFilePath,
@@ -102,6 +103,9 @@ function convertErrorToStringForRendererProcess(
 
     case error instanceof FileReadError:
       return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of \`${prettyFilePath}\` for ${(error as FileReadError).operation}.`;
+
+    case error instanceof UnsupportedDeadboltFileVersion:
+      return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is detected as being V${(error as UnsupportedDeadboltFileVersion).version}, which is not a supported value. Valid values: ${Object.keys(VERSION_FORMATS).join(', ')}.`;
 
     case error instanceof FileWriteError:
       return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` failed to be written during \`${(error as FileWriteError).operation}\`.`;
@@ -256,7 +260,7 @@ function detectDeadboltFileFormat(encryptedFilePath: string): {
       const format = VERSION_FORMATS[version];
 
       if (!format) {
-        throw new Error(`Unknown file version: ${version}`);
+        throw new UnsupportedDeadboltFileVersion(version);
       }
 
       return { version, detectedFileFormat: format };
