@@ -91,7 +91,8 @@ ipcMain.handle('getDeadboltFileVersion', (_event, [filePath]) => {
     if (header.startsWith('DEADBOLT_V')) {
       // Extract version number from header (e.g., "DEADBOLT_V002" -> 2)
       const versionStr = header.replace('DEADBOLT_V', '');
-      return parseInt(versionStr, 10);
+      const version = parseInt(versionStr, 10);
+      return isNaN(version) ? null : version;
     }
 
     // No header means V001
