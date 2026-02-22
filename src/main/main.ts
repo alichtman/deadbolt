@@ -84,9 +84,12 @@ ipcMain.handle('revealFileInFinder', (_event, [filePath]) => {
  * @returns Version number (1 for V001, 2 for V002, etc.) or null if unable to determine
  */
 ipcMain.handle('getDeadboltFileVersion', (_event, [filePath]) => {
+  let fd: number | null = null;
   try {
-    const fileContent = fs.readFileSync(filePath);
-    const header = fileContent.subarray(0, 13).toString('ascii');
+    fd = fs.openSync(filePath, 'r');
+    const headerBuffer = Buffer.alloc(13);
+    fs.readSync(fd, headerBuffer, 0, 13, 0);
+    const header = headerBuffer.toString('ascii');
 
     if (header.startsWith('DEADBOLT_V')) {
       // Extract version number from header (e.g., "DEADBOLT_V002" -> 2)
@@ -100,6 +103,14 @@ ipcMain.handle('getDeadboltFileVersion', (_event, [filePath]) => {
   } catch (error) {
     log.error('Failed to check file format version:', error);
     return null;
+  } finally {
+    if (fd !== null) {
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        log.error('Failed to close file descriptor in getDeadboltFileVersion:', e);
+      }
+    }
   }
 });
 
