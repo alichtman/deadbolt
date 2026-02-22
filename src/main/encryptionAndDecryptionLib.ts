@@ -422,7 +422,17 @@ export async function encryptFile(
   let createdZipFileForFolderEncryption = false;
 
   // Check if the path is a directory
-  const isDirectory = (await promisify(fs.stat)(filePath)).isDirectory();
+  let isDirectory: boolean;
+  try {
+    isDirectory = (await promisify(fs.stat)(filePath)).isDirectory();
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    const prettyFilePath = prettyPrintFilePath(filePath);
+    if (err.code === 'EACCES' || err.code === 'EPERM') {
+      return `${ERROR_MESSAGE_PREFIX}: Permission denied when trying to read \`${prettyFilePath}\`.\nPlease check file permissions.`;
+    }
+    return `${ERROR_MESSAGE_PREFIX}: Failed to access \`${prettyFilePath}\`: ${err.message}`;
+  }
   if (isDirectory) {
     // Zip the folder before encrypting
     const zipFilePath = generateValidZipFilePath(filePath);
