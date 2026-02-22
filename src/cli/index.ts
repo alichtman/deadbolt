@@ -343,9 +343,11 @@ Notes:
 
     // Check if this is a V001 file and warn the user before decryption
     try {
-      const fileContent = fs.readFileSync(absoluteFilePath);
-      const header = fileContent.subarray(0, 13).toString('ascii');
-      const isV001File = !header.startsWith('DEADBOLT_V');
+      const fd = fs.openSync(absoluteFilePath, 'r');
+      const headerBuffer = Buffer.alloc(13);
+      fs.readSync(fd, headerBuffer, 0, 13, 0);
+      fs.closeSync(fd);
+      const isV001File = !headerBuffer.toString('ascii').startsWith('DEADBOLT_V');
 
       if (isV001File) {
         console.log(chalk.yellow('\n⚠️  Legacy V001 Format Detected'));
