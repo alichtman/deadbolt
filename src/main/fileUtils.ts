@@ -5,6 +5,11 @@ import log from './logger';
 
 export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
 export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
+export const VERSION_HEADER_PREFIX = 'DEADBOLT_V';
+export const VERSION_DIGITS_LEN = 3; // e.g. "002"
+export const VERSION_HEADER_LEN = VERSION_HEADER_PREFIX.length + VERSION_DIGITS_LEN; // 13 bytes total, e.g. "DEADBOLT_V002"
+export const LEGACY_METADATA_LEN = 96; // V001 format minimum size
+export const MIN_METADATA_LEN = 61; // V002 format minimum size (smallest across all formats)
 
 export default function prettyPrintFilePath(
   filePath: string | undefined,
@@ -77,6 +82,71 @@ function removeEncryptedFileExtension(input: string): string {
     return replaceLast(input, LEGACY_ENCRYPTED_FILE_EXTENSION, '');
   }
   return input;
+}
+
+/**
+ * Checks if a file is a valid deadbolt encrypted file by examining its binary header.
+ * Supports both versioned (V002+) and legacy (V001) formats.
+ *
+ * @param filePath - Path to the file to check
+ * @returns true if the file is a valid deadbolt encrypted file, false otherwise
+ * @throws Error if file cannot be read due to permissions or I/O errors
+ */
+export function isDeadboltEncryptedFile(filePath: string): boolean {
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+
+  // Get file stats (will throw on permission errors)
+  const stats = fs.statSync(filePath);
+
+  // File must be at least as large as the minimum metadata across all formats (61 bytes for V002)
+  if (stats.size < MIN_METADATA_LEN) {
+    return false;
+  }
+
+  // Read the full 13-byte version header to check for a valid versioned format
+  // (will throw on permission errors)
+  let fd: number | null = null;
+  let headerString: string;
+  try {
+    fd = fs.openSync(filePath, 'r');
+    const headerBuffer = Buffer.alloc(VERSION_HEADER_LEN);
+    fs.readSync(fd, headerBuffer, 0, VERSION_HEADER_LEN, 0);
+    headerString = headerBuffer.toString('ascii');
+  } finally {
+    if (fd !== null) {
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        log.error('Failed to close file descriptor:', e);
+      }
+    }
+  }
+
+  // Check for a valid versioned header: "DEADBOLT_V" followed by exactly 3 ASCII digits
+  // e.g. "DEADBOLT_V002". Rejects garbage like "DEADBOLT_VXYZ".
+  if (
+    headerString.startsWith(VERSION_HEADER_PREFIX) &&
+    /^\d{3}$/.test(headerString.substring(VERSION_HEADER_PREFIX.length))
+  ) {
+    return true;
+  }
+
+  // Legacy format (V001) doesn't have a header, so we check:
+  // 1. Has a valid extension (.deadbolt or .dbolt)
+  // 2. Is at least LEGACY_METADATA_LEN bytes
+  // This isn't foolproof but provides reasonable validation
+  if (
+    (filePath.endsWith(ENCRYPTED_FILE_EXTENSION) ||
+      filePath.endsWith(LEGACY_ENCRYPTED_FILE_EXTENSION)) &&
+    stats.size >= LEGACY_METADATA_LEN
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**

@@ -341,6 +341,30 @@ Notes:
     validateEncryptedFile(absoluteFilePath);
     const outputPath = validateOutputPath(options.output);
 
+    // Check if this is a V001 file and warn the user before decryption
+    try {
+      const fd = fs.openSync(absoluteFilePath, 'r');
+      const headerBuffer = Buffer.alloc(13);
+      fs.readSync(fd, headerBuffer, 0, 13, 0);
+      fs.closeSync(fd);
+      const isV001File = !headerBuffer.toString('ascii').startsWith('DEADBOLT_V');
+
+      if (isV001File) {
+        console.log(chalk.yellow('\n⚠️  Legacy V001 Format Detected'));
+        console.log(
+          chalk.yellow('For better security, consider re-encrypting this file.'),
+        );
+        console.log(
+          chalk.yellow(
+            'V001 uses PBKDF2 (10K iterations). V002 uses Argon2id with 2 GiB memory, 1 iteration, and 4-lane parallelism (RFC 9106 FIRST recommendation), making password cracking significantly more expensive for GPU/ASIC attackers.\n',
+          ),
+        );
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.debug(`Could not check file format version: ${message}`);
+    }
+
     // Get and validate password
     const password = await getPassword(options.password, false);
 

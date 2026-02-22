@@ -8,20 +8,81 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { promisify } from 'util';
 import archiver from 'archiver';
+import * as argon2 from '@node-rs/argon2';
 import log from './logger';
 import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordError';
 import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
 import FileReadError from './error-types/FileReadError';
 import FileWriteError from './error-types/FileWriteError';
+import UnsupportedDeadboltFileVersion from './error-types/UnsupportedDeadboltFileVersion';
+import Argon2OutOfMemoryError from './error-types/Argon2OutOfMemoryError';
 import prettyPrintFilePath, {
   generateValidDecryptedFilePath,
   generateValidEncryptedFilePath,
   generateValidZipFilePath,
+  isDeadboltEncryptedFile,
+  VERSION_HEADER_PREFIX,
+  VERSION_HEADER_LEN,
 } from './fileUtils';
 import EncryptionOrDecryptionEnum from './EncryptionOrDecryptionEnum';
 
 const AES_256_GCM = 'aes-256-gcm';
-const METADATA_LEN = 96;
+
+// When DEADBOLT_ARGON2_TEST_PARAMS=1 (set by Jest setupFiles), use minimal
+// Argon2id parameters so tests complete in milliseconds.
+// Production always uses RFC 9106 FIRST recommendation parameters.
+const ARGON2_TEST_MODE = process.env.DEADBOLT_ARGON2_TEST_PARAMS === '1';
+
+// Version constants for binary format
+const CURRENT_VERSION = '002';
+const VERSION_HEADER = `${VERSION_HEADER_PREFIX}${CURRENT_VERSION}`; // "DEADBOLT_V002"
+
+// Deadbolt file format specification
+type DeadboltFileFormat =
+  | {
+      kdfType: 'pbkdf2';
+      pbkdf2Iterations: number;
+      saltOffset: number;
+      ivOffset: number;
+      authTagOffset: number;
+      metadataLength: number;
+    }
+  | {
+      kdfType: 'argon2id';
+      argon2Params: {
+        memoryCost: number; // in KiB
+        timeCost: number; // iterations
+        parallelism: number; // threads
+      };
+      saltOffset: number;
+      ivOffset: number;
+      authTagOffset: number;
+      metadataLength: number;
+    };
+
+// Format specifications for each version
+const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
+  '001': {
+    kdfType: 'pbkdf2',
+    pbkdf2Iterations: 10000,
+    saltOffset: 0,
+    ivOffset: 64,
+    authTagOffset: 80,
+    metadataLength: 96, // salt(64) + IV(16) + authTag(16)
+  },
+  '002': {
+    kdfType: 'argon2id',
+    argon2Params: {
+      memoryCost: ARGON2_TEST_MODE ? 64 : 2097152, // 64 KiB vs 2 GiB (RFC 9106 FIRST)
+      timeCost: 1,
+      parallelism: ARGON2_TEST_MODE ? 1 : 4, // 1 lane vs 4 lanes (RFC 9106 FIRST)
+    },
+    saltOffset: VERSION_HEADER_LEN, // 13 bytes
+    ivOffset: VERSION_HEADER_LEN + 16, // 29 bytes
+    authTagOffset: VERSION_HEADER_LEN + 32, // 45 bytes
+    metadataLength: VERSION_HEADER_LEN + 48, // version(13) + salt(16) + IV(16) + authTag(16) = 61 bytes
+  },
+};
 
 /*************
  * Error Prefix
@@ -42,13 +103,19 @@ function convertErrorToStringForRendererProcess(
   const prettyFilePath = prettyPrintFilePath(filePath);
   switch (true) {
     case error instanceof DecryptionWrongPasswordError:
-      return `${ERROR_MESSAGE_PREFIX}: Failed to decrypt \`${prettyFilePath}\`\nIs the password correct?`;
+      return `${ERROR_MESSAGE_PREFIX}: Failed to decrypt \`${prettyFilePath}\`\nIs the password correct? The file may also be corrupted.`;
 
     case error instanceof EncryptedFileMissingMetadataError:
       return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is missing metadata.\nIt's likely corrupted.`;
 
     case error instanceof FileReadError:
       return `${ERROR_MESSAGE_PREFIX}: Failed to retrieve file contents of \`${prettyFilePath}\` for ${(error as FileReadError).operation}.`;
+
+    case error instanceof UnsupportedDeadboltFileVersion:
+      return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is detected as being V${(error as UnsupportedDeadboltFileVersion).version}, which is not a supported value. Valid values: ${Object.keys(VERSION_FORMATS).join(', ')}.`;
+
+    case error instanceof Argon2OutOfMemoryError:
+      return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` could not be processed: Argon2id ran out of memory.\nDeadbolt requires ~2 GiB of free RAM. Close other applications and try again.`;
 
     case error instanceof FileWriteError:
       return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` failed to be written during \`${(error as FileWriteError).operation}\`.`;
@@ -104,23 +171,124 @@ function sha256Hash(data: Buffer): string {
  *********************************/
 
 /**
- * Returns a SHA512 digest to be used as the key for AES encryption. Uses a 64B salt with 10,000 iterations of PBKDF2
- * Follows the NIST standards described here: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
- * @param  {Buffer} salt          64 byte random salt
- * @param  {string} encryptionKey User's entered encryption key
- * @return {Buffer}               SHA512 hash that will be used as the IV.
+ * Converts crypto.BinaryLike to Buffer.
+ * BinaryLike = string | NodeJS.ArrayBufferView, where ArrayBufferView includes
+ * Uint8Array, DataView, etc. This ensures we always get a Buffer for argon2.
  */
-function createDerivedKey(
-  salt: crypto.BinaryLike,
+function ensureBufferForArgon2(data: crypto.BinaryLike): Buffer {
+  if (Buffer.isBuffer(data)) {
+    return data;
+  }
+  if (typeof data === 'string') {
+    return Buffer.from(data, 'utf8');
+  }
+  // NodeJS.ArrayBufferView (Uint8Array, DataView, etc.)
+  // Access underlying ArrayBuffer with proper offset and length
+  return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+}
+
+/**
+ * Returns a derived key to be used for AES encryption.
+ * Uses PBKDF2-SHA512 for V001 (legacy) or Argon2id for V002.
+ * @param  {Buffer} salt               64 byte random salt
+ * @param  {string} encryptionKey      User's entered encryption key
+ * @param  {DeadboltFileFormat} format File format specification
+ * @return {Promise<Buffer>}           32-byte key for AES-256-GCM
+ */
+async function createDerivedKey(
+  salt: Buffer,
   encryptionKey: crypto.BinaryLike,
-): Buffer {
-  return crypto.pbkdf2Sync(
-    encryptionKey,
-    salt,
-    10000,
-    32, // This value is in bytes
-    'sha512',
-  );
+  format: DeadboltFileFormat,
+): Promise<Buffer> {
+  switch (format.kdfType) {
+    case 'argon2id': {
+      try {
+        const encryptionKeyBuffer = ensureBufferForArgon2(encryptionKey);
+
+        // Use hashRaw() instead of hash() to get raw bytes for key derivation.
+        // hashRaw() returns a Buffer of raw hash bytes (32 bytes for AES-256).
+        // hash() returns a PHC-encoded string like "$argon2id$v=19$m=19456,t=2,p=1$...",
+        // which is used for password storage/verification, not encryption key derivation.
+        const hash = await argon2.hashRaw(encryptionKeyBuffer, {
+          algorithm: argon2.Algorithm.Argon2id,
+          memoryCost: format.argon2Params.memoryCost,
+          timeCost: format.argon2Params.timeCost,
+          parallelism: format.argon2Params.parallelism,
+          outputLen: 32, // 32 bytes = 256 bits
+          salt: salt,
+        });
+
+        return hash;
+      } catch (error) {
+        const err = error as Error;
+        log.error('Failed to load or execute argon2:', err.message);
+        if (err.message.toLowerCase().includes('memory allocation')) {
+          throw new Argon2OutOfMemoryError();
+        }
+        throw error;
+      }
+    }
+
+    case 'pbkdf2': {
+      // V001 legacy PBKDF2
+      return crypto.pbkdf2Sync(
+        encryptionKey,
+        salt,
+        format.pbkdf2Iterations,
+        32,
+        'sha512',
+      );
+    }
+
+    default: {
+      // Exhaustive check - will error if we add new KDF types without handling them
+      const exhaustiveCheck: never = format;
+      throw new Error(`Unsupported KDF type`);
+    }
+  }
+}
+
+/**
+ * Detects the version of an encrypted file and returns its format specification.
+ * @param encryptedFilePath Path to the encrypted file
+ * @returns Object containing version string and format specification
+ */
+function detectDeadboltFileFormat(encryptedFilePath: string): {
+  version: string;
+  detectedFileFormat: DeadboltFileFormat;
+} {
+  let fd: number | null = null;
+  try {
+    fd = fs.openSync(encryptedFilePath, 'r');
+    const versionBuffer = Buffer.alloc(VERSION_HEADER_LEN);
+    fs.readSync(fd, versionBuffer, 0, VERSION_HEADER_LEN, 0);
+
+    const versionString = versionBuffer.toString('ascii');
+
+    // Check if file starts with "DEADBOLT_V"
+    if (versionString.startsWith(VERSION_HEADER_PREFIX)) {
+      // Extract version number (last 3 digits)
+      const version = versionString.substring(VERSION_HEADER_PREFIX.length);
+      const format = VERSION_FORMATS[version];
+
+      if (!format) {
+        throw new UnsupportedDeadboltFileVersion(version);
+      }
+
+      return { version, detectedFileFormat: format };
+    }
+
+    // Legacy format (no version header)
+    return { version: '001', detectedFileFormat: VERSION_FORMATS['001'] };
+  } finally {
+    if (fd !== null) {
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        log.error('Failed to close file descriptor:', e);
+      }
+    }
+  }
 }
 
 /**
@@ -135,20 +303,30 @@ async function getDecryptedFileContents(
   decryptionKey: crypto.BinaryLike,
   isVerification: boolean = false,
 ): Promise<Buffer> {
-  // Read salt, IV and authTag from beginning of file.
+  // Detect file version and get format specification
+  const { detectedFileFormat } = detectDeadboltFileFormat(encryptedFilePath);
+
+  // Read salt, IV, and authTag from file using format offsets
   const fd = fs.openSync(encryptedFilePath, 'r');
-  const salt = Buffer.alloc(64);
-  fs.readSync(fd, salt, 0, 64, 0);
+  // Calculate salt length from format offsets (V001: 64 bytes, V002: 16 bytes)
+  const saltLength =
+    detectedFileFormat.ivOffset - detectedFileFormat.saltOffset;
+  const salt = Buffer.alloc(saltLength);
+  fs.readSync(fd, salt, 0, saltLength, detectedFileFormat.saltOffset);
 
   const initializationVector = Buffer.alloc(16);
-  fs.readSync(fd, initializationVector, 0, 16, 64);
+  fs.readSync(fd, initializationVector, 0, 16, detectedFileFormat.ivOffset);
 
   const authTag = Buffer.alloc(16);
-  fs.readSync(fd, authTag, 0, 16, 80);
+  fs.readSync(fd, authTag, 0, 16, detectedFileFormat.authTagOffset);
   fs.closeSync(fd);
 
-  // Decrypt the cipher text
-  const derivedKey = createDerivedKey(salt, decryptionKey);
+  // Decrypt the cipher text using the format's KDF
+  const derivedKey = await createDerivedKey(
+    salt,
+    decryptionKey,
+    detectedFileFormat,
+  );
   const decrypt = crypto.createDecipheriv(
     AES_256_GCM,
     derivedKey,
@@ -158,10 +336,10 @@ async function getDecryptedFileContents(
   // Detect decryption/corruption errors. This will throw when we call decrypt.final() if data has been corrupted / tampered with
   decrypt.setAuthTag(authTag);
 
-  // Read encrypted file, and drop the first METADATA_LEN bytes
+  // Read encrypted file, and drop the metadata bytes
   const cipherText = await readFileWithPromise(encryptedFilePath)
     .then((data) => {
-      if (data.length < METADATA_LEN && data.length > 0) {
+      if (data.length < detectedFileFormat.metadataLength && data.length > 0) {
         throw new EncryptedFileMissingMetadataError();
       } else if (data.length === 0) {
         throw new FileReadError(
@@ -170,7 +348,7 @@ async function getDecryptedFileContents(
             : EncryptionOrDecryptionEnum.DECRYPTION,
         );
       }
-      return data.subarray(METADATA_LEN);
+      return data.subarray(detectedFileFormat.metadataLength);
     })
     .catch((error: Error) => {
       // Unclear if we need to catch and rethrow, or if the exception would bubble up. Leaving in for now
@@ -214,12 +392,20 @@ function zipDirectory(sourcePath: string, outputPath: string): Promise<void> {
 }
 
 /**
- * Encrypts a file using this format:
- * (https://gist.github.com/AndiDittrich/4629e7db04819244e843)
+ * Encrypts a file using this format (V002):
+ * +---------------------+--------------------+-----------------------+----------------+----------------+
+ * | Version Header      | Salt               | Initialization Vector | Auth Tag       | Payload        |
+ * | DEADBOLT_V###       | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
+ * | 13 Bytes, ASCII     | 16 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-61) Bytes   |
+ * | (e.g. DEADBOLT_V002)| (128 bits)         | (128 bits)            | (128 bits)     |                |
+ * +---------------------+--------------------+-----------------------+----------------+----------------+
+ *
+ * Legacy format (V001) did not include the version header:
  * +--------------------+-----------------------+----------------+----------------+
  * | Salt               | Initialization Vector | Auth Tag       | Payload        |
  * | Used to derive key | AES GCM XOR Init      | Data Integrity | Encrypted File |
  * | 64 Bytes, random   | 16 Bytes, random      | 16 Bytes       | (N-96) Bytes   |
+ * | (512 bits)         | (128 bits)            | (128 bits)     |                |
  * +--------------------+-----------------------+----------------+----------------+
  *
  * A huge thank you to: https://medium.com/@brandonstilson/lets-encrypt-files-with-node-85037bea8c0e
@@ -241,7 +427,17 @@ export async function encryptFile(
   let createdZipFileForFolderEncryption = false;
 
   // Check if the path is a directory
-  const isDirectory = (await promisify(fs.stat)(filePath)).isDirectory();
+  let isDirectory: boolean;
+  try {
+    isDirectory = (await promisify(fs.stat)(filePath)).isDirectory();
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    const prettyFilePath = prettyPrintFilePath(filePath);
+    if (err.code === 'EACCES' || err.code === 'EPERM') {
+      return `${ERROR_MESSAGE_PREFIX}: Permission denied when trying to read \`${prettyFilePath}\`.\nPlease check file permissions.`;
+    }
+    return `${ERROR_MESSAGE_PREFIX}: Failed to access \`${prettyFilePath}\`: ${err.message}`;
+  }
   if (isDirectory) {
     // Zip the folder before encrypting
     const zipFilePath = generateValidZipFilePath(filePath);
@@ -280,8 +476,16 @@ export async function encryptFile(
     return `${ERROR_MESSAGE_PREFIX}: ${filePathToEncrypt} failed to be opened for reading.`;
   }
 
-  const salt = crypto.randomBytes(64);
-  const derivedKey = createDerivedKey(salt, password);
+  // Calculate salt length from current format specification (V001: 64, V002: 16)
+  const currentFormat = VERSION_FORMATS[CURRENT_VERSION];
+  const saltLength = currentFormat.ivOffset - currentFormat.saltOffset;
+  const salt = crypto.randomBytes(saltLength);
+  let derivedKey: Buffer;
+  try {
+    derivedKey = await createDerivedKey(salt, password, currentFormat);
+  } catch (error) {
+    return convertErrorToStringForRendererProcess(error as Error, filePath);
+  }
   const initializationVector = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(
     AES_256_GCM,
@@ -297,13 +501,14 @@ export async function encryptFile(
   const cipherText = cipher.update(fileDataToEncrypt);
   cipher.final();
 
-  const authTag = cipher.getAuthTag();
+  const aesGcmAuthTag = cipher.getAuthTag();
 
-  // Write salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
+  // Write version header, salt, IV, and authTag to encrypted file, and then the encrypted file data afterwards
   const encryptedFileDataWithMetadata = Buffer.concat([
+    Buffer.from(VERSION_HEADER, 'ascii'), // V002 format includes version header
     salt,
     initializationVector,
-    Buffer.from(authTag),
+    Buffer.from(aesGcmAuthTag),
     cipherText,
   ]);
 
@@ -375,6 +580,22 @@ export async function decryptFile(
   filePath: string,
   decryptionKey: crypto.BinaryLike,
 ): Promise<string> {
+  // Validate that the file is a valid deadbolt encrypted file before attempting decryption
+  try {
+    if (!isDeadboltEncryptedFile(filePath)) {
+      const prettyFilePath = prettyPrintFilePath(filePath);
+      return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is not a valid deadbolt encrypted file.\nPlease ensure you've selected a file encrypted with deadbolt.`;
+    }
+  } catch (error) {
+    // Handle I/O errors from validation (e.g., permission errors)
+    const prettyFilePath = prettyPrintFilePath(filePath);
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === 'EACCES' || err.code === 'EPERM') {
+      return `${ERROR_MESSAGE_PREFIX}: Permission denied when trying to read \`${prettyFilePath}\`.\nPlease check file permissions.`;
+    }
+    return `${ERROR_MESSAGE_PREFIX}: Failed to read \`${prettyFilePath}\`: ${err.message}`;
+  }
+
   const decryptedFilePath = generateValidDecryptedFilePath(filePath);
   let decryptedText: Buffer | string;
   try {

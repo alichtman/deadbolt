@@ -4,7 +4,21 @@
       "Bash(npm run build:cli:*)",
       "Bash(node dist/deadbolt-cli.js:*)",
       "Bash(cat:*)",
-      "Bash(npm run test)"
+      "Bash(npm run test)",
+      "Bash(npm run test:*)",
+      "Bash(node ../../../../dist/deadbolt-cli.js:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebSearch",
+      "Bash(npm view:*)",
+      "Bash(tar:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh api:*)",
+      "Bash(npm test)",
+      "Bash(gh issue view:*)",
+      "Bash(ls:*)",
+      "Bash(git -C /home/alichtman/Desktop/Development/projects/deadbolt-source-and-packages/deadbolt status)",
+      "Bash(git -C /home/alichtman/Desktop/Development/projects/deadbolt-source-and-packages/deadbolt diff)",
+      "Bash(git -C /home/alichtman/Desktop/Development/projects/deadbolt-source-and-packages/deadbolt log --oneline -5)"
     ],
     "deny": [],
     "ask": []

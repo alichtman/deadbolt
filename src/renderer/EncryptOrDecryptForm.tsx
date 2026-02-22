@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './EncryptOrDecryptForm.css';
 import CancelIcon from '@mui/icons-material/Cancel';
+import WarningIcon from '@mui/icons-material/Warning';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import PasswordInput from './PasswordInput';
 import Button from './Button';
 import DecryptIcon from './assets/decryptIcon.svg';
 import EncryptIcon from './assets/encryptIcon.svg';
 import EncryptOrDecryptFileHeader from './EncryptOrDecryptFileHeader';
+import { logger } from './logger';
 
 export default function EncryptOrDecryptForm({
   isDecryption,
@@ -23,6 +26,21 @@ export default function EncryptOrDecryptForm({
   const [displayError, setDisplayError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [fileVersion, setFileVersion] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (isDecryption && file?.path) {
+      window.electronAPI
+        .getDeadboltFileVersion(file.path)
+        .then((version) => {
+          setFileVersion(version);
+          return version;
+        })
+        .catch((error) => {
+          logger.error('Failed to get file version:', error);
+        });
+    }
+  }, [isDecryption, file?.path]);
 
   // Must match the confirmation, and longer than 8 characters
   const validatePassword = () => {
@@ -65,6 +83,35 @@ export default function EncryptOrDecryptForm({
         className="formBody"
         style={{ marginTop: isDecryption ? '0px' : '-20px' }}
       >
+        {isDecryption && fileVersion === 1 && (
+          <div className="warningBanner">
+            <div className="warningBannerHeader">
+              <WarningIcon className="warningIcon" />
+              <strong className="warningBannerTitle">
+                Legacy Deadbolt File Format Detected
+              </strong>
+            </div>
+            <div className="warningBannerMessage">
+              <div>
+                To upgrade the security of this encrypted file, consider
+                re-encrypting this file with deadbolt v2.1.0 or above.
+              </div>
+              <div>
+                <span>See the </span>
+                <a
+                  href="https://github.com/alichtman/deadbolt?tab=readme-ov-file#technical-version"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="warningBannerLink"
+                >
+                  README
+                  <GitHubIcon className="warningBannerLinkIcon" />
+                </a>
+                <span> for more information.</span>
+              </div>
+            </div>
+          </div>
+        )}
         <PasswordInput
           placeholder="Enter password"
           value={password}

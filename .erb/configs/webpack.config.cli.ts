@@ -23,6 +23,13 @@ const configuration: webpack.Configuration = {
     filename: 'deadbolt-cli.js',
   },
 
+  resolve: {
+    modules: [
+      'node_modules',
+      path.join(webpackPaths.rootPath, 'release/app/node_modules'),
+    ],
+  },
+
   optimization: {
     minimizer: [
       new TerserPlugin({
@@ -33,7 +40,22 @@ const configuration: webpack.Configuration = {
 
   plugins: [
     new webpack.BannerPlugin({
-      banner: '#!/usr/bin/env node',
+      banner: `#!/usr/bin/env node
+// Add release/app/node_modules to module search paths for native dependencies
+const fs = require('fs');
+const path = require('path');
+
+const candidateModuleDirs = [
+  path.join(__dirname, '../release/app/node_modules'),
+  path.join(process.cwd(), 'release/app/node_modules'),
+];
+
+for (const dir of candidateModuleDirs) {
+  if (fs.existsSync(dir) && !module.paths.includes(dir)) {
+    module.paths.push(dir);
+  }
+}
+`,
       raw: true,
     }),
 
@@ -41,6 +63,10 @@ const configuration: webpack.Configuration = {
       NODE_ENV: 'production',
     }),
   ],
+
+  externals: {
+    '@node-rs/argon2': 'commonjs @node-rs/argon2',
+  },
 
   /**
    * Disables webpack processing of __dirname and __filename.
