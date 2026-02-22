@@ -6,6 +6,8 @@ import log from './logger';
 export const ENCRYPTED_FILE_EXTENSION = '.deadbolt';
 export const LEGACY_ENCRYPTED_FILE_EXTENSION = '.dbolt';
 export const VERSION_HEADER_PREFIX = 'DEADBOLT_V';
+export const VERSION_DIGITS_LEN = 3; // e.g. "002"
+export const VERSION_HEADER_LEN = VERSION_HEADER_PREFIX.length + VERSION_DIGITS_LEN; // 13 bytes total, e.g. "DEADBOLT_V002"
 export const LEGACY_METADATA_LEN = 96; // V001 format minimum size
 export const MIN_METADATA_LEN = 61; // V002 format minimum size (smallest across all formats)
 
@@ -104,13 +106,14 @@ export function isDeadboltEncryptedFile(filePath: string): boolean {
     return false;
   }
 
-  // Read the first few bytes to check for version header (will throw on permission errors)
+  // Read the full 13-byte version header to check for a valid versioned format
+  // (will throw on permission errors)
   let fd: number | null = null;
   let headerString: string;
   try {
     fd = fs.openSync(filePath, 'r');
-    const headerBuffer = Buffer.alloc(VERSION_HEADER_PREFIX.length);
-    fs.readSync(fd, headerBuffer, 0, VERSION_HEADER_PREFIX.length, 0);
+    const headerBuffer = Buffer.alloc(VERSION_HEADER_LEN);
+    fs.readSync(fd, headerBuffer, 0, VERSION_HEADER_LEN, 0);
     headerString = headerBuffer.toString('ascii');
   } finally {
     if (fd !== null) {
@@ -122,8 +125,12 @@ export function isDeadboltEncryptedFile(filePath: string): boolean {
     }
   }
 
-  // Check if file starts with "DEADBOLT_V" (versioned format)
-  if (headerString.startsWith(VERSION_HEADER_PREFIX)) {
+  // Check for a valid versioned header: "DEADBOLT_V" followed by exactly 3 ASCII digits
+  // e.g. "DEADBOLT_V002". Rejects garbage like "DEADBOLT_VXYZ".
+  if (
+    headerString.startsWith(VERSION_HEADER_PREFIX) &&
+    /^\d{3}$/.test(headerString.substring(VERSION_HEADER_PREFIX.length))
+  ) {
     return true;
   }
 

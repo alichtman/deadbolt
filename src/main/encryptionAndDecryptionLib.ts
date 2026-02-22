@@ -18,16 +18,16 @@ import prettyPrintFilePath, {
   generateValidEncryptedFilePath,
   generateValidZipFilePath,
   isDeadboltEncryptedFile,
+  VERSION_HEADER_PREFIX,
+  VERSION_HEADER_LEN,
 } from './fileUtils';
 import EncryptionOrDecryptionEnum from './EncryptionOrDecryptionEnum';
 
 const AES_256_GCM = 'aes-256-gcm';
 
 // Version constants for binary format
-const VERSION_HEADER_PREFIX = 'DEADBOLT_V';
 const CURRENT_VERSION = '002';
 const VERSION_HEADER = `${VERSION_HEADER_PREFIX}${CURRENT_VERSION}`; // "DEADBOLT_V002"
-const VERSION_HEADER_LEN = VERSION_HEADER.length; // 13 bytes
 
 // Deadbolt file format specification
 type DeadboltFileFormat =
