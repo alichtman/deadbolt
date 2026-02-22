@@ -8,12 +8,14 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { promisify } from 'util';
 import archiver from 'archiver';
+import * as argon2 from '@node-rs/argon2';
 import log from './logger';
 import DecryptionWrongPasswordError from './error-types/DecryptionWrongPasswordError';
 import EncryptedFileMissingMetadataError from './error-types/EncryptedFileMissingMetadataError';
 import FileReadError from './error-types/FileReadError';
 import FileWriteError from './error-types/FileWriteError';
 import UnsupportedDeadboltFileVersion from './error-types/UnsupportedDeadboltFileVersion';
+import Argon2OutOfMemoryError from './error-types/Argon2OutOfMemoryError';
 import prettyPrintFilePath, {
   generateValidDecryptedFilePath,
   generateValidEncryptedFilePath,
@@ -107,6 +109,9 @@ function convertErrorToStringForRendererProcess(
     case error instanceof UnsupportedDeadboltFileVersion:
       return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` is detected as being V${(error as UnsupportedDeadboltFileVersion).version}, which is not a supported value. Valid values: ${Object.keys(VERSION_FORMATS).join(', ')}.`;
 
+    case error instanceof Argon2OutOfMemoryError:
+      return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` could not be processed: Argon2id ran out of memory.\nDeadbolt requires ~2 GiB of free RAM. Close other applications and try again.`;
+
     case error instanceof FileWriteError:
       return `${ERROR_MESSAGE_PREFIX}: \`${prettyFilePath}\` failed to be written during \`${(error as FileWriteError).operation}\`.`;
 
@@ -193,7 +198,6 @@ async function createDerivedKey(
   switch (format.kdfType) {
     case 'argon2id': {
       try {
-        const argon2 = await import('@node-rs/argon2');
         const encryptionKeyBuffer = ensureBufferForArgon2(encryptionKey);
 
         // Use hashRaw() instead of hash() to get raw bytes for key derivation.
@@ -211,8 +215,11 @@ async function createDerivedKey(
 
         return hash;
       } catch (error) {
-        const err = (error as Error).message;
-        log.error('Failed to load or execute argon2:', err);
+        const err = error as Error;
+        log.error('Failed to load or execute argon2:', err.message);
+        if (err.message.toLowerCase().includes('memory allocation')) {
+          throw new Argon2OutOfMemoryError();
+        }
         throw error;
       }
     }
@@ -458,7 +465,12 @@ export async function encryptFile(
   const currentFormat = VERSION_FORMATS[CURRENT_VERSION];
   const saltLength = currentFormat.ivOffset - currentFormat.saltOffset;
   const salt = crypto.randomBytes(saltLength);
-  const derivedKey = await createDerivedKey(salt, password, currentFormat);
+  let derivedKey: Buffer;
+  try {
+    derivedKey = await createDerivedKey(salt, password, currentFormat);
+  } catch (error) {
+    return convertErrorToStringForRendererProcess(error as Error, filePath);
+  }
   const initializationVector = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(
     AES_256_GCM,
