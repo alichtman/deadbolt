@@ -28,6 +28,11 @@ import EncryptionOrDecryptionEnum from './EncryptionOrDecryptionEnum';
 
 const AES_256_GCM = 'aes-256-gcm';
 
+// When DEADBOLT_ARGON2_TEST_PARAMS=1 (set by Jest setupFiles), use minimal
+// Argon2id parameters so tests complete in milliseconds.
+// Production always uses RFC 9106 FIRST recommendation parameters.
+const ARGON2_TEST_MODE = process.env.DEADBOLT_ARGON2_TEST_PARAMS === '1';
+
 // Version constants for binary format
 const CURRENT_VERSION = '002';
 const VERSION_HEADER = `${VERSION_HEADER_PREFIX}${CURRENT_VERSION}`; // "DEADBOLT_V002"
@@ -68,9 +73,9 @@ const VERSION_FORMATS: Record<string, DeadboltFileFormat> = {
   '002': {
     kdfType: 'argon2id',
     argon2Params: {
-      memoryCost: 2097152, // 2 GiB in KiB (RFC 9106 FIRST recommendation)
-      timeCost: 1, // iteration (RFC 9106 FIRST)
-      parallelism: 4, // lanes (RFC 9106 FIRST)
+      memoryCost: ARGON2_TEST_MODE ? 64 : 2097152, // 64 KiB vs 2 GiB (RFC 9106 FIRST)
+      timeCost: 1,
+      parallelism: ARGON2_TEST_MODE ? 1 : 4, // 1 lane vs 4 lanes (RFC 9106 FIRST)
     },
     saltOffset: VERSION_HEADER_LEN, // 13 bytes
     ivOffset: VERSION_HEADER_LEN + 16, // 29 bytes
