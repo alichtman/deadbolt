@@ -173,7 +173,7 @@ async function release(): Promise<void> {
   // Create a new tag and a new github release (all done inside the gh release create cmd)
   return new Promise((resolve, reject) => {
     try {
-      const command = `gh release create ${CURRENT_VERSION} --title "${prettyVersion}" --target main --generate-notes ${
+      const command = `gh release create ${CURRENT_VERSION} --title "${prettyVersion}" --target main --generate-notes --draft ${
         isAutodetectedPrerelease || isPrerelease ? '--prerelease' : ''
       }`;
 
@@ -185,7 +185,7 @@ async function release(): Promise<void> {
         chalk.green.bold(`
           \nA ${chalk.yellow.bold('DRAFT')} release has been created.
           You will need to publish it from the GitHub UI.
-          CI will populate the build artifacts. The Homebrew recipe (https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb) should be automatically updated once you publish the release.
+          CI will populate the build artifacts within 10-20 minutes. The Homebrew recipe (https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb) should be automatically updated once you publish the release.
           Make sure you update any other package managers with the new release.
         `),
       );
