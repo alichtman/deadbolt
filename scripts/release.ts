@@ -184,8 +184,8 @@ async function release(): Promise<void> {
       console.log(
         chalk.green.bold(`
           \nA ${chalk.yellow.bold('DRAFT')} release has been created.
-          You will need to publish it from the GitHub UI.
-          CI will populate the build artifacts within 10-20 minutes. The Homebrew recipe (https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb) should be automatically updated once you publish the release.
+          You will need to publish it from the GitHub UI, after CI populates the build artifacts (which should happen within 10-20 minutes).
+          The Homebrew recipe (https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb) should be automatically updated once you publish the release.
           Make sure you update any other package managers with the new release.
         `),
       );
