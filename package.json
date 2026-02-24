@@ -1,7 +1,7 @@
 {
   "name": "deadbolt",
   "productName": "Deadbolt",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Dead-simple file encryption for any OS.",
   "keywords": [
     "encryption",
