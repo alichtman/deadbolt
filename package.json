@@ -1,5 +1,5 @@
 {
-  "name": "deadbolt",
+  "name": "deadbolt-cli",
   "productName": "Deadbolt",
   "version": "2.1.1",
   "description": "Dead-simple file encryption for any OS.",
@@ -31,18 +31,26 @@
   ],
   "main": "./.erb/dll/main.bundle.dev.js",
   "bin": {
-    "deadbolt": "./dist/deadbolt-cli.js"
+    "deadbolt": "./dist/deadbolt-cli.js",
+    "deadbolt-cli": "./dist/deadbolt-cli.js"
   },
+  "files": [
+    "dist/deadbolt-cli.js",
+    "dist/deadbolt-cli.js.map",
+    "scripts/postinstall.js"
+  ],
   "scripts": {
     "build:cli": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.cli.ts && chmod +x dist/deadbolt-cli.js",
     "cli": "npm run build:cli && node dist/deadbolt-cli.js",
     "install:cli": "npm install --ignore-scripts && npm run build:cli && npm link",
+    "install:global": "npm run build:cli && npm install -g .",
     "clean": "rimraf dist",
     "build": "npm run update-versions && concurrently \"npm run build:main\" \"npm run build:renderer\"",
     "build:dll": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
     "build:main": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.prod.ts",
     "build:renderer": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.prod.ts",
-    "postinstall": "ts-node .erb/scripts/check-native-dep.js && electron-builder install-app-deps && npm run build:dll",
+    "postinstall": "node scripts/postinstall.js",
+    "prepublishOnly": "npm run build:cli",
     "lint": "cross-env NODE_ENV=development eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "cross-env NODE_ENV=development eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "package": "npm run update-versions && ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build -mlw --publish onTagOrDraft && npm run build:dll",
@@ -118,6 +126,7 @@
     }
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
     "@electron/notarize": "^2.5.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",

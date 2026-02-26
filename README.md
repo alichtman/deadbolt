@@ -19,8 +19,7 @@ Select a file (or folder) to encrypt, enter a password, and … that's it. Decry
 `deadbolt` includes a command-line interface for encrypting and decrypting files without the GUI. If you don't provide a password, you'll be prompted to enter it securely.
 
 ```bash
-$ git clone https://github.com/alichtman/deadbolt.git && cd deadbolt
-$ npm run install:cli
+$ npm install -g deadbolt-cli
 
 # Encrypt a file or folder
 $ deadbolt encrypt secret.pdf
@@ -146,7 +145,7 @@ $ yay -S deadbolt-bin
 
 ### Deadbolt File Formats
 
-Encrypted files include a version header (starting with `DEADBOLT_V002` -- if it's missing, it's V1) at the beginning of the file, allowing for cryptographic improvements while maintaining backwards compatibility. 
+Encrypted files include a version header (starting with `DEADBOLT_V002` -- if it's missing, it's V1) at the beginning of the file, allowing for cryptographic improvements while maintaining backwards compatibility.
 
 **V002 Format (Current)**
 - **Password Hashing Algorithm**: `argon2id`
