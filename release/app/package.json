@@ -16,7 +16,9 @@
     "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
   },
   "dependencies": {
-    "@node-rs/argon2": "^2.0.2",
+    "@node-rs/argon2": "^2.0.2"
+  },
+  "optionalDependencies": {
     "@node-rs/argon2-darwin-arm64": "^2.0.2"
   }
 }
