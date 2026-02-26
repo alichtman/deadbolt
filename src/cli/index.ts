@@ -16,13 +16,15 @@ import {
   LEGACY_ENCRYPTED_FILE_EXTENSION,
 } from '../main/fileUtils';
 
+declare const __APP_VERSION__: string;
+
 const program = new Command();
 
 program
   .name('deadbolt')
   .description('Encrypt and decrypt files using AES-256-GCM encryption')
-  .version('2.0.2')
-  .option('-v, --verbose', 'Enable verbose logging (debug mode)')
+  .version(__APP_VERSION__, '-v, --version', 'Output the current version')
+  .option('-d, --verbose', 'Enable verbose logging (debug mode)')
   .addHelpText(
     'after',
     `
@@ -38,7 +40,7 @@ Password Prompting:
   Using --password directly may log your password in shell history.
 
 Verbose Mode:
-  Use --verbose or -v to enable debug logging for troubleshooting.
+  Use --verbose or -d to enable debug logging for troubleshooting.
 
 Documentation:
   https://github.com/alichtman/deadbolt

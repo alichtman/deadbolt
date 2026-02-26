@@ -8,6 +8,7 @@ import { merge } from 'webpack-merge';
 import TerserPlugin from 'terser-webpack-plugin';
 import baseConfig from './webpack.config.base';
 import webpackPaths from './webpack.paths';
+import { version } from '../../package.json';
 
 const configuration: webpack.Configuration = {
   devtool: 'source-map',
@@ -61,6 +62,10 @@ for (const dir of candidateModuleDirs) {
 
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
+    }),
+
+    new webpack.DefinePlugin({
+      __APP_VERSION__: JSON.stringify(version),
     }),
   ],
 
