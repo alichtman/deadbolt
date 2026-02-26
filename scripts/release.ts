@@ -56,6 +56,16 @@ function ensureGHCLIInstalled(): void {
   }
 }
 
+function ensureNPMLoggedIn(): void {
+  try {
+    execSync('npm whoami', { stdio: 'pipe' });
+  } catch (error) {
+    logFatalError(
+      'Error: You are not logged in to npm. Run `npm login` before releasing.',
+    );
+  }
+}
+
 /**
  * This whole section depends on execSync throwing if a process times out or has a non-zero exit code
  */
@@ -119,6 +129,7 @@ async function release(): Promise<void> {
   copyVersionFromMainToApp();
   ensureReleaseIsSafe();
   ensureGHCLIInstalled();
+  ensureNPMLoggedIn();
   printCurrentGHReleases();
 
   const prettyVersion = `deadbolt ${CURRENT_VERSION}`;
@@ -181,10 +192,18 @@ async function release(): Promise<void> {
       const output = execSync(command, { stdio: 'pipe' }).toString();
       console.log(chalk.blue(output));
 
+      const npmTag =
+        isAutodetectedPrerelease || isPrerelease ? 'beta' : 'latest';
+      const npmPublishCommand = `npm publish --tag ${npmTag}`;
+      console.log(
+        chalk.green.bold(`\nPublishing to npm: $ ${npmPublishCommand}\n`),
+      );
+      execSync(npmPublishCommand, { stdio: 'inherit' });
+
       console.log(
         chalk.green.bold(`
-          \nA ${chalk.yellow.bold('DRAFT')} release has been created.
-          You will need to publish it from the GitHub UI, after CI populates the build artifacts (which should happen within 10-20 minutes).
+          \nA ${chalk.yellow.bold('DRAFT')} GitHub release has been created and the package has been published to npm as ${chalk.cyan.bold(npmTag)}.
+          You will need to publish the GitHub release from the GitHub UI, after CI populates the build artifacts (which should happen within 10-20 minutes).
           The Homebrew recipe (https://github.com/Homebrew/homebrew-cask/blob/master/Casks/d/deadbolt.rb) should be automatically updated once you publish the release.
           Make sure you update any other package managers with the new release.
         `),
