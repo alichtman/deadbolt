@@ -50,20 +50,6 @@ $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/
 $ brew install deadbolt --cask
 ```
 
-When you open the app, you'll receive a Gatekeeper warning about the app not being verified as malware-free.
-
-<img src="img/not-opened-warning-macos.png" />
-
-This is because the app is not signed/notarized, since I do not have an Apple Developer account. You can bypass this warning by running:
-
-```bash
-$ xattr -c /Applications/Deadbolt.app
-```
-
-Or, go to `System Preferences > Security & Privacy > General` and click "Open Anyway".
-
-<img src="img/security-privacy-apple-settings.png" />
-
 #### Using `.dmg` from GitHub Releases
 
 Install the `deadbolt.dmg` file from [GitHub Releases](https://github.com/alichtman/deadbolt/releases). There are builds for both `x86_64` (Intel) and `arm64` (Apple Silicon -- M1, M2, etc.) CPU architectures.
@@ -72,11 +58,6 @@ After downloading:
 
 1. Double-click the `.dmg` file to mount it
 2. Drag the `Deadbolt` app to your `Applications` folder
-3. Unquarantine the app by running:
-
-```bash
-$ xattr -c /Applications/Deadbolt.app
-```
 
 ### Windows
 
