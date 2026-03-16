@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.alichtman.deadbolt</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>Deadbolt</name>
+  <summary>Dead-simple file encryption for any OS</summary>
+
+  <developer id="alichtman">
+    <name>Aaron Lichtman</name>
+  </developer>
+
+  <description>
+    <p>
+      Deadbolt is a simple, cross-platform file encryption tool using AES-256-GCM
+      and Argon2id key derivation. Files can be encrypted or decrypted by
+      drag-and-drop or double-click, with no configuration required.
+    </p>
+    <ul>
+      <li>AES-256-GCM authenticated encryption</li>
+      <li>Argon2id key derivation (RFC 9106 first recommended parameters)</li>
+      <li>Drag-and-drop or double-click to encrypt/decrypt</li>
+      <li>Standalone CLI available</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">org.alichtman.deadbolt.desktop</launchable>
+
+  <url type="homepage">https://github.com/alichtman/deadbolt</url>
+  <url type="bugtracker">https://github.com/alichtman/deadbolt/issues</url>
+  <url type="vcs-browser">https://github.com/alichtman/deadbolt</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Deadbolt main window</caption>
+      <image>https://raw.githubusercontent.com/alichtman/deadbolt/main/img/deadbolt-header.png</image>
+    </screenshot>
+  </screenshots>
+
+  <categories>
+    <category>Utility</category>
+    <category>Security</category>
+  </categories>
+
+  <keywords>
+    <keyword>encryption</keyword>
+    <keyword>security</keyword>
+    <keyword>privacy</keyword>
+    <keyword>AES</keyword>
+    <keyword>file</keyword>
+  </keywords>
+
+  <releases>
+    <release version="2.1.1" date="2026-02-24" />
+    <release version="2.1.0" date="2026-02-22" />
+    <release version="2.0.2" date="2025-02-09" />
+    <release version="2.0.1" date="2025-02-09" />
+    <release version="2.0.0" date="2025-02-09" />
+  </releases>
+
+  <content_rating type="oars-1.1" />
+</component>

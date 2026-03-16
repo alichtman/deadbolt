@@ -141,3 +141,6 @@ flatpak:
     - '--filesystem=home'
     - '--env=GDK_BACKEND=wayland,x11'
     - '--env=ELECTRON_OZONE_PLATFORM_HINT=auto'
+  files:
+    - - assets/org.alichtman.deadbolt.metainfo.xml
+      - /share/metainfo/org.alichtman.deadbolt.metainfo.xml
