@@ -164,16 +164,9 @@ export function generateValidDecryptedFilePath(encryptedFilePath: string) {
     removeEncryptedFileExtension(encryptedFilePath);
 
   // Split the path into name and extension
-  const lastDotIndex = baseFilePathWithOriginalExtension.lastIndexOf('.');
-  // This handles files with no extension
-  const nameWithoutExt =
-    lastDotIndex !== -1
-      ? baseFilePathWithOriginalExtension.slice(0, lastDotIndex)
-      : baseFilePathWithOriginalExtension;
-  const extension =
-    lastDotIndex !== -1
-      ? baseFilePathWithOriginalExtension.slice(lastDotIndex)
-      : '';
+  const parsedPath = path.parse(baseFilePathWithOriginalExtension);
+  const nameWithoutExt = path.join(parsedPath.dir, parsedPath.name);
+  const extension = parsedPath.ext;
 
   let candidateFilePath = baseFilePathWithOriginalExtension;
   let counter = 1;
@@ -230,10 +223,10 @@ export function generateValidEncryptedFilePath(
   originalFilePath: string,
 ): string {
   const baseFilePath = `${originalFilePath}${ENCRYPTED_FILE_EXTENSION}`;
-  const lastPeriodIndex = originalFilePath.lastIndexOf('.');
+  const parsedPath = path.parse(originalFilePath);
 
   // Handle files with no extension
-  if (lastPeriodIndex === -1) {
+  if (!parsedPath.ext) {
     let candidateFilePath = baseFilePath;
     let counter = 1;
 
@@ -244,11 +237,8 @@ export function generateValidEncryptedFilePath(
     return candidateFilePath;
   }
 
-  const originalFileExtension = originalFilePath.substring(lastPeriodIndex);
-  const baseFilePathWithoutExtension = originalFilePath.substring(
-    0,
-    lastPeriodIndex,
-  );
+  const originalFileExtension = parsedPath.ext;
+  const baseFilePathWithoutExtension = path.join(parsedPath.dir, parsedPath.name);
   let candidateFilePath = baseFilePath;
   let counter = 1;
 
